@@ -421,8 +421,10 @@ void cGUI::Display()
         }
     }
 
-    if (ImGui::Button("-"))
+    if (ImGui::Button("-")) {
         g_canvas[g_cidx].myCols.erase(g_canvas[g_cidx].myCols.begin() + g_canvas[g_cidx].selColIndex);
+        if (g_canvas[g_cidx].selColIndex > 0) g_canvas[g_cidx].selColIndex--;
+    }
 
     ImGui::SameLine();
 
