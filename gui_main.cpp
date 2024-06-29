@@ -274,14 +274,6 @@ void cGUI::Display()
         ImGui::SetCursorPosX(197);
         if (ImGui::BeginTabBar("ProjectTabs", ImGuiTabBarFlags_Reorderable | ImGuiTabBarFlags_AutoSelectNewTabs))
         {
-            //static std::vector<bool> opened;
-            //bool open = true;
-
-            //opened.clear();
-
-            //for (auto& cnvs : g_canvas)
-            //    opened.push_back(&open);
-
             for (uint16_t i = 0; i < g_canvas.size(); i++) {
                 bool open = true;
 
@@ -357,17 +349,7 @@ void cGUI::Display()
         const ImVec4 panelActiveColor = { 0.f, 0.46f, 0.78f, 1.f };
         
         ImGui::Begin("##Tools", NULL, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove);
-        //ImGui::PushStyleColor(ImGuiCol_Button, g_canvas[g_cidx].paintToolSelected == 4 ? panelActiveColor : panelColor);
-        //if (ImGui::ImageButton((void*)g_assets.selection_texture, ImVec2(16, 16))) g_canvas[g_cidx].paintToolSelected = 4;
-        //ImGui::PushStyleColor(ImGuiCol_Button, g_canvas[g_cidx].paintToolSelected == 0 ? panelActiveColor : panelColor);
-        //if (ImGui::ImageButton((void*)g_assets.brush_texture, ImVec2(16, 16))) g_canvas[g_cidx].paintToolSelected = 0;
-        //ImGui::PushStyleColor(ImGuiCol_Button, g_canvas[g_cidx].paintToolSelected == 1 ? panelActiveColor : panelColor);
-        //if (ImGui::ImageButton((void*)g_assets.bucket_texture, ImVec2(16, 16))) g_canvas[g_cidx].paintToolSelected = 1;
-        //ImGui::PushStyleColor(ImGuiCol_Button, g_canvas[g_cidx].paintToolSelected == 2 ? panelActiveColor : panelColor);
-        //if (ImGui::ImageButton((void*)g_assets.eraser_texture, ImVec2(16, 16))) g_canvas[g_cidx].paintToolSelected = 2;
-        //ImGui::PushStyleColor(ImGuiCol_Button, g_canvas[g_cidx].paintToolSelected == 3 ? panelActiveColor : panelColor);
-        //if (ImGui::ImageButton((void*)g_assets.dropper_texture, ImVec2(16, 16))) g_canvas[g_cidx].paintToolSelected = 3;
-        
+
         ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, { 4.5f, 4.5f });
         ImGui::PushStyleVar(ImGuiStyleVar_ButtonTextAlign, { 0.7f, 1.f });
         ImGui::PushStyleColor(ImGuiCol_Button, g_canvas[g_cidx].paintToolSelected == 5 ? panelActiveColor : panelColor);
@@ -395,12 +377,6 @@ void cGUI::Display()
         ImGui::PopStyleColor(6);
         ImGui::End();
     }
-
-    // Debug
-    /*std::string yee = std::to_string(g_cam.x);
-    ImGui::Text(yee.c_str());
-    yee = std::to_string(g_cam.y);
-    ImGui::Text(yee.c_str());*/
 
     auto& draw = *ImGui::GetBackgroundDrawList();
     draw.AddRectFilled({ io.DisplaySize.x - 60, io.DisplaySize.y - 19 }, { io.DisplaySize.x - 40, io.DisplaySize.y }, ImColor(51, 51, 55, 255));
