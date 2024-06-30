@@ -39,43 +39,30 @@ void SaveCanvasToPng(const char* name) {
     char* imageData = new char[g_canvas[g_cidx].width * g_canvas[g_cidx].height * 4];
     int imagePos = 0;
 
-    // Initialize imageData with transparent black
-    for (int j = 0; j < g_canvas[g_cidx].height; j++) {
-        for (int i = 0; i < g_canvas[g_cidx].width; i++) {
-            imageData[imagePos++] = 0; // Red
-            imageData[imagePos++] = 0; // Green
-            imageData[imagePos++] = 0; // Blue
-            imageData[imagePos++] = 0; // Alpha
-        }
-    }
-
-    // Reset imagePos for the blending process
-    imagePos = 0;
-
     // Blend all layers
     for (int j = 0; j < g_canvas[g_cidx].height; j++) {
         for (int i = 0; i < g_canvas[g_cidx].width; i++) {
             ImU32 finalColor = IM_COL32(0, 0, 0, 0); // Start with transparent black
             for (size_t layer = 0; layer < g_canvas[g_cidx].tiles.size(); layer++) {
-                ImU32 color = g_canvas[g_cidx].tiles[layer][i + j * g_canvas[g_cidx].width];
+                const ImU32 color = g_canvas[g_cidx].tiles[layer][i + j * g_canvas[g_cidx].width];
 
                 // Extract RGBA components
-                int srcR = (color >> 0) & 0xFF;
-                int srcG = (color >> 8) & 0xFF;
-                int srcB = (color >> 16) & 0xFF;
-                int srcA = (color >> 24) & 0xFF;
+                const int srcR = (color >> 0) & 0xFF;
+                const int srcG = (color >> 8) & 0xFF;
+                const int srcB = (color >> 16) & 0xFF;
+                const int srcA = (color >> 24) & 0xFF;
 
-                int dstR = (finalColor >> 0) & 0xFF;
-                int dstG = (finalColor >> 8) & 0xFF;
-                int dstB = (finalColor >> 16) & 0xFF;
-                int dstA = (finalColor >> 24) & 0xFF;
+                const int dstR = (finalColor >> 0) & 0xFF;
+                const int dstG = (finalColor >> 8) & 0xFF;
+                const int dstB = (finalColor >> 16) & 0xFF;
+                const int dstA = (finalColor >> 24) & 0xFF;
 
                 // Blend the source color onto the destination color using alpha blending
-                float alpha = srcA / 255.0f;
-                int outR = static_cast<int>(srcR * alpha + dstR * (1 - alpha));
-                int outG = static_cast<int>(srcG * alpha + dstG * (1 - alpha));
-                int outB = static_cast<int>(srcB * alpha + dstB * (1 - alpha));
-                int outA = static_cast<int>(srcA + dstA * (1 - alpha));
+                const float alpha = srcA / 255.0f;
+                const int outR = static_cast<int>(srcR * alpha + dstR * (1 - alpha));
+                const int outG = static_cast<int>(srcG * alpha + dstG * (1 - alpha));
+                const int outB = static_cast<int>(srcB * alpha + dstB * (1 - alpha));
+                const int outA = static_cast<int>(srcA + dstA * (1 - alpha));
 
                 finalColor = IM_COL32(outR, outG, outB, outA);
             }
