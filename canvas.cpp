@@ -12,18 +12,6 @@
 std::vector<cCanvas> g_canvas = std::vector<cCanvas>();
 uint16_t g_cidx = uint16_t();
 
-//void floodFill(int x, int y, ImColor curCol, ImColor col)
-//{
-//    if (x < g_canvas[g_cidx].width && y < g_canvas[g_cidx].height && y >= 0 && x >= 0 && g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex][x + y * g_canvas[g_cidx].width] == curCol && curCol != col)
-//    {
-//        g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex][x + y * g_canvas[g_cidx].width] = col;
-//        floodFill(x + 1, y, curCol, col);
-//        floodFill(x, y + 1, curCol, col);
-//        floodFill(x - 1, y, curCol, col);
-//        floodFill(x, y - 1, curCol, col);
-//    }
-//}
-
 #include <stack>
 #include <utility> // for std::pair
 #include <unordered_set>
@@ -89,20 +77,6 @@ void floodFill(int x, int y, bool paint)
 
     printf("FloodFill: Completed without freezing\n");
 }
-
-//void floodSelect(std::vector<uint16_t>& selectedIndexes, int x, int y, ImU32 curCol, ImU32 col)
-//{
-//    //if (x < g_canvas[g_cidx].width && y < height && y >= 0 && x >= 0 && tiles[x + y * width] == curCol && curCol != col)
-//    //{
-//    //    selectedIndexes.emplace_back(x + y * width);
-//    //    std::string txt = "x: " + std::to_string(x) + " y: " + std::to_string(y) + "\n";
-//    //    //printf(txt.c_str());
-//    //    floodSelect(selectedIndexes, x + 1, y, curCol, col);
-//    //    floodSelect(selectedIndexes, x, y + 1, curCol, col);
-//    //    floodSelect(selectedIndexes, x - 1, y, curCol, col);
-//    //    floodSelect(selectedIndexes, x, y - 1, curCol, col);
-//    //}
-//}
 
 //Todo: split this up for palette and initializing our canvas.
 //Also todo in future: maybe make this func take a new size argument ?
