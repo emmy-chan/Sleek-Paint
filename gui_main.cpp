@@ -321,6 +321,7 @@ void cGUI::Display()
         style.GrabMinSize = 150;
 
         ImGui::Begin("##ScrollH", NULL, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove);
+        ImGui::SetWindowSize({ ImGui::GetWindowWidth() - 20, 20});
         ImGui::PushItemWidth(ImGui::GetWindowWidth());
         ImGui::SliderFloat("##ScrollHorizontal", &g_cam.x, glm::abs(io.DisplaySize.x / 2 - g_canvas[g_cidx].zoom), 150 + -glm::abs(io.DisplaySize.x / 2 - (g_canvas[g_cidx].width * g_canvas[g_cidx].TILE_SIZE) + g_canvas[g_cidx].zoom), "");
         ImGui::End();

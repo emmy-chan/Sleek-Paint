@@ -2734,7 +2734,7 @@ bool ImGui::SliderBehaviorT(const ImRect& bb, ImGuiID id, ImGuiDataType data_typ
     const bool is_logarithmic = (flags & ImGuiSliderFlags_Logarithmic) != 0;
     const bool is_floating_point = (data_type == ImGuiDataType_Float) || (data_type == ImGuiDataType_Double);
 
-    const float grab_padding = 2.0f;
+    const float grab_padding = 4.0f;
     const float slider_sz = (bb.Max[axis] - bb.Min[axis]) - grab_padding * 2.0f;
     float grab_sz = style.GrabMinSize;
     SIGNEDTYPE v_range = (v_min < v_max ? v_max - v_min : v_min - v_max);
@@ -2742,8 +2742,8 @@ bool ImGui::SliderBehaviorT(const ImRect& bb, ImGuiID id, ImGuiDataType data_typ
         grab_sz = ImMax((float)(slider_sz / (v_range + 1)), style.GrabMinSize);  // For integer sliders: if possible have the grab size represent 1 unit
     grab_sz = ImMin(grab_sz, slider_sz);
     const float slider_usable_sz = slider_sz - grab_sz;
-    const float slider_usable_pos_min = bb.Min[axis] + grab_padding + grab_sz * 0.5f;
-    const float slider_usable_pos_max = bb.Max[axis] - grab_padding - grab_sz * 0.5f;
+    const float slider_usable_pos_min = bb.Min[axis] + grab_padding;
+    const float slider_usable_pos_max = bb.Max[axis] - grab_padding;
 
     float logarithmic_zero_epsilon = 0.0f; // Only valid when is_logarithmic is true
     float zero_deadzone_halfsize = 0.0f; // Only valid when is_logarithmic is true
