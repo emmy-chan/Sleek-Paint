@@ -23,15 +23,15 @@ bool DataManager::LoadColorData(const std::string& filepath, std::vector<ImU32>&
     while (file >> value)
         values.push_back(value);
 
-    int jump_val = expectAlpha ? 4 : 3;
+    const int jump_val = expectAlpha ? 4 : 3;
     data.clear();
 
     for (size_t i = 0; i + jump_val <= values.size(); i += jump_val) {
         try {
-            int r = std::stoi(values[i]);
-            int g = std::stoi(values[i + 1]);
-            int b = std::stoi(values[i + 2]);
-            int a = expectAlpha ? std::stoi(values[i + 3]) : 255;
+            const int r = std::stoi(values[i]);
+            const int g = std::stoi(values[i + 1]);
+            const int b = std::stoi(values[i + 2]);
+            const int a = expectAlpha ? std::stoi(values[i + 3]) : 255;
             data.push_back(IM_COL32(r, g, b, a));
         }
         catch (const std::exception& e) {

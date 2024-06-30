@@ -14,9 +14,9 @@ uint16_t g_cidx = uint16_t();
 
 //void floodFill(int x, int y, ImColor curCol, ImColor col)
 //{
-//    if (x < g_canvas[g_cidx].width && y < g_canvas[g_cidx].height && y >= 0 && x >= 0 && g_canvas[g_cidx].tiles[x + y * g_canvas[g_cidx].width] == curCol && curCol != col)
+//    if (x < g_canvas[g_cidx].width && y < g_canvas[g_cidx].height && y >= 0 && x >= 0 && g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex][x + y * g_canvas[g_cidx].width] == curCol && curCol != col)
 //    {
-//        g_canvas[g_cidx].tiles[x + y * g_canvas[g_cidx].width] = col;
+//        g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex][x + y * g_canvas[g_cidx].width] = col;
 //        floodFill(x + 1, y, curCol, col);
 //        floodFill(x, y + 1, curCol, col);
 //        floodFill(x - 1, y, curCol, col);
@@ -34,11 +34,18 @@ std::unordered_map<uint16_t, ImU32> copiedTiles; // Store copied tiles and their
 // Flood fill function
 void floodFill(int x, int y, bool paint)
 {
-    if (x < 0 || x >= g_canvas[g_cidx].width || y < 0 || y >= g_canvas[g_cidx].height)
+    if (x < 0 || x >= g_canvas[g_cidx].width || y < 0 || y >= g_canvas[g_cidx].height) {
+        printf("FloodFill: Out of bounds initial position\n");
         return;
+    }
 
-    ImU32 curCol = g_canvas[g_cidx].tiles[x + y * g_canvas[g_cidx].width];
+    ImU32 curCol = g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex][x + y * g_canvas[g_cidx].width];
     ImU32 fillCol = paint ? g_canvas[g_cidx].myCols[g_canvas[g_cidx].selColIndex] : curCol;
+
+    if (curCol == fillCol && paint) {
+        printf("FloodFill: Current color is the same as fill color\n");
+        return;
+    }
 
     std::stack<std::pair<int, int>> stack;
     stack.push({ x, y });
@@ -59,18 +66,16 @@ void floodFill(int x, int y, bool paint)
         uint16_t currentIndex = curX + curY * g_canvas[g_cidx].width;
 
         if (paint) {
-            // Skip if the index is not in the selected indexes set when painting
             if (!selectedIndexes.empty() && selectedIndexes.find(currentIndex) == selectedIndexes.end())
                 continue;
 
-            if (g_canvas[g_cidx].tiles[currentIndex] != curCol)
+            if (g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex][currentIndex] != curCol)
                 continue;
 
-            g_canvas[g_cidx].tiles[currentIndex] = fillCol;
+            g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex][currentIndex] = fillCol;
         }
         else {
-            // Skip if the tile does not match the target color when selecting
-            if (g_canvas[g_cidx].tiles[currentIndex] != curCol || selectedIndexes.find(currentIndex) != selectedIndexes.end())
+            if (g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex][currentIndex] != curCol || selectedIndexes.find(currentIndex) != selectedIndexes.end())
                 continue;
 
             selectedIndexes.insert(currentIndex);
@@ -81,6 +86,8 @@ void floodFill(int x, int y, bool paint)
         stack.push({ curX, curY + 1 });
         stack.push({ curX, curY - 1 });
     }
+
+    printf("FloodFill: Completed without freezing\n");
 }
 
 //void floodSelect(std::vector<uint16_t>& selectedIndexes, int x, int y, ImU32 curCol, ImU32 col)
@@ -102,40 +109,73 @@ void floodFill(int x, int y, bool paint)
 void cCanvas::Initialize() {
     tiles.clear();
     previousCanvases.clear();
+    NewLayer();
+}
+
+void cCanvas::NewLayer() {
+    std::vector<ImU32> layer0;
 
     //Create our blank canvas
     for (int i = 0; i < width * height; i++)
-        tiles.push_back(IM_COL32(0, 0, 0, 0));
+        layer0.push_back(IM_COL32(0, 0, 0, 0));
+
+    tiles.push_back(layer0);
 
     //Create state for (undo) previous canvas of blank canvas
     UpdateCanvasHistory();
 }
 
 void cCanvas::Clear() {
-    for (auto& tile : g_canvas[g_cidx].tiles) //int i = 0; i < g_canvas[g_cidx].width * g_canvas[g_cidx].height; i++
+    for (auto& tile : g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex]) //int i = 0; i < g_canvas[g_cidx].width * g_canvas[g_cidx].height; i++
         tile = IM_COL32(255, 255, 255, 0);
 }
 
 void cCanvas::AdaptNewSize() {
-    //g_canvas[g_cidx].tiles.clear();
+    //g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex].clear();
 
-    for (int i = g_canvas[g_cidx].tiles.size(); i < (g_canvas[g_cidx].width * g_canvas[g_cidx].height); i++)
-        g_canvas[g_cidx].tiles.push_back(IM_COL32(0, 0, 0, 0));
+    for (int i = g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex].size(); i < (g_canvas[g_cidx].width * g_canvas[g_cidx].height); i++)
+        g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex].push_back(IM_COL32(0, 0, 0, 0));
 
     Clear();
 }
 
+// Helper function to compare two 1D vectors
+bool isTilesEqual(const std::vector<ImU32>& a, const std::vector<ImU32>& b) {
+    if (a.size() != b.size()) return false;
+    for (size_t i = 0; i < a.size(); ++i) {
+        if (a[i] != b[i]) return false;
+    }
+    return true;
+}
+
+// Function to update the canvas history
 void cCanvas::UpdateCanvasHistory() {
+    // Ensure g_cidx is valid
+    if (g_cidx >= g_canvas.size()) {
+        printf("Error: Canvas index out of bounds. g_cidx: %d, g_canvas size: %zu\n", g_cidx, g_canvas.size());
+        return;
+    }
+
+    // Ensure tiles is initialized and selLayerIndex is valid
+    if (tiles.empty() || g_canvas[g_cidx].selLayerIndex >= tiles.size()) {
+        printf("Error: Tiles not properly initialized or selLayerIndex out of bounds. Tiles size: %zu, selLayerIndex: %d\n", tiles.size(), g_canvas[g_cidx].selLayerIndex);
+        return;
+    }
+
+    // Ensure selected layer is not empty
+    if (tiles[g_canvas[g_cidx].selLayerIndex].empty()) {
+        printf("Error: Selected layer is empty. Layer index: %d\n", g_canvas[g_cidx].selLayerIndex);
+        return;
+    }
+
     // Check if there are previous states and the current state index is valid
     if (previousCanvases.size() > 1 && previousCanvases.size() > canvas_idx) {
         previousCanvases.resize(canvas_idx + 1);
-        //std::string yee = "Canvas state resized to " + std::to_string(previousCanvases.size()) + ".\n";
-        //printf(yee.c_str());
     }
 
     // Only add the current state to history if it's different from the last saved state
-    if (previousCanvases.empty() || !tiles.empty() && !previousCanvases.empty() && !std::equal(tiles.begin(), tiles.end(), previousCanvases.back().begin())) {
-        previousCanvases.push_back(tiles);
+    if (previousCanvases.empty() || (!tiles[g_canvas[g_cidx].selLayerIndex].empty() && !previousCanvases.empty() && !isTilesEqual(tiles[g_canvas[g_cidx].selLayerIndex], previousCanvases.back()))) {
+        previousCanvases.push_back(tiles[g_canvas[g_cidx].selLayerIndex]);
         canvas_idx = previousCanvases.size() - 1;
         printf("Canvas state created.\n");
     }
@@ -182,8 +222,8 @@ void cCanvas::LoadColorPalette(std::string input) {
 }
 
 void cCanvas::DestroyCanvas() {
-    g_canvas[g_cidx].tiles.clear();
-    g_canvas[g_cidx].tiles.shrink_to_fit();
+    g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex].clear();
+    g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex].shrink_to_fit();
     g_canvas[g_cidx].myCols.clear();
     g_canvas[g_cidx].myCols.shrink_to_fit();
     g_canvas.erase(g_canvas.begin() + g_cidx);
@@ -240,7 +280,7 @@ void cCanvas::PasteSelection() {
 
         if (newX >= 0 && newX < g_canvas[g_cidx].width && newY >= 0 && newY < g_canvas[g_cidx].height) {
             uint16_t newIndex = newX + newY * g_canvas[g_cidx].width;
-            g_canvas[g_cidx].tiles[newIndex] = tile.second;
+            g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex][newIndex] = tile.second;
             newSelectedIndexes.insert(newIndex);
         }
     }
@@ -252,13 +292,13 @@ void cCanvas::PasteSelection() {
 void cCanvas::CopySelection() {
     copiedTiles.clear();
     for (auto& index : selectedIndexes) {
-        copiedTiles[index] = g_canvas[g_cidx].tiles[index];
+        copiedTiles[index] = g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex][index];
     }
 }
 
 void cCanvas::DeleteSelection() {
     for (auto& index : selectedIndexes) {
-        g_canvas[g_cidx].tiles[index] = IM_COL32(0, 0, 0, 0);
+        g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex][index] = IM_COL32(0, 0, 0, 0);
     }
 
     g_canvas[g_cidx].UpdateCanvasHistory();
@@ -273,7 +313,7 @@ void DrawLineOnCanvas(int x0, int y0, int x1, int y1, ImU32 color) {
 
     while (true) {
         if (x0 >= 0 && x0 < g_canvas[g_cidx].width && y0 >= 0 && y0 < g_canvas[g_cidx].height) {
-            g_canvas[g_cidx].tiles[y0 * g_canvas[g_cidx].width + x0] = color;
+            g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex][y0 * g_canvas[g_cidx].width + x0] = color;
         }
 
         if (x0 == x1 && y0 == y1) break;
@@ -308,14 +348,14 @@ void cCanvas::Editor() {
         if (GetAsyncKeyState(VK_CONTROL) && GetAsyncKeyState('Z') & 1) {
             if (g_canvas[g_cidx].canvas_idx > 0) {
                 g_canvas[g_cidx].canvas_idx--;
-                g_canvas[g_cidx].tiles = g_canvas[g_cidx].previousCanvases[g_canvas[g_cidx].canvas_idx];
+                g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex] = g_canvas[g_cidx].previousCanvases[g_canvas[g_cidx].canvas_idx];
             }
         }
 
         if (GetAsyncKeyState(VK_CONTROL) && GetAsyncKeyState('Y') & 1) {
             if (g_canvas[g_cidx].canvas_idx < g_canvas[g_cidx].previousCanvases.size() - 1) {
                 g_canvas[g_cidx].canvas_idx++;
-                g_canvas[g_cidx].tiles = g_canvas[g_cidx].previousCanvases[g_canvas[g_cidx].canvas_idx];
+                g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex] = g_canvas[g_cidx].previousCanvases[g_canvas[g_cidx].canvas_idx];
             }
         }
 
@@ -354,7 +394,7 @@ void cCanvas::Editor() {
     //ImGui::Text(ya.c_str());
     //ya = "Canvas state size: " + std::to_string(g_canvas[g_cidx].previousCanvases.size());
     //ImGui::Text(ya.c_str());
-    ////ya = "Tile 0 alpha " + std::to_string(g_canvas[g_cidx].tiles[0].Value.w);
+    ////ya = "Tile 0 alpha " + std::to_string(g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex][0].Value.w);
     ////ImGui::Text(ya.c_str());
     ////ya = "Canvas idx: " + std::to_string(g_canvas[g_cidx].canvas_idx);
     ////ImGui::Text(ya.c_str());
@@ -417,10 +457,16 @@ void cCanvas::Editor() {
             if (selectedIndexes.find((uint64_t)x + (uint64_t)y * width) == selectedIndexes.end())
                 nonSelectedIndexes.insert((uint64_t)x + (uint64_t)y * width);
 
-            //Grid background!
-            if (((tiles[(uint64_t)x + (uint64_t)y * width] >> 24) & 0xFF) != 255) {
-                const ImU32 col = (int)(x + y) % 2 == 0 ? IM_COL32(110, 110, 110, 255) : IM_COL32(175, 175, 175, 255);
+            // Draw grid background for the base layer
+            if (((g_canvas[g_cidx].tiles[0][static_cast<uint64_t>(x) + static_cast<uint64_t>(y) * width] >> 24) & 0xFF) != 255) {
+                const ImU32 col = (static_cast<int>(x) + static_cast<int>(y)) % 2 == 0 ? IM_COL32(110, 110, 110, 255) : IM_COL32(175, 175, 175, 255);
                 d.AddRectFilled({ g_cam.x + x * TILE_SIZE, g_cam.y + y * TILE_SIZE }, { g_cam.x + x * TILE_SIZE + TILE_SIZE, g_cam.y + y * TILE_SIZE + TILE_SIZE }, col);
+            }
+
+            // Draw each layer from bottom to top, including layers after the selected layer index
+            for (size_t layer = 0; layer < g_canvas[g_cidx].tiles.size(); layer++) {
+                ImU32 tileColor = g_canvas[g_cidx].tiles[layer][static_cast<uint64_t>(x) + static_cast<uint64_t>(y) * width];
+                d.AddRectFilled({ g_cam.x + x * TILE_SIZE, g_cam.y + y * TILE_SIZE }, { g_cam.x + x * TILE_SIZE + TILE_SIZE, g_cam.y + y * TILE_SIZE + TILE_SIZE }, tileColor);
             }
 
             if (bCanDraw && g_util.Hovering(g_cam.x + x * TILE_SIZE, g_cam.y + y * TILE_SIZE, g_cam.x + x * TILE_SIZE + TILE_SIZE, g_cam.y + y * TILE_SIZE + TILE_SIZE)) {
@@ -430,11 +476,11 @@ void cCanvas::Editor() {
                     if (selectedIndexes.empty() || selectedIndexes.find((uint64_t)x + (uint64_t)y * width) != selectedIndexes.end()) {
                         if (io.MouseDown[0]) {
                             if (ImGui::GetMousePos().x > 0 && ImGui::GetMousePos().x < io.DisplaySize.x - 1 && ImGui::GetMousePos().y > 0 && ImGui::GetMousePos().y < io.DisplaySize.y - 1)
-                                tiles[(uint64_t)x + (uint64_t)y * width] = myCols[selColIndex];
+                                tiles[g_canvas[g_cidx].selLayerIndex][(uint64_t)x + (uint64_t)y * width] = myCols[selColIndex];
                         }
                         else if (io.MouseDown[1]) {
                             if (ImGui::GetMousePos().y > 0 && ImGui::GetMousePos().x < io.DisplaySize.x - 1 && ImGui::GetMousePos().y > 0 && ImGui::GetMousePos().y < io.DisplaySize.y - 1)
-                                tiles[(uint64_t)x + (uint64_t)y * width] = IM_COL32(0, 0, 0, 0);
+                                tiles[g_canvas[g_cidx].selLayerIndex][(uint64_t)x + (uint64_t)y * width] = IM_COL32(0, 0, 0, 0);
                         }
                     }
 
@@ -453,7 +499,7 @@ void cCanvas::Editor() {
                     if (io.MouseDown[0])
                         if (selectedIndexes.empty() || selectedIndexes.find((uint64_t)x + (uint64_t)y * width) != selectedIndexes.end())
                             if (ImGui::GetMousePos().y > 0 && ImGui::GetMousePos().x < io.DisplaySize.x - 1 && ImGui::GetMousePos().y > 0 && ImGui::GetMousePos().y < io.DisplaySize.y - 1)
-                                tiles[(uint64_t)x + (uint64_t)y * width] = IM_COL32(0, 0, 0, 0);
+                                tiles[g_canvas[g_cidx].selLayerIndex][(uint64_t)x + (uint64_t)y * width] = IM_COL32(0, 0, 0, 0);
 
                     d.AddRect({ g_cam.x + x * TILE_SIZE, g_cam.y + y * TILE_SIZE }, { g_cam.x + x * TILE_SIZE + TILE_SIZE - 1, g_cam.y + y * TILE_SIZE + TILE_SIZE - 1 }, IM_COL32(0, 0, 0, 255));
                     d.AddRectFilled({ g_cam.x + x * TILE_SIZE + 1, g_cam.y + y * TILE_SIZE + 1 }, { g_cam.x + x * TILE_SIZE + TILE_SIZE - 2, g_cam.y + y * TILE_SIZE + TILE_SIZE - 2 }, IM_COL32(255, 255, 255, 255));
@@ -461,7 +507,7 @@ void cCanvas::Editor() {
                 case 3:
                     //dropper
                     if (io.MouseDown[0])
-                        myCols[selColIndex] = tiles[(uint64_t)x + (uint64_t)y * width];
+                        myCols[selColIndex] = tiles[g_canvas[g_cidx].selLayerIndex][(uint64_t)x + (uint64_t)y * width];
 
                     d.AddRect({ g_cam.x + x * TILE_SIZE, g_cam.y + y * TILE_SIZE }, { g_cam.x + x * TILE_SIZE + TILE_SIZE - 1, g_cam.y + y * TILE_SIZE + TILE_SIZE - 1 }, IM_COL32(0, 0, 0, 255));
                     d.AddRectFilled({ g_cam.x + x * TILE_SIZE + 1, g_cam.y + y * TILE_SIZE + 1 }, { g_cam.x + x * TILE_SIZE + TILE_SIZE - 2, g_cam.y + y * TILE_SIZE + TILE_SIZE - 2 }, IM_COL32(255, 255, 255, 255));
@@ -522,10 +568,10 @@ void cCanvas::Editor() {
                         float maxX = -FLT_MAX, maxY = -FLT_MAX;
 
                         for (const auto& index : initialSelectedIndexes) {
-                            int selectX = index % width;
-                            int selectY = index / width;
-                            float tilePosX = g_cam.x + selectX * TILE_SIZE;
-                            float tilePosY = g_cam.y + selectY * TILE_SIZE;
+                            const int selectX = index % width;
+                            const int selectY = index / width;
+                            const float tilePosX = g_cam.x + selectX * TILE_SIZE;
+                            const float tilePosY = g_cam.y + selectY * TILE_SIZE;
                             minX = std::min(minX, tilePosX);
                             minY = std::min(minY, tilePosY);
                             maxX = std::max(maxX, tilePosX + TILE_SIZE);
@@ -541,8 +587,7 @@ void cCanvas::Editor() {
 
                     if (g_util.MouseReleased(0)) {
                         ImVec2 offset = ImGui::GetMousePos();
-                        offset.x -= start.x;
-                        offset.y -= start.y;
+                        offset.x -= start.x; offset.y -= start.y;
 
                         std::unordered_set<uint16_t> newSelectedIndexes;
                         std::unordered_map<uint16_t, ImU32> newTileColors;
@@ -556,18 +601,18 @@ void cCanvas::Editor() {
                             if (newX >= 0 && newX < width && newY >= 0 && newY < height) {
                                 uint16_t newIndex = newX + newY * width;
                                 newSelectedIndexes.insert(newIndex);
-                                newTileColors[newIndex] = tiles[index];
+                                newTileColors[newIndex] = tiles[g_canvas[g_cidx].selLayerIndex][index];
                             }
                         }
 
                         // Clear the original positions
                         for (const auto& index : initialSelectedIndexes) {
-                            tiles[index] = IM_COL32(0, 0, 0, 0);
+                            tiles[g_canvas[g_cidx].selLayerIndex][index] = IM_COL32(0, 0, 0, 0);
                         }
 
                         // Update new positions
                         for (const auto& [newIndex, color] : newTileColors) {
-                            tiles[newIndex] = color;
+                            tiles[g_canvas[g_cidx].selLayerIndex][newIndex] = color;
                         }
 
                         selectedIndexes = newSelectedIndexes;
@@ -577,7 +622,7 @@ void cCanvas::Editor() {
                 }
             }
             else
-                d.AddRectFilled({ g_cam.x + x * TILE_SIZE, g_cam.y + y * TILE_SIZE }, { g_cam.x + x * TILE_SIZE + TILE_SIZE, g_cam.y + y * TILE_SIZE + TILE_SIZE }, tiles[(uint64_t)x + (uint64_t)y * width]);
+                d.AddRectFilled({ g_cam.x + x * TILE_SIZE, g_cam.y + y * TILE_SIZE }, { g_cam.x + x * TILE_SIZE + TILE_SIZE, g_cam.y + y * TILE_SIZE + TILE_SIZE }, tiles[g_canvas[g_cidx].selLayerIndex][(uint64_t)x + (uint64_t)y * width]);
         }
     }
 
@@ -585,14 +630,13 @@ void cCanvas::Editor() {
     if (!selectedIndexes.empty()) {
         if (paintToolSelected == 6 && ImGui::IsMouseDown(0)) {
             ImVec2 offset = ImGui::GetMousePos();
-            offset.x -= start.x;
-            offset.y -= start.y;
+            offset.x -= start.x; offset.y -= start.y;
 
             for (const auto& index : initialSelectedIndexes) {
                 const int selectX = index % width;
                 const int selectY = index / width;
                 const ImVec2 tilePos = { g_cam.x + selectX * TILE_SIZE + offset.x, g_cam.y + selectY * TILE_SIZE + offset.y };
-                d.AddRectFilled(tilePos, { tilePos.x + TILE_SIZE, tilePos.y + TILE_SIZE }, tiles[index]);
+                d.AddRectFilled(tilePos, { tilePos.x + TILE_SIZE, tilePos.y + TILE_SIZE }, tiles[g_canvas[g_cidx].selLayerIndex][index]);
             }
         }
 
@@ -632,10 +676,11 @@ void cCanvas::Editor() {
 
     //TODO: when we click new project it makes one state for us right now... But we should make it create that state upon new creation only. Fix states being added during dialog.
     //Add canvas to history for undo-redo feature
-    if (paintToolSelected < 3 || paintToolSelected >= 6) // fix later
-        if (bCanDraw && !g_app.ui_state)
-            if (g_util.MouseReleased(0) || g_util.MouseReleased(1))
-                UpdateCanvasHistory();
+    if (!g_canvas.empty())
+        if (paintToolSelected < 3 || paintToolSelected >= 6) // fix later
+            if (bCanDraw && !g_app.ui_state)
+                if (g_util.MouseReleased(0) || g_util.MouseReleased(1))
+                    UpdateCanvasHistory();
 
     //if (io.MouseDelta.x || io.MouseDelta.y)
     //if (!bHovering && io.MouseDown[0] ) {

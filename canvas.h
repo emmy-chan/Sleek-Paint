@@ -20,10 +20,12 @@ public:
 	std::vector<std::vector<ImU32>> previousCanvases;
 	std::vector<ImU32> myCols;
 	uint16_t selColIndex = 0;
-	std::vector<ImU32> tiles;
+	uint8_t selLayerIndex = 0;
+	std::vector<std::vector<ImU32>> tiles;
 	uint16_t width = 1000;
 	uint16_t height = 1000;
 	void Initialize();
+	void NewLayer();
 	void AdaptNewSize();
 	void Clear();
 	void UpdateCanvasHistory();

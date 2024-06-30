@@ -103,13 +103,13 @@ void cGUI::Display()
             if (ImGui::MenuItem(ICON_FA_UNDO" Undo") && g_canvas.size() > 0) {
                 if (g_canvas[g_cidx].canvas_idx > 0) {
                     g_canvas[g_cidx].canvas_idx--;
-                    g_canvas[g_cidx].tiles = g_canvas[g_cidx].previousCanvases[g_canvas[g_cidx].canvas_idx];
+                    g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex] = g_canvas[g_cidx].previousCanvases[g_canvas[g_cidx].canvas_idx];
                 }
             }
             if (ImGui::MenuItem(ICON_FA_REDO" Redo") && g_canvas.size() > 0) {
                 if (g_canvas[g_cidx].canvas_idx < g_canvas[g_cidx].previousCanvases.size() - 1) {
                     g_canvas[g_cidx].canvas_idx++;
-                    g_canvas[g_cidx].tiles = g_canvas[g_cidx].previousCanvases[g_canvas[g_cidx].canvas_idx];
+                    g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex] = g_canvas[g_cidx].previousCanvases[g_canvas[g_cidx].canvas_idx];
                 }
             }
             if (ImGui::MenuItem(ICON_FA_CUT" Cut") && g_canvas.size() > 0) {
@@ -133,7 +133,7 @@ void cGUI::Display()
                 for (uint64_t y = 0; y < g_canvas[g_cidx].height; y++) {
                     for (uint64_t x = 0; x < g_canvas[g_cidx].width; x++) {
                         uint64_t index = x + y * g_canvas[g_cidx].width;
-                        ImU32 currentColor = g_canvas[g_cidx].tiles[index];
+                        ImU32 currentColor = g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex][index];
 
                         // Skip processing for fully transparent tiles
                         if (((currentColor >> IM_COL32_A_SHIFT) & 0xFF) == 0) continue; 
@@ -151,7 +151,7 @@ void cGUI::Display()
                         }
 
                         // Set the tile's color to the closest color found
-                        g_canvas[g_cidx].tiles[index] = closestColor;
+                        g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex][index] = closestColor;
                     }
                 }
 
@@ -176,7 +176,7 @@ void cGUI::Display()
                 for (uint64_t y = 0; y < g_canvas[g_cidx].height; y++) {
                     for (uint64_t x = 0; x < g_canvas[g_cidx].width; x++) {
                         uint64_t index = x + y * g_canvas[g_cidx].width;
-                        ImU32 currentColor = g_canvas[g_cidx].tiles[index];
+                        ImU32 currentColor = g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex][index];
                         uniqueColors.insert(currentColor);
                     }
                 }
@@ -212,7 +212,7 @@ void cGUI::Display()
                 for (uint64_t y = 0; y < g_canvas[g_cidx].height; y++) {
                     for (uint64_t x = 0; x < g_canvas[g_cidx].width; x++) {
                         uint64_t index = x + y * g_canvas[g_cidx].width;
-                        ImU32& currentColor = g_canvas[g_cidx].tiles[index];
+                        ImU32& currentColor = g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex][index];
                         currentColor = applyDithering(currentColor, x, y);
                     }
                 }
@@ -238,7 +238,7 @@ void cGUI::Display()
                     for (uint64_t y = 0; y < g_canvas[g_cidx].height; y++) {
                         for (uint64_t x = 0; x < g_canvas[g_cidx].width; x++) {
                             uint64_t index = x + y * g_canvas[g_cidx].width;
-                            ImU32& currentColor = g_canvas[g_cidx].tiles[index];
+                            ImU32& currentColor = g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex][index];
 
                             // Adjust saturation and contrast
                             currentColor = adjustSaturation(currentColor, saturationFactor);
@@ -431,7 +431,52 @@ void cGUI::Display()
     if (ImGui::Button("+"))
         g_canvas[g_cidx].myCols.push_back(ImColor(0, 0, 0, 255));
 
-    ImGui::PopStyleVar();
+    ImGui::PopStyleVar(); ImGui::Spacing(); ImGui::Separator();
+
+    for (size_t i = 0; i < g_canvas[g_cidx].tiles.size(); i++) {
+        const std::string name = "Layer " + std::to_string(i + 1);
+        const bool isSelected = (g_canvas[g_cidx].selLayerIndex == i);
+
+        // Start drag and drop source
+        if (ImGui::Selectable(name.c_str(), isSelected)) {
+            g_canvas[g_cidx].selLayerIndex = i;
+        }
+
+        if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_SourceAllowNullID)) {
+            ImGui::SetDragDropPayload("DND_LAYER", &i, sizeof(size_t));
+            ImGui::Text("Dragging %s", name.c_str());
+            ImGui::EndDragDropSource();
+        }
+
+        if (ImGui::BeginDragDropTarget()) {
+            if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("DND_LAYER")) {
+                size_t payloadIndex = *(const size_t*)payload->Data;
+                if (payloadIndex != i) {
+                    // Swap layers
+                    std::swap(g_canvas[g_cidx].tiles[i], g_canvas[g_cidx].tiles[payloadIndex]);
+                    // Adjust selected layer index if necessary
+                    if (g_canvas[g_cidx].selLayerIndex == payloadIndex) {
+                        g_canvas[g_cidx].selLayerIndex = i;
+                    }
+                    else if (g_canvas[g_cidx].selLayerIndex == i) {
+                        g_canvas[g_cidx].selLayerIndex = payloadIndex;
+                    }
+                }
+            }
+            ImGui::EndDragDropTarget();
+        }
+    }
+
+    if (ImGui::Button("Add Layer", { ImGui::GetColumnWidth(), ImGui::GetFrameHeight() }))
+        g_canvas[g_cidx].NewLayer();
+
+    if (ImGui::Button("Remove Layer", { ImGui::GetColumnWidth(), ImGui::GetFrameHeight() })) {
+        if (g_canvas[g_cidx].selLayerIndex > 0 && g_canvas[g_cidx].tiles.size() > 1) {
+            g_canvas[g_cidx].tiles.resize(g_canvas[g_cidx].tiles.size() - 1);
+            g_canvas[g_cidx].selLayerIndex--;
+        }
+    }
+
     ImGui::End();
 
     ImGui::SetNextWindowSize({ 197, 278 });

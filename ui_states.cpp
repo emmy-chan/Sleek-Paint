@@ -39,13 +39,52 @@ void SaveCanvasToPng(const char* name) {
     char* imageData = new char[g_canvas[g_cidx].width * g_canvas[g_cidx].height * 4];
     int imagePos = 0;
 
+    // Initialize imageData with transparent black
     for (int j = 0; j < g_canvas[g_cidx].height; j++) {
         for (int i = 0; i < g_canvas[g_cidx].width; i++) {
-            ImU32 color = g_canvas[g_cidx].tiles[i + j * g_canvas[g_cidx].width];
-            imageData[imagePos++] = (color >> 0) & 0xFF;  // Red
-            imageData[imagePos++] = (color >> 8) & 0xFF;  // Green
-            imageData[imagePos++] = (color >> 16) & 0xFF; // Blue
-            imageData[imagePos++] = (color >> 24) & 0xFF; // Alpha
+            imageData[imagePos++] = 0; // Red
+            imageData[imagePos++] = 0; // Green
+            imageData[imagePos++] = 0; // Blue
+            imageData[imagePos++] = 0; // Alpha
+        }
+    }
+
+    // Reset imagePos for the blending process
+    imagePos = 0;
+
+    // Blend all layers
+    for (int j = 0; j < g_canvas[g_cidx].height; j++) {
+        for (int i = 0; i < g_canvas[g_cidx].width; i++) {
+            ImU32 finalColor = IM_COL32(0, 0, 0, 0); // Start with transparent black
+            for (size_t layer = 0; layer < g_canvas[g_cidx].tiles.size(); layer++) {
+                ImU32 color = g_canvas[g_cidx].tiles[layer][i + j * g_canvas[g_cidx].width];
+
+                // Extract RGBA components
+                int srcR = (color >> 0) & 0xFF;
+                int srcG = (color >> 8) & 0xFF;
+                int srcB = (color >> 16) & 0xFF;
+                int srcA = (color >> 24) & 0xFF;
+
+                int dstR = (finalColor >> 0) & 0xFF;
+                int dstG = (finalColor >> 8) & 0xFF;
+                int dstB = (finalColor >> 16) & 0xFF;
+                int dstA = (finalColor >> 24) & 0xFF;
+
+                // Blend the source color onto the destination color using alpha blending
+                float alpha = srcA / 255.0f;
+                int outR = static_cast<int>(srcR * alpha + dstR * (1 - alpha));
+                int outG = static_cast<int>(srcG * alpha + dstG * (1 - alpha));
+                int outB = static_cast<int>(srcB * alpha + dstB * (1 - alpha));
+                int outA = static_cast<int>(srcA + dstA * (1 - alpha));
+
+                finalColor = IM_COL32(outR, outG, outB, outA);
+            }
+
+            // Store the final blended color into imageData
+            imageData[imagePos++] = (finalColor >> 0) & 0xFF;  // Red
+            imageData[imagePos++] = (finalColor >> 8) & 0xFF;  // Green
+            imageData[imagePos++] = (finalColor >> 16) & 0xFF; // Blue
+            imageData[imagePos++] = (finalColor >> 24) & 0xFF; // Alpha
         }
     }
 
@@ -95,7 +134,7 @@ void cUIStateSaveProject::Update()
     {
         //Get our canvas and push it to our data string!
         //GetColorData caused freezing one time... very strange... maybe issues with width height variables?
-        if (fileDialog.GetTypeFilterIndex() == 1) data = GetColorData(g_canvas[g_cidx].tiles, true);
+        if (fileDialog.GetTypeFilterIndex() == 1) data = GetColorData(g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex], true);
         file_name = fileDialog.GetSelected().string();
 
         if (!fileDialog.GetTypeFilterIndex() == 1 && !file_name.find(".spr") != std::string::npos)
@@ -340,7 +379,7 @@ void LoadImageFileToCanvas(const std::string& filename) {
         return;
 
     //Clear our canvas tiles
-    g_canvas[g_cidx].tiles.clear();
+    g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex].clear();
 
     g_canvas[g_cidx].width = image_width;
     g_canvas[g_cidx].height = image_width;
@@ -348,7 +387,7 @@ void LoadImageFileToCanvas(const std::string& filename) {
     size_t image_size = image_width * image_height * 4;
     for (size_t i = 0; i < image_size - 3; i+= 4)
     {
-        g_canvas[g_cidx].tiles.push_back(ImColor(image_data[i], image_data[i+1], image_data[i+2], image_data[i+3]));
+        g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex].push_back(ImColor(image_data[i], image_data[i+1], image_data[i+2], image_data[i+3]));
         //printf("%x\n", image_data[i]);
     }
 
@@ -377,12 +416,12 @@ void cUIStateOpenProject::Update()
         canvas.height = 32;
         g_canvas.push_back(canvas);
         g_cidx = (uint16_t)g_canvas.size() - 1;
-        //g_canvas[g_cidx].tiles.clear();
+        //g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex].clear();
 
         //Load our scene file data!
         //DataManager data;
         //std::string input = fileDialog.GetSelected().string();
-        //data.LoadColorData(input, g_canvas[g_cidx].tiles);
+        //data.LoadColorData(input, g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex]);
 
         LoadImageFileToCanvas(fileDialog.GetSelected().string());
         g_canvas[g_cidx].UpdateCanvasHistory();
