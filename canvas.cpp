@@ -267,19 +267,24 @@ void DrawSelectionRectangle(ImDrawList* drawList, const std::unordered_set<uint1
 std::unordered_set<uint16_t> initialSelectedIndexes;
 
 void cCanvas::PasteSelection() {
-    const ImVec2 mousePos = ImGui::GetMousePos();
-    const int offsetX = static_cast<int>((mousePos.x - g_cam.x) / TILE_SIZE);
-    const int offsetY = static_cast<int>((mousePos.y - g_cam.y) / TILE_SIZE);
+    // Ensure there is something to paste
+    if (copiedTiles.empty()) {
+        printf("PasteSelection: No copied tiles to paste.\n");
+        return;
+    }
+
+    // Create a new layer for pasting
+    NewLayer();
+    g_canvas[g_cidx].selLayerIndex = g_canvas[g_cidx].tiles.size() - 1; // Set to the newly created layer
 
     std::unordered_set<uint16_t> newSelectedIndexes;
     for (auto& tile : copiedTiles) {
         const int selectX = tile.first % g_canvas[g_cidx].width;
         const int selectY = tile.first / g_canvas[g_cidx].width;
-        const int newX = selectX + offsetX;
-        const int newY = selectY + offsetY;
 
-        if (newX >= 0 && newX < g_canvas[g_cidx].width && newY >= 0 && newY < g_canvas[g_cidx].height) {
-            uint16_t newIndex = newX + newY * g_canvas[g_cidx].width;
+        // Ensure the coordinates are within the canvas boundaries
+        if (selectX >= 0 && selectX < g_canvas[g_cidx].width && selectY >= 0 && selectY < g_canvas[g_cidx].height) {
+            uint16_t newIndex = selectX + selectY * g_canvas[g_cidx].width;
             g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex][newIndex] = tile.second;
             newSelectedIndexes.insert(newIndex);
         }
@@ -291,12 +296,20 @@ void cCanvas::PasteSelection() {
 
 void cCanvas::CopySelection() {
     copiedTiles.clear();
+    if (selectedIndexes.empty()) {
+        printf("CopySelection: No selected tiles to copy.\n");
+        return;
+    }
     for (auto& index : selectedIndexes) {
         copiedTiles[index] = g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex][index];
     }
 }
 
 void cCanvas::DeleteSelection() {
+    if (selectedIndexes.empty()) {
+        printf("DeleteSelection: No selected tiles to delete.\n");
+        return;
+    }
     for (auto& index : selectedIndexes) {
         g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex][index] = IM_COL32(0, 0, 0, 0);
     }

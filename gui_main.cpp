@@ -113,27 +113,21 @@ void cGUI::Display()
                 }
             }
             if (ImGui::MenuItem(ICON_FA_CUT" Cut") && g_canvas.size() > 0) {
-                if (g_canvas[g_cidx].canvas_idx > 0) {
                     g_canvas[g_cidx].CopySelection();
                     g_canvas[g_cidx].DeleteSelection();
-                }
             }
             if (ImGui::MenuItem(ICON_FA_COPY" Copy") && g_canvas.size() > 0) {
-                if (g_canvas[g_cidx].canvas_idx < g_canvas[g_cidx].previousCanvases.size() - 1) {
                     g_canvas[g_cidx].CopySelection();
-                }
             }
             if (ImGui::MenuItem(ICON_FA_PASTE" Paste") && g_canvas.size() > 0) {
-                if (g_canvas[g_cidx].canvas_idx > 0) {
                     g_canvas[g_cidx].PasteSelection();
-                }
             }
             
             if (ImGui::MenuItem(ICON_FA_EXCHANGE " Convert color to palette") && g_canvas.size() > 0) {
                 for (uint64_t y = 0; y < g_canvas[g_cidx].height; y++) {
                     for (uint64_t x = 0; x < g_canvas[g_cidx].width; x++) {
-                        uint64_t index = x + y * g_canvas[g_cidx].width;
-                        ImU32 currentColor = g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex][index];
+                        const uint64_t index = x + y * g_canvas[g_cidx].width;
+                        const ImU32 currentColor = g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex][index];
 
                         // Skip processing for fully transparent tiles
                         if (((currentColor >> IM_COL32_A_SHIFT) & 0xFF) == 0) continue; 
@@ -143,7 +137,7 @@ void cGUI::Display()
 
                         // Compare current tile color to each color in myCols to find the closest one
                         for (size_t i = 1; i < g_canvas[g_cidx].myCols.size(); i++) {
-                            int distance = g_util.ColorDistanceSquared(currentColor, g_canvas[g_cidx].myCols[i]);
+                            const int distance = g_util.ColorDistanceSquared(currentColor, g_canvas[g_cidx].myCols[i]);
                             if (distance < minDistance) {
                                 closestColor = g_canvas[g_cidx].myCols[i];
                                 minDistance = distance;
