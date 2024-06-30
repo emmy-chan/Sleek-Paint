@@ -655,30 +655,22 @@ void cCanvas::Editor() {
     // Line tool
     static ImVec2 lineStart;
     if (paintToolSelected == 7) {
-        ImVec2 lineEnd;
-
         if (g_util.MousePressed(0)) {
             lineStart = ImGui::GetMousePos();
         }
 
         if (ImGui::IsMouseDown(0)) {
-            lineEnd = ImGui::GetMousePos();
-
             // Draw the preview line
-            d.AddLine(lineStart, lineEnd, myCols[selColIndex], 4);
+            d.AddLine(lineStart, ImGui::GetMousePos(), myCols[selColIndex], 4);
         }
 
         if (g_util.MouseReleased(0)) {
-            lineEnd = ImGui::GetMousePos();
-
             // Convert the screen coordinates to tile coordinates
             const int startX = static_cast<int>((lineStart.x - g_cam.x) / TILE_SIZE);
             const int startY = static_cast<int>((lineStart.y - g_cam.y) / TILE_SIZE);
-            const int endX = static_cast<int>((lineEnd.x - g_cam.x) / TILE_SIZE);
-            const int endY = static_cast<int>((lineEnd.y - g_cam.y) / TILE_SIZE);
 
             // Draw the line on the canvas
-            DrawLineOnCanvas(startX, startY, endX, endY, myCols[selColIndex]);
+            DrawLineOnCanvas(startX, startY, x, y, myCols[selColIndex]);
         }
     }
 
