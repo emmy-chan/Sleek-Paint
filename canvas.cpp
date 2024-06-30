@@ -674,6 +674,8 @@ void cCanvas::Editor() {
             // Draw the preview line
             d.AddLine(lineStart, ImGui::GetMousePos(), myCols[selColIndex], 4);
         }
+        else
+            d.AddRectFilled({ g_cam.x + x * TILE_SIZE, g_cam.y + y * TILE_SIZE }, { g_cam.x + x * TILE_SIZE + TILE_SIZE, g_cam.y + y * TILE_SIZE + TILE_SIZE }, myCols[selColIndex]);
 
         if (g_util.MouseReleased(0)) {
             // Convert the screen coordinates to tile coordinates
