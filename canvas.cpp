@@ -666,8 +666,8 @@ void cCanvas::Editor() {
 
         if (g_util.MouseReleased(0)) {
             // Convert the screen coordinates to tile coordinates
-            const int startX = static_cast<int>((lineStart.x - g_cam.x) / TILE_SIZE);
-            const int startY = static_cast<int>((lineStart.y - g_cam.y) / TILE_SIZE);
+            const uint16_t startX = static_cast<int>((lineStart.x - g_cam.x) / TILE_SIZE);
+            const uint16_t startY = static_cast<int>((lineStart.y - g_cam.y) / TILE_SIZE);
 
             // Draw the line on the canvas
             DrawLineOnCanvas(startX, startY, x, y, myCols[selColIndex]);
@@ -682,10 +682,11 @@ void cCanvas::Editor() {
                 if (g_util.MouseReleased(0) || g_util.MouseReleased(1))
                     UpdateCanvasHistory();
 
-    //if (io.MouseDelta.x || io.MouseDelta.y)
-    //if (!bHovering && io.MouseDown[0] ) {
-    //    g_cam.x += io.MouseDelta.x;
-    //    g_cam.y += io.MouseDelta.y;
-    //    printf("Moving the canvas.\n");
-    //}
+    // Middle mouse navigate
+    if (io.MouseDelta.x || io.MouseDelta.y) {
+        if (io.MouseDown[2]) {
+            g_cam.x += io.MouseDelta.x;
+            g_cam.y += io.MouseDelta.y;
+        }
+    }
 }
