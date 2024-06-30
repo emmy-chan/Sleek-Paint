@@ -466,9 +466,9 @@ void cGUI::Display()
         g_canvas[g_cidx].NewLayer();
 
     if (ImGui::Button("Remove Layer", { ImGui::GetColumnWidth(), ImGui::GetFrameHeight() })) {
-        if (g_canvas[g_cidx].selLayerIndex > 0 && g_canvas[g_cidx].tiles.size() > 1) {
-            g_canvas[g_cidx].tiles.resize(g_canvas[g_cidx].tiles.size() - 1);
-            g_canvas[g_cidx].selLayerIndex--;
+        if (g_canvas[g_cidx].tiles.size() > 1) {
+            g_canvas[g_cidx].tiles.erase(g_canvas[g_cidx].tiles.begin() + g_canvas[g_cidx].selLayerIndex);
+            if (g_canvas[g_cidx].selLayerIndex > 0) g_canvas[g_cidx].selLayerIndex--;
         }
     }
 
