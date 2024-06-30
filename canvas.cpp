@@ -357,22 +357,20 @@ void cCanvas::Editor() {
             paintToolSelected = 2;
         else if (GetAsyncKeyState('X'))
             paintToolSelected = 3;
-
-        if (GetAsyncKeyState(VK_CONTROL) && GetAsyncKeyState('Z') & 1) {
+        else if (GetAsyncKeyState(VK_CONTROL) && GetAsyncKeyState('Z') & 1) {
             if (g_canvas[g_cidx].canvas_idx > 0) {
                 g_canvas[g_cidx].canvas_idx--;
                 g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex] = g_canvas[g_cidx].previousCanvases[g_canvas[g_cidx].canvas_idx];
             }
         }
-
-        if (GetAsyncKeyState(VK_CONTROL) && GetAsyncKeyState('Y') & 1) {
+        else if (GetAsyncKeyState(VK_CONTROL) && GetAsyncKeyState('Y') & 1) {
             if (g_canvas[g_cidx].canvas_idx < g_canvas[g_cidx].previousCanvases.size() - 1) {
                 g_canvas[g_cidx].canvas_idx++;
                 g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex] = g_canvas[g_cidx].previousCanvases[g_canvas[g_cidx].canvas_idx];
             }
         }
 
-        //Zooming
+        // Zooming
         if (io.MouseWheel != 0.f) {
             //zoom = TILE_SIZE * 4;
             if (TILE_SIZE >= 16) {
@@ -390,82 +388,24 @@ void cCanvas::Editor() {
             TILE_SIZE = glm::clamp<int>(TILE_SIZE, 2, 126); //io.DisplaySize.y * 0.1
         }
 
-        //if (io.MouseWheel > 0.f) {
-        //    
-        //    g_cam = { g_cam.x + (io.MousePos.x - (150 + width * TILE_SIZE) / 2) / TILE_SIZE, g_cam.y + (io.MousePos.y - (20 + height * TILE_SIZE) / 2) / TILE_SIZE }; //g_cam.x + (io.MousePos.x - (io.DisplaySize.x) / 2) / 4, g_cam.y + (io.MousePos.y - (io.DisplaySize.y) / 2) / 4
-        //}
-        //else if (io.MouseWheel < 0.f) {
-        //    g_cam = { g_cam.x + ((width * TILE_SIZE) / 2 - io.MousePos.x) / TILE_SIZE, g_cam.y + ((height * TILE_SIZE) / 2 - io.MousePos.y) / TILE_SIZE };
-        //}
+        // Delete our selection area
+        if (GetAsyncKeyState(VK_DELETE))
+            DeleteSelection();
+
+        // Cut our selection area
+        if (GetAsyncKeyState(VK_CONTROL) & GetAsyncKeyState('X')) {
+            g_canvas[g_cidx].CopySelection();
+            g_canvas[g_cidx].DeleteSelection();
+        }
+
+        // Copy our selection area
+        if (GetAsyncKeyState(VK_CONTROL) & GetAsyncKeyState('C'))
+            CopySelection();
+
+        // Paste our selection area
+        if (GetAsyncKeyState(VK_CONTROL) & GetAsyncKeyState('V') && !copiedTiles.empty())
+            PasteSelection();
     }
-
-    //Debug stuff
-    //ImGui::SetNextWindowPos({ 555, 555 }, ImGuiCond_Once);
-    //std::string ya = "Zoom: " + std::to_string(zoom);
-    //ImGui::Text(ya.c_str());
-    //ya = "Tile size: " + std::to_string(TILE_SIZE);
-    //ImGui::Text(ya.c_str());
-    //ya = "Canvas state size: " + std::to_string(g_canvas[g_cidx].previousCanvases.size());
-    //ImGui::Text(ya.c_str());
-    ////ya = "Tile 0 alpha " + std::to_string(g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex][0].Value.w);
-    ////ImGui::Text(ya.c_str());
-    ////ya = "Canvas idx: " + std::to_string(g_canvas[g_cidx].canvas_idx);
-    ////ImGui::Text(ya.c_str());
-
-    ////Mouse pos debug
-    //ya = "mouse x: " + std::to_string((int)io.MousePos.x) 
-    //    + "\nmouse y: " + std::to_string((int)io.MousePos.y);
-    //ImGui::Text(ya.c_str());
-
-    //state system please
-    //if (paintToolSelected == 4) {
-    //    static glm::vec2 mouse_rect = { io.MousePos.x, io.MousePos.y };
-    //    const glm::vec2 mouse_rect_delta = { (io.MousePos.x - mouse_rect.x), (io.MousePos.y - mouse_rect.y) };
-
-    //    if (io.MouseDown[0]) {
-    //        d.AddRect({ mouse_rect.x, mouse_rect.y }, { mouse_rect.x + mouse_rect_delta.x, mouse_rect.y + mouse_rect_delta.y }, ImColor(0, 0, 0, 255), 0, 0, TILE_SIZE);
-    //        selectedIndexes.clear();
-    //    }
-    //    else {
-    //        mouse_rect = { io.MousePos.x, io.MousePos.y };
-    //    }
-
-    //    //Released the mouse
-    //    if (last_pressed && !io.MouseDown[0]) {
-    //        for (float y = 0; y < height; y++) {
-    //            for (float x = 0; x < width; x++) {
-    //                if (Hovering(mouse_rect.x, mouse_rect.y, mouse_rect.x + mouse_rect_delta.x, mouse_rect.y + mouse_rect_delta.y))
-    //                    selectedIndexes.push_back((x + y * width) / TILE_SIZE);
-    //                
-    //                printf(std::string(std::to_string((x + y * width) / TILE_SIZE) + "\n").c_str());
-    //            }
-    //        }
-    //    }
-    //}
-
-    /*glm::u32vec2 mouse = g_util.MapCoordsToRect({ io.MousePos.x, io.MousePos.y }, g_canvas[g_cidx].width * g_canvas[g_cidx].TILE_SIZE, g_canvas[g_cidx].height * g_canvas[g_cidx].TILE_SIZE);
-
-    std::string txt = "mouse x: " + std::to_string(mouse.x)
-        + "\nmouse y: " + std::to_string(mouse.y);
-    ImGui::Text(txt.c_str());*/
-
-    // Delete our selection area
-    if (GetAsyncKeyState(VK_DELETE))
-        DeleteSelection();
-
-    // Cut our selection area
-    if (GetAsyncKeyState(VK_CONTROL) & GetAsyncKeyState('X')) {
-        g_canvas[g_cidx].CopySelection();
-        g_canvas[g_cidx].DeleteSelection();
-    }
-
-    // Copy our selection area
-    if (GetAsyncKeyState(VK_CONTROL) & GetAsyncKeyState('C'))
-        CopySelection();
-
-    // Paste our selection area
-    if (GetAsyncKeyState(VK_CONTROL) & GetAsyncKeyState('V') && !copiedTiles.empty())
-        PasteSelection();
 
     for (float y = 0; y < height; y++) {
         for (float x = 0; x < width; x++) {
