@@ -425,6 +425,7 @@ void cGUI::Display()
     if (ImGui::Button("+"))
         g_canvas[g_cidx].myCols.push_back(ImColor(0, 0, 0, 255));
 
+    ImGui::SetCursorPosY(ImGui::GetWindowHeight() * 0.5f);
     ImGui::PopStyleVar(); ImGui::Spacing(); ImGui::Separator();
 
     for (size_t i = 0; i < g_canvas[g_cidx].tiles.size(); i++) {
