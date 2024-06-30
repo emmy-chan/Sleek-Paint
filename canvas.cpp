@@ -468,163 +468,171 @@ void cCanvas::Editor() {
                 ImU32 tileColor = g_canvas[g_cidx].tiles[layer][static_cast<uint64_t>(x) + static_cast<uint64_t>(y) * width];
                 d.AddRectFilled({ g_cam.x + x * TILE_SIZE, g_cam.y + y * TILE_SIZE }, { g_cam.x + x * TILE_SIZE + TILE_SIZE, g_cam.y + y * TILE_SIZE + TILE_SIZE }, tileColor);
             }
-
-            if (bCanDraw && g_util.Hovering(g_cam.x + x * TILE_SIZE, g_cam.y + y * TILE_SIZE, g_cam.x + x * TILE_SIZE + TILE_SIZE, g_cam.y + y * TILE_SIZE + TILE_SIZE)) {
-                switch (paintToolSelected) {
-                case 0:
-                    //brush
-                    if (selectedIndexes.empty() || selectedIndexes.find((uint64_t)x + (uint64_t)y * width) != selectedIndexes.end()) {
-                        if (io.MouseDown[0]) {
-                            if (ImGui::GetMousePos().x > 0 && ImGui::GetMousePos().x < io.DisplaySize.x - 1 && ImGui::GetMousePos().y > 0 && ImGui::GetMousePos().y < io.DisplaySize.y - 1)
-                                tiles[g_canvas[g_cidx].selLayerIndex][(uint64_t)x + (uint64_t)y * width] = myCols[selColIndex];
-                        }
-                        else if (io.MouseDown[1]) {
-                            if (ImGui::GetMousePos().y > 0 && ImGui::GetMousePos().x < io.DisplaySize.x - 1 && ImGui::GetMousePos().y > 0 && ImGui::GetMousePos().y < io.DisplaySize.y - 1)
-                                tiles[g_canvas[g_cidx].selLayerIndex][(uint64_t)x + (uint64_t)y * width] = IM_COL32(0, 0, 0, 0);
-                        }
-                    }
-
-                    d.AddRectFilled({ g_cam.x + x * TILE_SIZE, g_cam.y + y * TILE_SIZE }, { g_cam.x + x * TILE_SIZE + TILE_SIZE, g_cam.y + y * TILE_SIZE + TILE_SIZE }, myCols[selColIndex]);
-                    break;
-                case 1:
-                    //paint bucket
-                    if (g_util.MousePressed(0))
-                       if (selectedIndexes.empty() || selectedIndexes.find((uint64_t)x + (uint64_t)y * width) != selectedIndexes.end())
-                            floodFill((int)x, (int)y, true);
-
-                    d.AddRectFilled({ g_cam.x + x * TILE_SIZE, g_cam.y + y * TILE_SIZE }, { g_cam.x + x * TILE_SIZE + TILE_SIZE, g_cam.y + y * TILE_SIZE + TILE_SIZE }, myCols[selColIndex]);
-                    break;
-                case 2:
-                    //eraser
-                    if (io.MouseDown[0])
-                        if (selectedIndexes.empty() || selectedIndexes.find((uint64_t)x + (uint64_t)y * width) != selectedIndexes.end())
-                            if (ImGui::GetMousePos().y > 0 && ImGui::GetMousePos().x < io.DisplaySize.x - 1 && ImGui::GetMousePos().y > 0 && ImGui::GetMousePos().y < io.DisplaySize.y - 1)
-                                tiles[g_canvas[g_cidx].selLayerIndex][(uint64_t)x + (uint64_t)y * width] = IM_COL32(0, 0, 0, 0);
-
-                    d.AddRect({ g_cam.x + x * TILE_SIZE, g_cam.y + y * TILE_SIZE }, { g_cam.x + x * TILE_SIZE + TILE_SIZE - 1, g_cam.y + y * TILE_SIZE + TILE_SIZE - 1 }, IM_COL32(0, 0, 0, 255));
-                    d.AddRectFilled({ g_cam.x + x * TILE_SIZE + 1, g_cam.y + y * TILE_SIZE + 1 }, { g_cam.x + x * TILE_SIZE + TILE_SIZE - 2, g_cam.y + y * TILE_SIZE + TILE_SIZE - 2 }, IM_COL32(255, 255, 255, 255));
-                    break;
-                case 3:
-                    //dropper
-                    if (io.MouseDown[0])
-                        myCols[selColIndex] = tiles[g_canvas[g_cidx].selLayerIndex][(uint64_t)x + (uint64_t)y * width];
-
-                    d.AddRect({ g_cam.x + x * TILE_SIZE, g_cam.y + y * TILE_SIZE }, { g_cam.x + x * TILE_SIZE + TILE_SIZE - 1, g_cam.y + y * TILE_SIZE + TILE_SIZE - 1 }, IM_COL32(0, 0, 0, 255));
-                    d.AddRectFilled({ g_cam.x + x * TILE_SIZE + 1, g_cam.y + y * TILE_SIZE + 1 }, { g_cam.x + x * TILE_SIZE + TILE_SIZE - 2, g_cam.y + y * TILE_SIZE + TILE_SIZE - 2 }, IM_COL32(255, 255, 255, 255));
-                    break;
-                case 4:
-                    if (g_util.MousePressed(0)) {
-                        selectedIndexes.clear();
-                        start = ImGui::GetMousePos();
-                    }
-
-                    if (ImGui::IsMouseDown(0))
-                        d.AddRect(start, ImGui::GetMousePos(), IM_COL32_WHITE, 0, NULL, 4);
-
-                    if (g_util.MouseReleased(0)) {
-                        const ImVec2 end = ImGui::GetMousePos();
-                        const float startX = std::floor(std::min(start.x, end.x) / TILE_SIZE) * TILE_SIZE;
-                        const float startY = std::floor(std::min(start.y, end.y) / TILE_SIZE) * TILE_SIZE;
-                        const float endX = std::ceil(std::max(start.x, end.x) / TILE_SIZE) * TILE_SIZE;
-                        const float endY = std::ceil(std::max(start.y, end.y) / TILE_SIZE) * TILE_SIZE;
-
-                        for (float selectY = 0; selectY < height; selectY++) {
-                            for (float selectX = 0; selectX < width; selectX++) {
-                                const float tilePosX = g_cam.x + selectX * TILE_SIZE;
-                                const float tilePosY = g_cam.y + selectY * TILE_SIZE;
-
-                                if (tilePosX >= startX && tilePosX < endX && tilePosY >= startY && tilePosY < endY) {
-                                    selectedIndexes.insert((uint16_t)(selectX + selectY * width));
-                                }
-                            }
-                        }
-                    }
-
-                    break;
-
-                case 5:
-                    //magic wand
-                    if (g_util.MousePressed(0)) {
-                        const ImVec2 mousePos = ImGui::GetMousePos();
-                        const int tileX = static_cast<int>((mousePos.x - g_cam.x) / TILE_SIZE);
-                        const int tileY = static_cast<int>((mousePos.y - g_cam.y) / TILE_SIZE);
-
-                        if (tileX >= 0 && tileX < width && tileY >= 0 && tileY < height) {
-                            floodFill(tileX, tileY, false);
-                        }
-                    }
-
-                    d.AddRectFilled({ g_cam.x + x * TILE_SIZE, g_cam.y + y * TILE_SIZE }, { g_cam.x + x * TILE_SIZE + TILE_SIZE, g_cam.y + y * TILE_SIZE + TILE_SIZE }, myCols[selColIndex]);
-                    break;
-
-                case 6:
-                    // move tool
-                    if (g_util.MousePressed(0)) {
-                        start = ImGui::GetMousePos();
-                        initialSelectedIndexes = selectedIndexes;
-
-                        // Calculate selection bounds
-                        float minX = FLT_MAX, minY = FLT_MAX;
-                        float maxX = -FLT_MAX, maxY = -FLT_MAX;
-
-                        for (const auto& index : initialSelectedIndexes) {
-                            const int selectX = index % width;
-                            const int selectY = index / width;
-                            const float tilePosX = g_cam.x + selectX * TILE_SIZE;
-                            const float tilePosY = g_cam.y + selectY * TILE_SIZE;
-                            minX = std::min(minX, tilePosX);
-                            minY = std::min(minY, tilePosY);
-                            maxX = std::max(maxX, tilePosX + TILE_SIZE);
-                            maxY = std::max(maxY, tilePosY + TILE_SIZE);
-                        }
-
-                        // Check if the click is outside the bounds
-                        if (start.x < minX || start.x > maxX || start.y < minY || start.y > maxY) {
-                            selectedIndexes.clear();
-                            initialSelectedIndexes.clear();
-                        }
-                    }
-
-                    if (g_util.MouseReleased(0)) {
-                        ImVec2 offset = ImGui::GetMousePos();
-                        offset.x -= start.x; offset.y -= start.y;
-
-                        std::unordered_set<uint16_t> newSelectedIndexes;
-                        std::unordered_map<uint16_t, ImU32> newTileColors;
-
-                        for (const auto& index : initialSelectedIndexes) {
-                            const int selectX = index % width;
-                            const int selectY = index / width;
-                            const int newX = static_cast<int>(selectX + offset.x / TILE_SIZE);
-                            const int newY = static_cast<int>(selectY + offset.y / TILE_SIZE);
-
-                            if (newX >= 0 && newX < width && newY >= 0 && newY < height) {
-                                uint16_t newIndex = newX + newY * width;
-                                newSelectedIndexes.insert(newIndex);
-                                newTileColors[newIndex] = tiles[g_canvas[g_cidx].selLayerIndex][index];
-                            }
-                        }
-
-                        // Clear the original positions
-                        for (const auto& index : initialSelectedIndexes) {
-                            tiles[g_canvas[g_cidx].selLayerIndex][index] = IM_COL32(0, 0, 0, 0);
-                        }
-
-                        // Update new positions
-                        for (const auto& [newIndex, color] : newTileColors) {
-                            tiles[g_canvas[g_cidx].selLayerIndex][newIndex] = color;
-                        }
-
-                        selectedIndexes = newSelectedIndexes;
-                    }
-
-                    break;
-                }
-            }
-            else
-                d.AddRectFilled({ g_cam.x + x * TILE_SIZE, g_cam.y + y * TILE_SIZE }, { g_cam.x + x * TILE_SIZE + TILE_SIZE, g_cam.y + y * TILE_SIZE + TILE_SIZE }, tiles[g_canvas[g_cidx].selLayerIndex][(uint64_t)x + (uint64_t)y * width]);
         }
     }
+
+    // Convert the screen coordinates to tile coordinates
+    uint16_t x = static_cast<int>((ImGui::GetMousePos().x - g_cam.x) / TILE_SIZE);
+    uint16_t y = static_cast<int>((ImGui::GetMousePos().y - g_cam.y) / TILE_SIZE);
+
+    // Clamp the coordinates to ensure they are within the canvas dimensions
+    x = glm::clamp<uint16_t>(x, (uint16_t)0, g_canvas[g_cidx].width - (uint16_t)1);
+    y = glm::clamp<uint16_t>(y, (uint16_t)0, g_canvas[g_cidx].height - (uint16_t)1);
+
+    if (bCanDraw && g_util.Hovering(g_cam.x + x * TILE_SIZE, g_cam.y + y * TILE_SIZE, g_cam.x + x * TILE_SIZE + TILE_SIZE, g_cam.y + y * TILE_SIZE + TILE_SIZE)) {
+        switch (paintToolSelected) {
+        case 0:
+            //brush
+            if (selectedIndexes.empty() || selectedIndexes.find((uint64_t)x + (uint64_t)y * width) != selectedIndexes.end()) {
+                if (io.MouseDown[0]) {
+                    if (ImGui::GetMousePos().x > 0 && ImGui::GetMousePos().x < io.DisplaySize.x - 1 && ImGui::GetMousePos().y > 0 && ImGui::GetMousePos().y < io.DisplaySize.y - 1)
+                        tiles[g_canvas[g_cidx].selLayerIndex][(uint64_t)x + (uint64_t)y * width] = myCols[selColIndex];
+                }
+                else if (io.MouseDown[1]) {
+                    if (ImGui::GetMousePos().y > 0 && ImGui::GetMousePos().x < io.DisplaySize.x - 1 && ImGui::GetMousePos().y > 0 && ImGui::GetMousePos().y < io.DisplaySize.y - 1)
+                        tiles[g_canvas[g_cidx].selLayerIndex][(uint64_t)x + (uint64_t)y * width] = IM_COL32(0, 0, 0, 0);
+                }
+            }
+
+            d.AddRectFilled({ g_cam.x + x * TILE_SIZE, g_cam.y + y * TILE_SIZE }, { g_cam.x + x * TILE_SIZE + TILE_SIZE, g_cam.y + y * TILE_SIZE + TILE_SIZE }, myCols[selColIndex]);
+            break;
+        case 1:
+            //paint bucket
+            if (g_util.MousePressed(0))
+                if (selectedIndexes.empty() || selectedIndexes.find((uint64_t)x + (uint64_t)y * width) != selectedIndexes.end())
+                    floodFill((int)x, (int)y, true);
+
+            d.AddRectFilled({ g_cam.x + x * TILE_SIZE, g_cam.y + y * TILE_SIZE }, { g_cam.x + x * TILE_SIZE + TILE_SIZE, g_cam.y + y * TILE_SIZE + TILE_SIZE }, myCols[selColIndex]);
+            break;
+        case 2:
+            //eraser
+            if (io.MouseDown[0])
+                if (selectedIndexes.empty() || selectedIndexes.find((uint64_t)x + (uint64_t)y * width) != selectedIndexes.end())
+                    if (ImGui::GetMousePos().y > 0 && ImGui::GetMousePos().x < io.DisplaySize.x - 1 && ImGui::GetMousePos().y > 0 && ImGui::GetMousePos().y < io.DisplaySize.y - 1)
+                        tiles[g_canvas[g_cidx].selLayerIndex][(uint64_t)x + (uint64_t)y * width] = IM_COL32(0, 0, 0, 0);
+
+            d.AddRect({ g_cam.x + x * TILE_SIZE, g_cam.y + y * TILE_SIZE }, { g_cam.x + x * TILE_SIZE + TILE_SIZE - 1, g_cam.y + y * TILE_SIZE + TILE_SIZE - 1 }, IM_COL32(0, 0, 0, 255));
+            d.AddRectFilled({ g_cam.x + x * TILE_SIZE + 1, g_cam.y + y * TILE_SIZE + 1 }, { g_cam.x + x * TILE_SIZE + TILE_SIZE - 2, g_cam.y + y * TILE_SIZE + TILE_SIZE - 2 }, IM_COL32(255, 255, 255, 255));
+            break;
+        case 3:
+            //dropper
+            if (io.MouseDown[0])
+                myCols[selColIndex] = tiles[g_canvas[g_cidx].selLayerIndex][(uint64_t)x + (uint64_t)y * width];
+
+            d.AddRect({ g_cam.x + x * TILE_SIZE, g_cam.y + y * TILE_SIZE }, { g_cam.x + x * TILE_SIZE + TILE_SIZE - 1, g_cam.y + y * TILE_SIZE + TILE_SIZE - 1 }, IM_COL32(0, 0, 0, 255));
+            d.AddRectFilled({ g_cam.x + x * TILE_SIZE + 1, g_cam.y + y * TILE_SIZE + 1 }, { g_cam.x + x * TILE_SIZE + TILE_SIZE - 2, g_cam.y + y * TILE_SIZE + TILE_SIZE - 2 }, IM_COL32(255, 255, 255, 255));
+            break;
+        case 4:
+            if (g_util.MousePressed(0)) {
+                selectedIndexes.clear();
+                start = ImGui::GetMousePos();
+            }
+
+            if (ImGui::IsMouseDown(0))
+                d.AddRect(start, ImGui::GetMousePos(), IM_COL32_WHITE, 0, NULL, 4);
+
+            if (g_util.MouseReleased(0)) {
+                const ImVec2 end = ImGui::GetMousePos();
+                const float startX = std::floor(std::min(start.x, end.x) / TILE_SIZE) * TILE_SIZE;
+                const float startY = std::floor(std::min(start.y, end.y) / TILE_SIZE) * TILE_SIZE;
+                const float endX = std::ceil(std::max(start.x, end.x) / TILE_SIZE) * TILE_SIZE;
+                const float endY = std::ceil(std::max(start.y, end.y) / TILE_SIZE) * TILE_SIZE;
+
+                for (float selectY = 0; selectY < height; selectY++) {
+                    for (float selectX = 0; selectX < width; selectX++) {
+                        const float tilePosX = g_cam.x + selectX * TILE_SIZE;
+                        const float tilePosY = g_cam.y + selectY * TILE_SIZE;
+
+                        if (tilePosX >= startX && tilePosX < endX && tilePosY >= startY && tilePosY < endY) {
+                            selectedIndexes.insert((uint16_t)(selectX + selectY * width));
+                        }
+                    }
+                }
+            }
+
+            break;
+
+        case 5:
+            //magic wand
+            if (g_util.MousePressed(0)) {
+                const ImVec2 mousePos = ImGui::GetMousePos();
+                const int tileX = static_cast<int>((mousePos.x - g_cam.x) / TILE_SIZE);
+                const int tileY = static_cast<int>((mousePos.y - g_cam.y) / TILE_SIZE);
+
+                if (tileX >= 0 && tileX < width && tileY >= 0 && tileY < height) {
+                    floodFill(tileX, tileY, false);
+                }
+            }
+
+            d.AddRectFilled({ g_cam.x + x * TILE_SIZE, g_cam.y + y * TILE_SIZE }, { g_cam.x + x * TILE_SIZE + TILE_SIZE, g_cam.y + y * TILE_SIZE + TILE_SIZE }, myCols[selColIndex]);
+            break;
+
+        case 6:
+            // move tool
+            if (g_util.MousePressed(0)) {
+                start = ImGui::GetMousePos();
+                initialSelectedIndexes = selectedIndexes;
+
+                // Calculate selection bounds
+                float minX = FLT_MAX, minY = FLT_MAX;
+                float maxX = -FLT_MAX, maxY = -FLT_MAX;
+
+                for (const auto& index : initialSelectedIndexes) {
+                    const int selectX = index % width;
+                    const int selectY = index / width;
+                    const float tilePosX = g_cam.x + selectX * TILE_SIZE;
+                    const float tilePosY = g_cam.y + selectY * TILE_SIZE;
+                    minX = std::min(minX, tilePosX);
+                    minY = std::min(minY, tilePosY);
+                    maxX = std::max(maxX, tilePosX + TILE_SIZE);
+                    maxY = std::max(maxY, tilePosY + TILE_SIZE);
+                }
+
+                // Check if the click is outside the bounds
+                if (start.x < minX || start.x > maxX || start.y < minY || start.y > maxY) {
+                    selectedIndexes.clear();
+                    initialSelectedIndexes.clear();
+                }
+            }
+
+            if (g_util.MouseReleased(0)) {
+                ImVec2 offset = ImGui::GetMousePos();
+                offset.x -= start.x; offset.y -= start.y;
+
+                std::unordered_set<uint16_t> newSelectedIndexes;
+                std::unordered_map<uint16_t, ImU32> newTileColors;
+
+                for (const auto& index : initialSelectedIndexes) {
+                    const int selectX = index % width;
+                    const int selectY = index / width;
+                    const int newX = static_cast<int>(selectX + offset.x / TILE_SIZE);
+                    const int newY = static_cast<int>(selectY + offset.y / TILE_SIZE);
+
+                    if (newX >= 0 && newX < width && newY >= 0 && newY < height) {
+                        uint16_t newIndex = newX + newY * width;
+                        newSelectedIndexes.insert(newIndex);
+                        newTileColors[newIndex] = tiles[g_canvas[g_cidx].selLayerIndex][index];
+                    }
+                }
+
+                // Clear the original positions
+                for (const auto& index : initialSelectedIndexes) {
+                    tiles[g_canvas[g_cidx].selLayerIndex][index] = IM_COL32(0, 0, 0, 0);
+                }
+
+                // Update new positions
+                for (const auto& [newIndex, color] : newTileColors) {
+                    tiles[g_canvas[g_cidx].selLayerIndex][newIndex] = color;
+                }
+
+                selectedIndexes = newSelectedIndexes;
+            }
+
+            break;
+        }
+    }
+    else
+        d.AddRectFilled({ g_cam.x + x * TILE_SIZE, g_cam.y + y * TILE_SIZE }, { g_cam.x + x * TILE_SIZE + TILE_SIZE, g_cam.y + y * TILE_SIZE + TILE_SIZE }, tiles[g_canvas[g_cidx].selLayerIndex][(uint64_t)x + (uint64_t)y * width]);
 
     // Always draw a rectangle around the selected indexes
     if (!selectedIndexes.empty()) {
