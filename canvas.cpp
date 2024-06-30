@@ -436,9 +436,6 @@ void cCanvas::Editor() {
         + "\nmouse y: " + std::to_string(mouse.y);
     ImGui::Text(txt.c_str());*/
 
-    const bool bCanDraw = IsClickingOutsideCanvas();
-    static ImVec2 start;
-
     // Delete our selection area
     if (GetAsyncKeyState(VK_DELETE))
         DeleteSelection();
@@ -476,8 +473,11 @@ void cCanvas::Editor() {
     uint16_t y = static_cast<int>((ImGui::GetMousePos().y - g_cam.y) / TILE_SIZE);
 
     // Clamp the coordinates to ensure they are within the canvas dimensions
-    x = glm::clamp<uint16_t>(x, (uint16_t)0, g_canvas[g_cidx].width - (uint16_t)1);
-    y = glm::clamp<uint16_t>(y, (uint16_t)0, g_canvas[g_cidx].height - (uint16_t)1);
+    //x = glm::clamp<uint16_t>(x, (uint16_t)0, g_canvas[g_cidx].width - (uint16_t)1);
+    //y = glm::clamp<uint16_t>(y, (uint16_t)0, g_canvas[g_cidx].height - (uint16_t)1);
+
+    const bool bCanDraw = IsClickingOutsideCanvas() && x >= 0 && x < g_canvas[g_cidx].width && y >= 0 && y < g_canvas[g_cidx].height;
+    static ImVec2 start;
 
     if (bCanDraw && g_util.Hovering(g_cam.x + x * TILE_SIZE, g_cam.y + y * TILE_SIZE, g_cam.x + x * TILE_SIZE + TILE_SIZE, g_cam.y + y * TILE_SIZE + TILE_SIZE)) {
         switch (paintToolSelected) {
@@ -631,8 +631,6 @@ void cCanvas::Editor() {
             break;
         }
     }
-    else
-        d.AddRectFilled({ g_cam.x + x * TILE_SIZE, g_cam.y + y * TILE_SIZE }, { g_cam.x + x * TILE_SIZE + TILE_SIZE, g_cam.y + y * TILE_SIZE + TILE_SIZE }, tiles[g_canvas[g_cidx].selLayerIndex][(uint64_t)x + (uint64_t)y * width]);
 
     // Always draw a rectangle around the selected indexes
     if (!selectedIndexes.empty()) {
