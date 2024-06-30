@@ -453,6 +453,12 @@ void cCanvas::Editor() {
     if (GetAsyncKeyState(VK_DELETE))
         DeleteSelection();
 
+    // Cut our selection area
+    if (GetAsyncKeyState(VK_CONTROL) & GetAsyncKeyState('X')) {
+        g_canvas[g_cidx].CopySelection();
+        g_canvas[g_cidx].DeleteSelection();
+    }
+
     // Copy our selection area
     if (GetAsyncKeyState(VK_CONTROL) & GetAsyncKeyState('C'))
         CopySelection();
