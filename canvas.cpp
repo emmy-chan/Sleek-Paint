@@ -595,6 +595,18 @@ void cCanvas::Editor() {
                 }
             }
 
+            if (ImGui::IsMouseDown(0)) {
+                ImVec2 offset = ImGui::GetMousePos();
+                offset.x -= start.x; offset.y -= start.y;
+
+                for (const auto& index : initialSelectedIndexes) {
+                    const int selectX = index % width;
+                    const int selectY = index / width;
+                    const ImVec2 tilePos = { g_cam.x + selectX * TILE_SIZE + offset.x, g_cam.y + selectY * TILE_SIZE + offset.y };
+                    d.AddRectFilled(tilePos, { tilePos.x + TILE_SIZE, tilePos.y + TILE_SIZE }, tiles[g_canvas[g_cidx].selLayerIndex][index]);
+                }
+            }
+
             if (g_util.MouseReleased(0)) {
                 ImVec2 offset = ImGui::GetMousePos();
                 offset.x -= start.x; offset.y -= start.y;
@@ -632,20 +644,8 @@ void cCanvas::Editor() {
         }
     }
 
-    // Always draw a rectangle around the selected indexes
+    // Draw a rectangle around the selected indexes
     if (!selectedIndexes.empty()) {
-        if (paintToolSelected == 6 && ImGui::IsMouseDown(0)) {
-            ImVec2 offset = ImGui::GetMousePos();
-            offset.x -= start.x; offset.y -= start.y;
-
-            for (const auto& index : initialSelectedIndexes) {
-                const int selectX = index % width;
-                const int selectY = index / width;
-                const ImVec2 tilePos = { g_cam.x + selectX * TILE_SIZE + offset.x, g_cam.y + selectY * TILE_SIZE + offset.y };
-                d.AddRectFilled(tilePos, { tilePos.x + TILE_SIZE, tilePos.y + TILE_SIZE }, tiles[g_canvas[g_cidx].selLayerIndex][index]);
-            }
-        }
-
         DrawSelectionRectangle(&d, selectedIndexes, TILE_SIZE, g_cam.x, g_cam.y, width, IM_COL32_WHITE);
         DrawSelectionRectangle(&d, nonSelectedIndexes, TILE_SIZE, g_cam.x, g_cam.y, width, IM_COL32(175, 175, 175, 255));
     }
