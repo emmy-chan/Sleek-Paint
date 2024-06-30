@@ -3145,8 +3145,13 @@ bool ImGui::VSliderScalar(const char* label, const ImVec2& size, ImGuiDataType d
         MarkItemEdited(id);
 
     // Render grab
-    if (grab_bb.Max.y > grab_bb.Min.y)
-        window->DrawList->AddRectFilled(grab_bb.Min, grab_bb.Max, GetColorU32(g.ActiveId == id ? ImGuiCol_SliderGrabActive : ImGuiCol_SliderGrab), style.GrabRounding);
+    if (grab_bb.Max.x > grab_bb.Min.x)
+    {
+        ImVec2 pos = grab_bb.Min + (grab_bb.Max - grab_bb.Min) * 0.5f;
+        const float circle_radius = frame_bb.GetWidth() * 0.5f;
+        window->DrawList->AddRectFilled(frame_bb.Min, ImVec2(frame_bb.Max.x, pos.y), GetColorU32(ImGuiCol_Border), ImGui::GetStyle().FrameRounding);
+        window->DrawList->AddCircleFilled(pos, circle_radius, GetColorU32(g.ActiveId == id ? ImGuiCol_SliderGrabActive : ImGuiCol_SliderGrab));
+    }
 
     // Display value using user-provided display format so user can add prefix/suffix/decorations to the value.
     // For the vertical slider we allow centered text to overlap the frame padding
