@@ -15,6 +15,7 @@ uint16_t g_cidx = uint16_t();
 #include <stack>
 #include <utility> // for std::pair
 #include <unordered_set>
+#include <set>
 
 std::unordered_set<uint16_t> selectedIndexes;
 std::unordered_map<uint16_t, ImU32> copiedTiles; // Store copied tiles and their colors
@@ -24,15 +25,18 @@ void floodFill(int x, int y, bool paint) {
     if (x < 0 || x >= g_canvas[g_cidx].width || y < 0 || y >= g_canvas[g_cidx].height)
         return;
 
-    const ImU32 curCol = g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex][x + y * g_canvas[g_cidx].width];
-    const ImU32 fillCol = paint ? g_canvas[g_cidx].myCols[g_canvas[g_cidx].selColIndex] : curCol;
+    const ImU32 initialCol = g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex][x + y * g_canvas[g_cidx].width];
+    const ImU32 fillCol = paint ? g_canvas[g_cidx].myCols[g_canvas[g_cidx].selColIndex] : initialCol;
 
-    if (curCol == fillCol && paint) return;
+    // Scale the threshold from 0-100 to 0-255
+    const uint8_t threshold = static_cast<uint8_t>((paint ? g_canvas[g_cidx].bucket_fill_threshold : g_canvas[g_cidx].magic_wand_threshold) * 255 / 100);
 
     std::stack<std::pair<int, int>> stack;
     stack.push({ x, y });
 
     if (!paint) selectedIndexes.clear();
+
+    std::set<uint16_t> visited; // To avoid processing the same pixel multiple times
 
     while (!stack.empty()) {
         std::pair<int, int> p = stack.top();
@@ -44,16 +48,21 @@ void floodFill(int x, int y, bool paint) {
             continue;
 
         const uint16_t currentIndex = curX + curY * g_canvas[g_cidx].width;
+
+        if (visited.find(currentIndex) != visited.end())
+            continue; // Skip already processed pixels
+
+        visited.insert(currentIndex);
         const ImU32 currentCol = g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex][currentIndex];
 
         if (paint) {
-            if (currentCol != curCol)
+            if (g_util.ColorDifference(currentCol, initialCol) >= threshold)
                 continue;
 
             g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex][currentIndex] = fillCol;
         }
         else {
-            if (g_util.ColorDifference(currentCol, curCol) >= g_canvas[g_cidx].magic_wand_threshold || selectedIndexes.find(currentIndex) != selectedIndexes.end())
+            if (g_util.ColorDifference(currentCol, initialCol) >= threshold || selectedIndexes.find(currentIndex) != selectedIndexes.end())
                 continue;
 
             selectedIndexes.insert(currentIndex);
@@ -67,6 +76,7 @@ void floodFill(int x, int y, bool paint) {
 
     printf("FloodFill: Completed successfully!\n");
 }
+
 
 
 //Todo: split this up for palette and initializing our canvas.
