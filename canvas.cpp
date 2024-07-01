@@ -26,7 +26,8 @@ void floodFill(int x, int y, bool paint) {
 
     const ImU32 curCol = g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex][x + y * g_canvas[g_cidx].width];
     const ImU32 fillCol = paint ? g_canvas[g_cidx].myCols[g_canvas[g_cidx].selColIndex] : curCol;
-    const int threshold = static_cast<int>(g_canvas[g_cidx].magic_wand_threshold);
+
+    if (curCol == fillCol && paint) return;
 
     std::stack<std::pair<int, int>> stack;
     stack.push({ x, y });
@@ -46,13 +47,13 @@ void floodFill(int x, int y, bool paint) {
         const ImU32 currentCol = g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex][currentIndex];
 
         if (paint) {
-            if (!selectedIndexes.empty() && selectedIndexes.find(currentIndex) == selectedIndexes.end())
+            if (currentCol != curCol)
                 continue;
 
             g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex][currentIndex] = fillCol;
         }
         else {
-            if (g_util.ColorDifference(currentCol, curCol) >= threshold || selectedIndexes.find(currentIndex) != selectedIndexes.end())
+            if (g_util.ColorDifference(currentCol, curCol) >= g_canvas[g_cidx].magic_wand_threshold || selectedIndexes.find(currentIndex) != selectedIndexes.end())
                 continue;
 
             selectedIndexes.insert(currentIndex);
@@ -63,7 +64,10 @@ void floodFill(int x, int y, bool paint) {
         stack.push({ curX, curY + 1 });
         stack.push({ curX, curY - 1 });
     }
+
+    printf("FloodFill: Completed successfully!\n");
 }
+
 
 //Todo: split this up for palette and initializing our canvas.
 //Also todo in future: maybe make this func take a new size argument ?
