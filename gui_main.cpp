@@ -434,7 +434,7 @@ void cGUI::Display()
         const bool isSelected = (g_canvas[g_cidx].selLayerIndex == i);
 
         // Start drag and drop source
-        if (ImGui::Selectable(name.c_str(), isSelected, NULL, { 150, 0 })) {
+        if (ImGui::Selectable(name.c_str(), isSelected, 0, ImVec2(150, 0))) {
             g_canvas[g_cidx].selLayerIndex = i;
         }
 
@@ -442,7 +442,8 @@ void cGUI::Display()
         ImGui::SameLine(ImGui::GetContentRegionMax().x - 24);
         ImGui::SetCursorPosY(ImGui::GetCursorPosY() - 2);
         const char* eyeIcon = g_canvas[g_cidx].layerVisibility[i] ? ICON_FA_EYE : ICON_FA_EYE_SLASH;
-        if (ImGui::Button(eyeIcon, { 0, 22 })) {
+        const std::string label = std::string(eyeIcon) + "##" + std::to_string(i); // Append unique identifier
+        if (ImGui::Button(label.c_str())) {
             g_canvas[g_cidx].layerVisibility[i] = !g_canvas[g_cidx].layerVisibility[i];
         }
 
