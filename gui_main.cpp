@@ -261,10 +261,6 @@ void cGUI::Display()
             ImGui::EndMenu();
         }
 
-        // Dont show any tools if we dont have any projects open.
-        if (g_canvas.empty())
-            return;
-
         ImGui::SetCursorPosX(197);
         if (ImGui::BeginTabBar("ProjectTabs", ImGuiTabBarFlags_Reorderable | ImGuiTabBarFlags_AutoSelectNewTabs))
         {
@@ -293,6 +289,10 @@ void cGUI::Display()
         }
 
         ImGui::EndMainMenuBar();
+
+        // Dont show any tools if we dont have any projects open.
+        if (g_canvas.empty())
+            return;
 
         auto& style = ImGui::GetStyle();
         ImGui::SetNextWindowPos({ 197, io.DisplaySize.y - 19 });
