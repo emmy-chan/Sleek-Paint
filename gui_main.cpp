@@ -289,22 +289,6 @@ void cGUI::Display()
                 }
             }
 
-            if (!g_canvas.empty()) {
-                std::string string = "Brush Size";
-
-                ImGui::SetCursorPosX(ImGui::GetWindowWidth() - 135 - ImGui::CalcTextSize(string.c_str()).x);
-                ImGui::PushItemWidth(125);
-
-                int temp_brush_size = static_cast<int>(g_canvas[g_cidx].brush_size); // Create a temporary int variable
-
-                // Use the temporary int variable with ImGui::SliderInt
-                if (ImGui::SliderInt(string.c_str(), &temp_brush_size, 1, 10)) {
-                    g_canvas[g_cidx].brush_size = static_cast<uint8_t>(temp_brush_size); // Assign the value back to your uint8_t variable
-                }
-
-                ImGui::PopItemWidth();
-            }
-
             ImGui::EndTabBar();
         }
 
@@ -382,7 +366,6 @@ void cGUI::Display()
     ImGui::Begin("##Colors", NULL, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoBringToFrontOnFocus);
     ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, { 0, 0 });
 
-    retry_draw:
     // Get the current window scroll and position information
     ImGuiWindow& window = *ImGui::GetCurrentWindow();
 
@@ -481,6 +464,16 @@ void cGUI::Display()
             g_canvas[g_cidx].tiles.erase(g_canvas[g_cidx].tiles.begin() + g_canvas[g_cidx].selLayerIndex);
             if (g_canvas[g_cidx].selLayerIndex > 0) g_canvas[g_cidx].selLayerIndex--;
         }
+    }
+
+    ImGui::Spacing(); ImGui::Separator();
+    ImGui::Text("Brush Size:");
+    const std::string string = "##Brush Size";
+    int temp_brush_size = static_cast<int>(g_canvas[g_cidx].brush_size); // Create a temporary int variable
+
+    // Use the temporary int variable with ImGui::SliderInt
+    if (ImGui::SliderInt(string.c_str(), &temp_brush_size, 1, 10)) {
+        g_canvas[g_cidx].brush_size = static_cast<uint8_t>(temp_brush_size); // Assign the value back to your uint8_t variable
     }
 
     ImGui::End();

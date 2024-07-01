@@ -431,22 +431,53 @@ void cCanvas::Editor() {
     const bool bCanDraw = IsClickingOutsideCanvas() && x >= 0 && x < g_canvas[g_cidx].width && y >= 0 && y < g_canvas[g_cidx].height;
     static ImVec2 start;
 
+    float brushRadius = brush_size / 2.0f;
+
     if (bCanDraw && g_util.Hovering(g_cam.x + x * TILE_SIZE, g_cam.y + y * TILE_SIZE, g_cam.x + x * TILE_SIZE + TILE_SIZE, g_cam.y + y * TILE_SIZE + TILE_SIZE)) {
         switch (paintToolSelected) {
         case 0:
             //brush
             if (selectedIndexes.empty() || selectedIndexes.find((uint64_t)x + (uint64_t)y * width) != selectedIndexes.end()) {
-                if (io.MouseDown[0]) {
-                    if (ImGui::GetMousePos().x > 0 && ImGui::GetMousePos().x < io.DisplaySize.x - 1 && ImGui::GetMousePos().y > 0 && ImGui::GetMousePos().y < io.DisplaySize.y - 1)
-                        tiles[g_canvas[g_cidx].selLayerIndex][(uint64_t)x + (uint64_t)y * width] = myCols[selColIndex];
-                }
-                else if (io.MouseDown[1]) {
-                    if (ImGui::GetMousePos().y > 0 && ImGui::GetMousePos().x < io.DisplaySize.x - 1 && ImGui::GetMousePos().y > 0 && ImGui::GetMousePos().y < io.DisplaySize.y - 1)
-                        tiles[g_canvas[g_cidx].selLayerIndex][(uint64_t)x + (uint64_t)y * width] = IM_COL32(0, 0, 0, 0);
+                if (io.MouseDown[0] || io.MouseDown[1]) {
+                    for (int offsetY = -brushRadius; offsetY <= brushRadius; ++offsetY) {
+                        for (int offsetX = -brushRadius; offsetX <= brushRadius; ++offsetX) {
+                            float distance = std::sqrt(offsetX * offsetX + offsetY * offsetY);
+                            if (distance <= brushRadius) {
+                                const int brushX = x + offsetX;
+                                const int brushY = y + offsetY;
+                                if (brushX >= 0 && brushX < width && brushY >= 0 && brushY < height) {
+                                    if (ImGui::GetMousePos().x > 0 && ImGui::GetMousePos().x < io.DisplaySize.x - 1 &&
+                                        ImGui::GetMousePos().y > 0 && ImGui::GetMousePos().y < io.DisplaySize.y - 1) {
+                                        if (io.MouseDown[0]) {
+                                            tiles[g_canvas[g_cidx].selLayerIndex][brushX + brushY * width] = myCols[selColIndex];
+                                        }
+                                        else if (io.MouseDown[1]) {
+                                            tiles[g_canvas[g_cidx].selLayerIndex][brushX + brushY * width] = IM_COL32(0, 0, 0, 0);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
             }
 
-            d.AddRectFilled({ g_cam.x + x * TILE_SIZE, g_cam.y + y * TILE_SIZE }, { g_cam.x + x * TILE_SIZE + TILE_SIZE, g_cam.y + y * TILE_SIZE + TILE_SIZE }, myCols[selColIndex]);
+            // Adjust the visualization of the brush size
+            for (int offsetY = -brushRadius; offsetY <= brushRadius; ++offsetY) {
+                for (int offsetX = -brushRadius; offsetX <= brushRadius; ++offsetX) {
+                    float distance = std::sqrt(offsetX * offsetX + offsetY * offsetY);
+                    if (distance <= brushRadius) {
+                        const int brushX = x + offsetX;
+                        const int brushY = y + offsetY;
+                        if (brushX >= 0 && brushX < width && brushY >= 0 && brushY < height) {
+                            d.AddRectFilled({ g_cam.x + brushX * TILE_SIZE, g_cam.y + brushY * TILE_SIZE },
+                                { g_cam.x + brushX * TILE_SIZE + TILE_SIZE, g_cam.y + brushY * TILE_SIZE + TILE_SIZE },
+                                myCols[selColIndex]);
+                        }
+                    }
+                }
+            }
+
             break;
         case 1:
             //paint bucket
