@@ -27,8 +27,8 @@ void floodFill(int x, int y, bool paint)
         return;
     }
 
-    ImU32 curCol = g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex][x + y * g_canvas[g_cidx].width];
-    ImU32 fillCol = paint ? g_canvas[g_cidx].myCols[g_canvas[g_cidx].selColIndex] : curCol;
+    const ImU32 curCol = g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex][x + y * g_canvas[g_cidx].width];
+    const ImU32 fillCol = paint ? g_canvas[g_cidx].myCols[g_canvas[g_cidx].selColIndex] : curCol;
 
     if (curCol == fillCol && paint) {
         printf("FloodFill: Current color is the same as fill color\n");
@@ -45,13 +45,13 @@ void floodFill(int x, int y, bool paint)
     {
         std::pair<int, int> p = stack.top();
         stack.pop();
-        int curX = p.first;
-        int curY = p.second;
+        const int curX = p.first;
+        const int curY = p.second;
 
         if (curX < 0 || curX >= g_canvas[g_cidx].width || curY < 0 || curY >= g_canvas[g_cidx].height)
             continue;
 
-        uint16_t currentIndex = curX + curY * g_canvas[g_cidx].width;
+        const uint16_t currentIndex = curX + curY * g_canvas[g_cidx].width;
 
         if (paint) {
             if (!selectedIndexes.empty() && selectedIndexes.find(currentIndex) == selectedIndexes.end())
@@ -94,6 +94,7 @@ void cCanvas::NewLayer() {
         layer0.push_back(IM_COL32(0, 0, 0, 0));
 
     tiles.push_back(layer0);
+    layerVisibility.push_back(true);
 
     //Create state for (undo) previous canvas of blank canvas
     UpdateCanvasHistory();
@@ -292,10 +293,10 @@ void cCanvas::DeleteSelection() {
 }
 
 void DrawLineOnCanvas(int x0, int y0, int x1, int y1, ImU32 color) {
-    int dx = abs(x1 - x0);
-    int dy = abs(y1 - y0);
-    int sx = (x0 < x1) ? 1 : -1;
-    int sy = (y0 < y1) ? 1 : -1;
+    const int dx = abs(x1 - x0);
+    const int dy = abs(y1 - y0);
+    const int sx = (x0 < x1) ? 1 : -1;
+    const int sy = (y0 < y1) ? 1 : -1;
     int err = dx - dy;
 
     while (true) {
@@ -304,7 +305,7 @@ void DrawLineOnCanvas(int x0, int y0, int x1, int y1, ImU32 color) {
         }
 
         if (x0 == x1 && y0 == y1) break;
-        int e2 = err * 2;
+        const int e2 = err * 2;
         if (e2 > -dy) {
             err -= dy;
             x0 += sx;
@@ -383,20 +384,38 @@ void cCanvas::Editor() {
 
     for (float y = 0; y < height; y++) {
         for (float x = 0; x < width; x++) {
-            // Add non selected tiles to list
-            if (selectedIndexes.find((uint64_t)x + (uint64_t)y * width) == selectedIndexes.end())
-                nonSelectedIndexes.insert((uint64_t)x + (uint64_t)y * width);
+            uint64_t index = static_cast<uint64_t>(x) + static_cast<uint64_t>(y) * width;
+
+            // Add non-selected tiles to the list
+            if (selectedIndexes.find(index) == selectedIndexes.end()) {
+                nonSelectedIndexes.insert(index);
+            }
 
             // Draw grid background for the base layer
-            if (((g_canvas[g_cidx].tiles[0][static_cast<uint64_t>(x) + static_cast<uint64_t>(y) * width] >> 24) & 0xFF) != 255) {
-                const ImU32 col = (static_cast<int>(x) + static_cast<int>(y)) % 2 == 0 ? IM_COL32(110, 110, 110, 255) : IM_COL32(175, 175, 175, 255);
-                d.AddRectFilled({ g_cam.x + x * TILE_SIZE, g_cam.y + y * TILE_SIZE }, { g_cam.x + x * TILE_SIZE + TILE_SIZE, g_cam.y + y * TILE_SIZE + TILE_SIZE }, col);
-            }
+            const ImU32 col = (static_cast<int>(x) + static_cast<int>(y)) % 2 == 0 ? IM_COL32(110, 110, 110, 255) : IM_COL32(175, 175, 175, 255);
+            d.AddRectFilled(
+                ImVec2(g_cam.x + x * TILE_SIZE, g_cam.y + y * TILE_SIZE),
+                ImVec2(g_cam.x + x * TILE_SIZE + TILE_SIZE, g_cam.y + y * TILE_SIZE + TILE_SIZE),
+                col
+            );
 
             // Draw each layer from bottom to top, including layers after the selected layer index
             for (size_t layer = 0; layer < g_canvas[g_cidx].tiles.size(); layer++) {
-                ImU32 tileColor = g_canvas[g_cidx].tiles[layer][static_cast<uint64_t>(x) + static_cast<uint64_t>(y) * width];
-                d.AddRectFilled({ g_cam.x + x * TILE_SIZE, g_cam.y + y * TILE_SIZE }, { g_cam.x + x * TILE_SIZE + TILE_SIZE, g_cam.y + y * TILE_SIZE + TILE_SIZE }, tileColor);
+                // Check if the layer is visible
+                if (!g_canvas[g_cidx].layerVisibility[layer]) {
+                    continue; // Skip drawing this layer if it is not visible
+                }
+
+                ImU32 tileColor = g_canvas[g_cidx].tiles[layer][index];
+
+                // Check for transparency in the tile color
+                if (((tileColor >> 24) & 0xFF) > 0) {
+                    d.AddRectFilled(
+                        ImVec2(g_cam.x + x * TILE_SIZE, g_cam.y + y * TILE_SIZE),
+                        ImVec2(g_cam.x + x * TILE_SIZE + TILE_SIZE, g_cam.y + y * TILE_SIZE + TILE_SIZE),
+                        tileColor
+                    );
+                }
             }
         }
     }

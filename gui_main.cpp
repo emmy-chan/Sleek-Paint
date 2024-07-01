@@ -434,8 +434,16 @@ void cGUI::Display()
         const bool isSelected = (g_canvas[g_cidx].selLayerIndex == i);
 
         // Start drag and drop source
-        if (ImGui::Selectable(name.c_str(), isSelected)) {
+        if (ImGui::Selectable(name.c_str(), isSelected, NULL, { 150, 0 })) {
             g_canvas[g_cidx].selLayerIndex = i;
+        }
+
+        // Add the eye button to toggle visibility, moving it to the right
+        ImGui::SameLine(ImGui::GetContentRegionMax().x - 24);
+        ImGui::SetCursorPosY(ImGui::GetCursorPosY() - 2);
+        const char* eyeIcon = g_canvas[g_cidx].layerVisibility[i] ? ICON_FA_EYE : ICON_FA_EYE_SLASH;
+        if (ImGui::Button(eyeIcon, { 0, 22 })) {
+            g_canvas[g_cidx].layerVisibility[i] = !g_canvas[g_cidx].layerVisibility[i];
         }
 
         if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_SourceAllowNullID)) {
@@ -450,6 +458,7 @@ void cGUI::Display()
                 if (payloadIndex != i) {
                     // Swap layers
                     std::swap(g_canvas[g_cidx].tiles[i], g_canvas[g_cidx].tiles[payloadIndex]);
+                    std::swap(g_canvas[g_cidx].layerVisibility[i], g_canvas[g_cidx].layerVisibility[payloadIndex]);
                     // Adjust selected layer index if necessary
                     if (g_canvas[g_cidx].selLayerIndex == payloadIndex) {
                         g_canvas[g_cidx].selLayerIndex = i;
