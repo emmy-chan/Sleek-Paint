@@ -21,22 +21,12 @@ std::unordered_map<uint16_t, ImU32> copiedTiles; // Store copied tiles and their
 
 // Flood fill function
 void floodFill(int x, int y, bool paint) {
-    if (x < 0 || x >= g_canvas[g_cidx].width || y < 0 || y >= g_canvas[g_cidx].height) {
-        printf("FloodFill: Out of bounds initial position\n");
+    if (x < 0 || x >= g_canvas[g_cidx].width || y < 0 || y >= g_canvas[g_cidx].height)
         return;
-    }
 
     const ImU32 curCol = g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex][x + y * g_canvas[g_cidx].width];
     const ImU32 fillCol = paint ? g_canvas[g_cidx].myCols[g_canvas[g_cidx].selColIndex] : curCol;
     const int threshold = static_cast<int>(g_canvas[g_cidx].magic_wand_threshold);
-
-    printf("FloodFill: Starting flood fill with threshold %d\n", threshold);
-    printf("FloodFill: Current color %u, Fill color %u\n", curCol, fillCol);
-
-    if (g_util.ColorDifference(curCol, fillCol) < threshold && paint) {
-        printf("FloodFill: Current color is within threshold of fill color\n");
-        return;
-    }
 
     std::stack<std::pair<int, int>> stack;
     stack.push({ x, y });
@@ -54,8 +44,6 @@ void floodFill(int x, int y, bool paint) {
 
         const uint16_t currentIndex = curX + curY * g_canvas[g_cidx].width;
         const ImU32 currentCol = g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex][currentIndex];
-
-        printf("FloodFill: At position (%d, %d), color %u\n", curX, curY, currentCol);
 
         if (paint) {
             if (!selectedIndexes.empty() && selectedIndexes.find(currentIndex) == selectedIndexes.end())
@@ -75,8 +63,6 @@ void floodFill(int x, int y, bool paint) {
         stack.push({ curX, curY + 1 });
         stack.push({ curX, curY - 1 });
     }
-
-    printf("FloodFill: Completed without freezing\n");
 }
 
 //Todo: split this up for palette and initializing our canvas.
