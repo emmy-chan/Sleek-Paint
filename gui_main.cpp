@@ -11,12 +11,12 @@
 #include <unordered_set>
 #include "imgui_internal.h"
 
-ImU32 adjustSaturation(ImU32 color, float saturationFactor) {
+ImU32 AdjustSaturation(ImU32 color, float saturationFactor) {
     float r = (color >> IM_COL32_R_SHIFT) & 0xFF;
     float g = (color >> IM_COL32_G_SHIFT) & 0xFF;
     float b = (color >> IM_COL32_B_SHIFT) & 0xFF;
 
-    float gray = 0.299 * r + 0.587 * g + 0.114 * b;
+    const float gray = 0.299 * r + 0.587 * g + 0.114 * b;
     r = std::min(255.0f, gray + (r - gray) * saturationFactor);
     g = std::min(255.0f, gray + (g - gray) * saturationFactor);
     b = std::min(255.0f, gray + (b - gray) * saturationFactor);
@@ -24,7 +24,7 @@ ImU32 adjustSaturation(ImU32 color, float saturationFactor) {
     return IM_COL32((int)r, (int)g, (int)b, 255);
 }
 
-ImU32 adjustContrast(ImU32 color, float contrastFactor) {
+ImU32 AdjustContrast(ImU32 color, float contrastFactor) {
     float r = (color >> IM_COL32_R_SHIFT) & 0xFF;
     float g = (color >> IM_COL32_G_SHIFT) & 0xFF;
     float b = (color >> IM_COL32_B_SHIFT) & 0xFF;
@@ -213,30 +213,42 @@ void cGUI::Display()
             }
 
             if (ImGui::CollapsingHeader("Color Adjustments")) {
-                float saturationFactor = 1.0f; // Default to no change in saturation
-                float contrastFactor = 1.0f;   // Default to no change in contrast
+                static float saturationFactor = 1.0f; // Default to no change in saturation
+                static float contrastFactor = 1.0f;   // Default to no change in contrast
                 bool changed = false; // Track if any adjustments are made
 
-                // Saturation slider
-                if (ImGui::SliderFloat("Saturation", &saturationFactor, 0.0f, 2.0f, "Factor: %.2f")) {
-                    changed = true;
-                }
-
-                // Contrast slider
-                if (ImGui::SliderFloat("Contrast", &contrastFactor, 0.5f, 2.0f, "Factor: %.2f")) {
-                    changed = true;
-                }
-
-                if (changed && g_canvas.size() > 0) {
-                    // Apply the changes to the canvas
+                // Store the original colors if not already stored
+                static std::vector<ImU32> originalColors;
+                if (originalColors.empty() && g_canvas.size() > 0) {
+                    originalColors.resize(g_canvas[g_cidx].width * g_canvas[g_cidx].height);
                     for (uint64_t y = 0; y < g_canvas[g_cidx].height; y++) {
                         for (uint64_t x = 0; x < g_canvas[g_cidx].width; x++) {
                             uint64_t index = x + y * g_canvas[g_cidx].width;
-                            ImU32& currentColor = g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex][index];
+                            originalColors[index] = g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex][index];
+                        }
+                    }
+                }
+
+                // Saturation slider
+                if (ImGui::SliderFloat("Saturation", &saturationFactor, 0.0f, 2.0f, "Factor: %.2f"))
+                    changed = true;
+
+                // Contrast slider
+                if (ImGui::SliderFloat("Contrast", &contrastFactor, 0.0f, 2.0f, "Factor: %.2f"))
+                    changed = true;
+
+                if (changed && g_canvas.size() > 0) {
+                    // Apply the changes to the canvas based on the original colors
+                    for (uint64_t y = 0; y < g_canvas[g_cidx].height; y++) {
+                        for (uint64_t x = 0; x < g_canvas[g_cidx].width; x++) {
+                            const uint64_t index = x + y * g_canvas[g_cidx].width;
+                            ImU32 currentColor = originalColors[index];
 
                             // Adjust saturation and contrast
-                            currentColor = adjustSaturation(currentColor, saturationFactor);
-                            currentColor = adjustContrast(currentColor, contrastFactor);
+                            currentColor = AdjustSaturation(currentColor, saturationFactor);
+                            currentColor = AdjustContrast(currentColor, contrastFactor);
+
+                            g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex][index] = currentColor;
                         }
                     }
                 }
