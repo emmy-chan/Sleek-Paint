@@ -477,13 +477,25 @@ void cGUI::Display()
     }
 
     ImGui::Spacing(); ImGui::Separator();
-    ImGui::Text("Brush Size:");
-    const std::string string = "##Brush Size";
-    int temp_brush_size = static_cast<int>(g_canvas[g_cidx].brush_size); // Create a temporary int variable
+    if (g_canvas[g_cidx].paintToolSelected == 0) {
+        ImGui::Text("Brush Size:");
+        const std::string string = "##Brush Size";
+        int temp_brush_size = static_cast<int>(g_canvas[g_cidx].brush_size); // Create a temporary int variable
 
-    // Use the temporary int variable with ImGui::SliderInt
-    if (ImGui::SliderInt(string.c_str(), &temp_brush_size, 1, 10)) {
-        g_canvas[g_cidx].brush_size = static_cast<uint8_t>(temp_brush_size); // Assign the value back to your uint8_t variable
+        // Use the temporary int variable with ImGui::SliderInt
+        if (ImGui::SliderInt(string.c_str(), &temp_brush_size, 1, 10)) {
+            g_canvas[g_cidx].brush_size = static_cast<uint8_t>(temp_brush_size); // Assign the value back to your uint8_t variable
+        }
+    }
+    else if (g_canvas[g_cidx].paintToolSelected == 5) {
+        ImGui::Text("Wand Threshold:");
+        const std::string string = "##Wand Threshold";
+        int temp = static_cast<int>(g_canvas[g_cidx].magic_wand_threshold); // Create a temporary int variable
+
+        // Use the temporary int variable with ImGui::SliderInt
+        if (ImGui::SliderInt(string.c_str(), &temp, 1, 100)) {
+            g_canvas[g_cidx].magic_wand_threshold = static_cast<uint8_t>(temp); // Assign the value back to your uint8_t variable
+        }
     }
 
     ImGui::End();

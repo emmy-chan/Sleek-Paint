@@ -20,8 +20,7 @@ std::unordered_set<uint16_t> selectedIndexes;
 std::unordered_map<uint16_t, ImU32> copiedTiles; // Store copied tiles and their colors
 
 // Flood fill function
-void floodFill(int x, int y, bool paint)
-{
+void floodFill(int x, int y, bool paint) {
     if (x < 0 || x >= g_canvas[g_cidx].width || y < 0 || y >= g_canvas[g_cidx].height) {
         printf("FloodFill: Out of bounds initial position\n");
         return;
@@ -29,20 +28,22 @@ void floodFill(int x, int y, bool paint)
 
     const ImU32 curCol = g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex][x + y * g_canvas[g_cidx].width];
     const ImU32 fillCol = paint ? g_canvas[g_cidx].myCols[g_canvas[g_cidx].selColIndex] : curCol;
+    const int threshold = static_cast<int>(g_canvas[g_cidx].magic_wand_threshold);
 
-    if (curCol == fillCol && paint) {
-        printf("FloodFill: Current color is the same as fill color\n");
+    printf("FloodFill: Starting flood fill with threshold %d\n", threshold);
+    printf("FloodFill: Current color %u, Fill color %u\n", curCol, fillCol);
+
+    if (g_util.ColorDifference(curCol, fillCol) < threshold && paint) {
+        printf("FloodFill: Current color is within threshold of fill color\n");
         return;
     }
 
     std::stack<std::pair<int, int>> stack;
     stack.push({ x, y });
 
-    if (!paint)
-        selectedIndexes.clear();
+    if (!paint) selectedIndexes.clear();
 
-    while (!stack.empty())
-    {
+    while (!stack.empty()) {
         std::pair<int, int> p = stack.top();
         stack.pop();
         const int curX = p.first;
@@ -52,18 +53,18 @@ void floodFill(int x, int y, bool paint)
             continue;
 
         const uint16_t currentIndex = curX + curY * g_canvas[g_cidx].width;
+        const ImU32 currentCol = g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex][currentIndex];
+
+        printf("FloodFill: At position (%d, %d), color %u\n", curX, curY, currentCol);
 
         if (paint) {
             if (!selectedIndexes.empty() && selectedIndexes.find(currentIndex) == selectedIndexes.end())
                 continue;
 
-            if (g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex][currentIndex] != curCol)
-                continue;
-
             g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex][currentIndex] = fillCol;
         }
         else {
-            if (g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex][currentIndex] != curCol || selectedIndexes.find(currentIndex) != selectedIndexes.end())
+            if (g_util.ColorDifference(currentCol, curCol) >= threshold || selectedIndexes.find(currentIndex) != selectedIndexes.end())
                 continue;
 
             selectedIndexes.insert(currentIndex);

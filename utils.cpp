@@ -77,7 +77,7 @@ glm::u32vec2 cUtils::MapCoordsToRect(glm::u32vec2 coord, const int& w, const int
 }
 
 // Function to calculate the squared distance between two colors to avoid taking the square root unnecessarily
-int cUtils::ColorDistanceSquared(const ImU32 col1, const ImU32 col2) {
+int cUtils::ColorDistanceSquared(const ImU32& col1, const ImU32& col2) {
     const int r1 = (col1 >> IM_COL32_R_SHIFT) & 0xFF;
     const int g1 = (col1 >> IM_COL32_G_SHIFT) & 0xFF;
     const int b1 = (col1 >> IM_COL32_B_SHIFT) & 0xFF;
@@ -85,4 +85,15 @@ int cUtils::ColorDistanceSquared(const ImU32 col1, const ImU32 col2) {
     const int g2 = (col2 >> IM_COL32_G_SHIFT) & 0xFF;
     const int b2 = (col2 >> IM_COL32_B_SHIFT) & 0xFF;
     return (r2 - r1) * (r2 - r1) + (g2 - g1) * (g2 - g1) + (b2 - b1) * (b2 - b1);
+}
+
+int cUtils::ColorDifference(const ImU32& col1, const ImU32& col2) {
+    const int r1 = (col1 >> IM_COL32_R_SHIFT) & 0xFF;
+    const int g1 = (col1 >> IM_COL32_G_SHIFT) & 0xFF;
+    const int b1 = (col1 >> IM_COL32_B_SHIFT) & 0xFF;
+    const int r2 = (col2 >> IM_COL32_R_SHIFT) & 0xFF;
+    const int g2 = (col2 >> IM_COL32_G_SHIFT) & 0xFF;
+    const int b2 = (col2 >> IM_COL32_B_SHIFT) & 0xFF;
+    const int diff = std::sqrt((r1 - r2) * (r1 - r2) + (g1 - g2) * (g1 - g2) + (b1 - b2) * (b1 - b2));
+    return diff;
 }

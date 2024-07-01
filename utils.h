@@ -12,7 +12,8 @@ public:
 	bool MousePressed(const uint8_t& btn);
 	bool MouseReleased(const uint8_t& btn);
 	glm::u32vec2 MapCoordsToRect(glm::u32vec2 coord, const int& w, const int& h);
-	int ColorDistanceSquared(const ImU32 col1, const ImU32 col2);
+	int ColorDistanceSquared(const ImU32& col1, const ImU32& col2);
+	int ColorDifference(const ImU32& col1, const ImU32& col2);
 	//bool InitializeInputState(void);
 	//void UpdateInputState();
 	//int m_mouse_x;
