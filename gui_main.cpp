@@ -413,46 +413,56 @@ void cGUI::Display()
     ImGui::PopStyleVar(); ImGui::Spacing(); ImGui::Separator();
 
     for (size_t i = 0; i < g_canvas[g_cidx].tiles.size(); i++) {
-        const std::string name = "Layer " + std::to_string(i + 1);
+        std::string name = "Layer " + std::to_string(i + 1);
         const bool isSelected = (g_canvas[g_cidx].selLayerIndex == i);
 
         // Start drag and drop source
-        if (ImGui::Selectable(name.c_str(), isSelected, 0, ImVec2(150, 0))) {
+        if (ImGui::Selectable(name.c_str(), isSelected, 0, ImVec2(98, 0))) {
             g_canvas[g_cidx].selLayerIndex = i;
         }
 
         // Add the eye button to toggle visibility, moving it to the right
-        ImGui::SameLine(ImGui::GetContentRegionMax().x - 24);
+        ImGui::SameLine(ImGui::GetContentRegionMax().x - 76);
         ImGui::SetCursorPosY(ImGui::GetCursorPosY() - 2);
-        const char* eyeIcon = g_canvas[g_cidx].layerVisibility[i] ? ICON_FA_EYE : ICON_FA_EYE_SLASH;
-        const std::string label = std::string(eyeIcon) + "##" + std::to_string(i); // Append unique identifier
-        if (ImGui::Button(label.c_str())) {
-            g_canvas[g_cidx].layerVisibility[i] = !g_canvas[g_cidx].layerVisibility[i];
-        }
 
-        if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_SourceAllowNullID)) {
-            ImGui::SetDragDropPayload("DND_LAYER", &i, sizeof(size_t));
-            ImGui::Text("Dragging %s", name.c_str());
-            ImGui::EndDragDropSource();
-        }
+        name = std::string(ICON_FA_ARROW_UP) + "##" + std::to_string(i);
 
-        if (ImGui::BeginDragDropTarget()) {
-            if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("DND_LAYER")) {
-                size_t payloadIndex = *(const size_t*)payload->Data;
-                if (payloadIndex != i) {
-                    // Swap layers
-                    std::swap(g_canvas[g_cidx].tiles[i], g_canvas[g_cidx].tiles[payloadIndex]);
-                    std::swap(g_canvas[g_cidx].layerVisibility[i], g_canvas[g_cidx].layerVisibility[payloadIndex]);
-                    // Adjust selected layer index if necessary
-                    if (g_canvas[g_cidx].selLayerIndex == payloadIndex) {
-                        g_canvas[g_cidx].selLayerIndex = i;
-                    }
-                    else if (g_canvas[g_cidx].selLayerIndex == i) {
-                        g_canvas[g_cidx].selLayerIndex = payloadIndex;
-                    }
+        if (ImGui::Button(name.c_str(), ImVec2(22, 22))) {
+            if (i > 0) {
+                std::swap(g_canvas[g_cidx].tiles[i], g_canvas[g_cidx].tiles[i - 1]);
+                std::swap(g_canvas[g_cidx].layerVisibility[i], g_canvas[g_cidx].layerVisibility[i - 1]);
+                if (g_canvas[g_cidx].selLayerIndex == i) {
+                    g_canvas[g_cidx].selLayerIndex = i - 1;
+                }
+                else if (g_canvas[g_cidx].selLayerIndex == i - 1) {
+                    g_canvas[g_cidx].selLayerIndex = i;
                 }
             }
-            ImGui::EndDragDropTarget();
+        }
+
+        // Arrow down button to move layer down
+        ImGui::SameLine(ImGui::GetContentRegionMax().x - 50);
+        name = std::string(ICON_FA_ARROW_DOWN) + "##" + std::to_string(i);
+
+        if (ImGui::Button(name.c_str(), ImVec2(22, 22))) {
+            if (i < g_canvas[g_cidx].tiles.size() - 1) {
+                std::swap(g_canvas[g_cidx].tiles[i], g_canvas[g_cidx].tiles[i + 1]);
+                std::swap(g_canvas[g_cidx].layerVisibility[i], g_canvas[g_cidx].layerVisibility[i + 1]);
+                if (g_canvas[g_cidx].selLayerIndex == i) {
+                    g_canvas[g_cidx].selLayerIndex = i + 1;
+                }
+                else if (g_canvas[g_cidx].selLayerIndex == i + 1) {
+                    g_canvas[g_cidx].selLayerIndex = i;
+                }
+            }
+        }
+
+        // Add the eye button to toggle visibility, moving it to the right
+        ImGui::SameLine(ImGui::GetContentRegionMax().x - 24);
+        const char* eyeIcon = g_canvas[g_cidx].layerVisibility[i] ? ICON_FA_EYE : ICON_FA_EYE_SLASH;
+        const std::string label = std::string(eyeIcon) + "##" + std::to_string(i); // Append unique identifier
+        if (ImGui::Button(label.c_str(), { 0, 22 })) {
+            g_canvas[g_cidx].layerVisibility[i] = !g_canvas[g_cidx].layerVisibility[i];
         }
     }
 
