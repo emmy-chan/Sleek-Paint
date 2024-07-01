@@ -95,9 +95,6 @@ void cCanvas::NewLayer() {
 
     tiles.push_back(layer0);
     layerVisibility.push_back(true);
-
-    //Create state for (undo) previous canvas of blank canvas
-    UpdateCanvasHistory();
 }
 
 void cCanvas::Clear() {

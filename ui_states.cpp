@@ -250,15 +250,18 @@ void cUIStateNewProject::Update()
                 scene_idx++;
             }
             
-            //Add our new canvas to our canvases and set our idx
-            //To the newly created canvas!
+            // Add our new canvas to our canvases and set our idx
+            // To the newly created canvas!
             cCanvas canvas = cCanvas(scene_name);
             canvas.width = (int)wInput;
             canvas.height = (int)hInput;
             g_canvas.push_back(canvas);
             g_cidx = (uint16_t)g_canvas.size() - 1;
 
-            //Reset our UI State
+            // Create state for (undo) previous canvas of blank canvas
+            g_canvas[g_cidx].UpdateCanvasHistory();
+
+            // Reset our UI State
             g_app.ui_state.reset();
         }
 
