@@ -254,7 +254,8 @@ void DrawSelectionRectangle(ImDrawList* drawList, const std::unordered_set<uint1
         maxY = std::max(maxY, pos.y + tileSize);
     }
 
-    drawList->AddRect(ImVec2(minX, minY), ImVec2(maxX, maxY), col, 0.0f, 0, 1.0f); // Yellow rectangle
+    drawList->AddRect(ImVec2(minX, minY), ImVec2(maxX, maxY), IM_COL32_BLACK, 0.0f, 0, 4);
+    drawList->AddRect(ImVec2(minX, minY), ImVec2(maxX, maxY), col, 0.0f, 0, 2);
 }
 
 std::unordered_set<uint16_t> initialSelectedIndexes;
@@ -350,13 +351,19 @@ void cCanvas::Editor() {
 
     if (!g_app.ui_state) {
         if (GetAsyncKeyState('B'))
-            paintToolSelected = 0;
+            paintToolSelected = TOOL_BRUSH;
         else if (GetAsyncKeyState('G'))
-            paintToolSelected = 1;
+            paintToolSelected = TOOL_BUCKET;
         else if (GetAsyncKeyState('E'))
-            paintToolSelected = 2;
+            paintToolSelected = TOOL_ERASER;
         else if (GetAsyncKeyState('X'))
-            paintToolSelected = 3;
+            paintToolSelected = TOOL_DROPPER;
+        else if (GetAsyncKeyState('M'))
+            paintToolSelected = TOOL_MOVE;
+        else if (GetAsyncKeyState('W'))
+            paintToolSelected = TOOL_WAND;
+        else if (GetAsyncKeyState('S'))
+            paintToolSelected = TOOL_SELECT;
         else if (GetAsyncKeyState(VK_CONTROL) && GetAsyncKeyState('Z') & 1) {
             if (g_canvas[g_cidx].canvas_idx > 0) {
                 g_canvas[g_cidx].canvas_idx--;
@@ -465,7 +472,7 @@ void cCanvas::Editor() {
 
     if (bCanDraw && g_util.Hovering(g_cam.x + x * TILE_SIZE, g_cam.y + y * TILE_SIZE, g_cam.x + x * TILE_SIZE + TILE_SIZE, g_cam.y + y * TILE_SIZE + TILE_SIZE)) {
         switch (paintToolSelected) {
-        case 0:
+        case TOOL_BRUSH:
             //brush
             if (selectedIndexes.empty() || selectedIndexes.find((uint64_t)x + (uint64_t)y * width) != selectedIndexes.end()) {
                 if (io.MouseDown[0] || io.MouseDown[1]) {
@@ -509,7 +516,7 @@ void cCanvas::Editor() {
             }
 
             break;
-        case 1:
+        case TOOL_BUCKET:
             //paint bucket
             if (g_util.MousePressed(0))
                 if (selectedIndexes.empty() || selectedIndexes.find((uint64_t)x + (uint64_t)y * width) != selectedIndexes.end())
@@ -517,8 +524,7 @@ void cCanvas::Editor() {
 
             d.AddRectFilled({ g_cam.x + x * TILE_SIZE, g_cam.y + y * TILE_SIZE }, { g_cam.x + x * TILE_SIZE + TILE_SIZE, g_cam.y + y * TILE_SIZE + TILE_SIZE }, myCols[selColIndex]);
             break;
-        case 2:
-            //eraser
+        case TOOL_ERASER:
             if (io.MouseDown[0])
                 if (selectedIndexes.empty() || selectedIndexes.find((uint64_t)x + (uint64_t)y * width) != selectedIndexes.end())
                     if (ImGui::GetMousePos().y > 0 && ImGui::GetMousePos().x < io.DisplaySize.x - 1 && ImGui::GetMousePos().y > 0 && ImGui::GetMousePos().y < io.DisplaySize.y - 1)
@@ -527,20 +533,21 @@ void cCanvas::Editor() {
             d.AddRect({ g_cam.x + x * TILE_SIZE, g_cam.y + y * TILE_SIZE }, { g_cam.x + x * TILE_SIZE + TILE_SIZE - 1, g_cam.y + y * TILE_SIZE + TILE_SIZE - 1 }, IM_COL32(0, 0, 0, 255));
             d.AddRectFilled({ g_cam.x + x * TILE_SIZE + 1, g_cam.y + y * TILE_SIZE + 1 }, { g_cam.x + x * TILE_SIZE + TILE_SIZE - 2, g_cam.y + y * TILE_SIZE + TILE_SIZE - 2 }, IM_COL32(255, 255, 255, 255));
             break;
-        case 3:
-            //dropper
+        case TOOL_DROPPER:
             if (io.MouseDown[0])
                 myCols[selColIndex] = tiles[g_canvas[g_cidx].selLayerIndex][(uint64_t)x + (uint64_t)y * width];
 
             d.AddRect({ g_cam.x + x * TILE_SIZE, g_cam.y + y * TILE_SIZE }, { g_cam.x + x * TILE_SIZE + TILE_SIZE - 1, g_cam.y + y * TILE_SIZE + TILE_SIZE - 1 }, IM_COL32(0, 0, 0, 255));
             d.AddRectFilled({ g_cam.x + x * TILE_SIZE + 1, g_cam.y + y * TILE_SIZE + 1 }, { g_cam.x + x * TILE_SIZE + TILE_SIZE - 2, g_cam.y + y * TILE_SIZE + TILE_SIZE - 2 }, IM_COL32(255, 255, 255, 255));
             break;
-        case 4:
+        case TOOL_SELECT:
             if (g_util.MousePressed(0))
                 selectedIndexes.clear();
 
-            if (ImGui::IsMouseDown(0))
-                d.AddRect(mouseStart, ImGui::GetMousePos(), IM_COL32_WHITE, 0, NULL, 4);
+            if (ImGui::IsMouseDown(0)) {
+                d.AddRect(mouseStart, ImGui::GetMousePos(), IM_COL32_BLACK, 0, NULL, 4);
+                d.AddRect(mouseStart, ImGui::GetMousePos(), IM_COL32_WHITE, 0, NULL, 2);
+            }
 
             if (g_util.MouseReleased(0)) {
                 const ImVec2 end = ImGui::GetMousePos();
@@ -563,23 +570,20 @@ void cCanvas::Editor() {
 
             break;
 
-        case 5:
-            //magic wand
+        case TOOL_WAND:
             if (g_util.MousePressed(0)) {
                 const ImVec2 mousePos = ImGui::GetMousePos();
                 const int tileX = static_cast<int>((mousePos.x - g_cam.x) / TILE_SIZE);
                 const int tileY = static_cast<int>((mousePos.y - g_cam.y) / TILE_SIZE);
 
-                if (tileX >= 0 && tileX < width && tileY >= 0 && tileY < height) {
+                if (tileX >= 0 && tileX < width && tileY >= 0 && tileY < height)
                     floodFill(tileX, tileY, false);
-                }
             }
 
             d.AddRectFilled({ g_cam.x + x * TILE_SIZE, g_cam.y + y * TILE_SIZE }, { g_cam.x + x * TILE_SIZE + TILE_SIZE, g_cam.y + y * TILE_SIZE + TILE_SIZE }, myCols[selColIndex]);
             break;
 
-        case 6:
-            // move tool
+        case TOOL_MOVE:
             if (g_util.MousePressed(0)) {
                 initialSelectedIndexes = selectedIndexes;
 
@@ -660,8 +664,7 @@ void cCanvas::Editor() {
         DrawSelectionRectangle(&d, nonSelectedIndexes, TILE_SIZE, g_cam.x, g_cam.y, width, IM_COL32(175, 175, 175, 255));
     }
 
-    // Line tool
-    if (paintToolSelected == 7 && bCanDraw) {
+    if (paintToolSelected == TOOL_LINE && bCanDraw) {
         if (ImGui::IsMouseDown(0)) {
             // Draw the preview line
             const ImVec2 mousePos = ImGui::GetMousePos();

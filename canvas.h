@@ -7,6 +7,17 @@
 //The id of our current selected canvas project!
 extern uint16_t g_cidx;
 
+enum eTools {
+	TOOL_BRUSH,
+	TOOL_BUCKET,
+	TOOL_ERASER,
+	TOOL_DROPPER,
+	TOOL_SELECT,
+	TOOL_WAND,
+	TOOL_MOVE,
+	TOOL_LINE
+};
+
 class cCanvas
 {
 public:
