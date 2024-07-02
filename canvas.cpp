@@ -343,6 +343,101 @@ void DrawLineOnCanvas(int x0, int y0, int x1, int y1, ImU32 color, bool preview 
     }
 }
 
+void DrawCircleOnCanvas(int startX, int startY, int endX, int endY, ImU32 color, bool preview = false) {
+    int radius = static_cast<int>(sqrt(pow(endX - startX, 2) + pow(endY - startY, 2)));
+
+    int x = radius;
+    int y = 0;
+    int radiusError = 1 - x;
+
+    while (x >= y) {
+        auto plot8points = [&](int x, int y) {
+            int points[8][2] = {
+                {startX + x, startY + y},
+                {startX - x, startY + y},
+                {startX + x, startY - y},
+                {startX - x, startY - y},
+                {startX + y, startY + x},
+                {startX - y, startY + x},
+                {startX + y, startY - x},
+                {startX - y, startY - x},
+            };
+
+            for (auto& point : points) {
+                int px = point[0];
+                int py = point[1];
+                if (px >= 0 && px < g_canvas[g_cidx].width && py >= 0 && py < g_canvas[g_cidx].height) {
+                    if (preview) {
+                        ImVec2 topLeft = { g_cam.x + px * g_canvas[g_cidx].TILE_SIZE, g_cam.y + py * g_canvas[g_cidx].TILE_SIZE };
+                        ImVec2 bottomRight = { topLeft.x + g_canvas[g_cidx].TILE_SIZE, topLeft.y + g_canvas[g_cidx].TILE_SIZE };
+                        ImGui::GetBackgroundDrawList()->AddRectFilled(topLeft, bottomRight, color);
+                    }
+                    else {
+                        g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex][py * g_canvas[g_cidx].width + px] = color;
+                    }
+                }
+            }
+            };
+
+        plot8points(x, y);
+
+        y++;
+        if (radiusError < 0) {
+            radiusError += 2 * y + 1;
+        }
+        else {
+            x--;
+            radiusError += 2 * (y - x + 1);
+        }
+    }
+}
+
+void DrawRectangleOnCanvas(int x0, int y0, int x1, int y1, ImU32 color, bool preview = false) {
+    const int startX = std::min(x0, x1);
+    const int endX = std::max(x0, x1);
+    const int startY = std::min(y0, y1);
+    const int endY = std::max(y0, y1);
+
+    for (int x = startX; x <= endX; ++x) {
+        for (int y = startY; y <= endY; ++y) {
+            // Check if the current pixel is on the boundary
+            if (x == startX || x == endX || y == startY || y == endY) {
+                if (x >= 0 && x < g_canvas[g_cidx].width && y >= 0 && y < g_canvas[g_cidx].height) {
+                    if (preview) {
+                        ImVec2 topLeft = { g_cam.x + x * g_canvas[g_cidx].TILE_SIZE, g_cam.y + y * g_canvas[g_cidx].TILE_SIZE };
+                        ImVec2 bottomRight = { topLeft.x + g_canvas[g_cidx].TILE_SIZE, topLeft.y + g_canvas[g_cidx].TILE_SIZE };
+                        ImGui::GetBackgroundDrawList()->AddRectFilled(topLeft, bottomRight, color);
+                    }
+                    else {
+                        g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex][y * g_canvas[g_cidx].width + x] = color;
+                    }
+                }
+            }
+        }
+    }
+    
+    //FILLED RECT
+    /*const int startX = std::min(x0, x1);
+    const int endX = std::max(x0, x1);
+    const int startY = std::min(y0, y1);
+    const int endY = std::max(y0, y1);
+
+    for (int x = startX; x <= endX; ++x) {
+        for (int y = startY; y <= endY; ++y) {
+            if (x >= 0 && x < g_canvas[g_cidx].width && y >= 0 && y < g_canvas[g_cidx].height) {
+                if (preview) {
+                    ImVec2 topLeft = { g_cam.x + x * g_canvas[g_cidx].TILE_SIZE, g_cam.y + y * g_canvas[g_cidx].TILE_SIZE };
+                    ImVec2 bottomRight = { topLeft.x + g_canvas[g_cidx].TILE_SIZE, topLeft.y + g_canvas[g_cidx].TILE_SIZE };
+                    ImGui::GetBackgroundDrawList()->AddRectFilled(topLeft, bottomRight, color);
+                }
+                else {
+                    g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex][y * g_canvas[g_cidx].width + x] = color;
+                }
+            }
+        }
+    }*/
+}
+
 void cCanvas::Editor() {
     auto& d = *ImGui::GetBackgroundDrawList();
     auto& io = ImGui::GetIO();
@@ -459,10 +554,6 @@ void cCanvas::Editor() {
     // Convert the screen coordinates to tile coordinates
     uint16_t x = static_cast<int>((ImGui::GetMousePos().x - g_cam.x) / TILE_SIZE);
     uint16_t y = static_cast<int>((ImGui::GetMousePos().y - g_cam.y) / TILE_SIZE);
-
-    // Clamp the coordinates to ensure they are within the canvas dimensions
-    //x = glm::clamp<uint16_t>(x, (uint16_t)0, g_canvas[g_cidx].width - (uint16_t)1);
-    //y = glm::clamp<uint16_t>(y, (uint16_t)0, g_canvas[g_cidx].height - (uint16_t)1);
 
     const bool bCanDraw = IsClickingOutsideCanvas() && x >= 0 && x < g_canvas[g_cidx].width && y >= 0 && y < g_canvas[g_cidx].height;
     static ImVec2 mouseStart;
@@ -664,25 +755,69 @@ void cCanvas::Editor() {
         DrawSelectionRectangle(&d, nonSelectedIndexes, TILE_SIZE, g_cam.x, g_cam.y, width, IM_COL32(175, 175, 175, 255));
     }
 
-    if (paintToolSelected == TOOL_LINE && bCanDraw) {
-        if (ImGui::IsMouseDown(0)) {
-            // Draw the preview line
-            const ImVec2 mousePos = ImGui::GetMousePos();
-            const uint16_t endX = static_cast<int>((mousePos.x - g_cam.x) / TILE_SIZE);
-            const uint16_t endY = static_cast<int>((mousePos.y - g_cam.y) / TILE_SIZE);
+    if (bCanDraw) {
+        if (paintToolSelected == TOOL_LINE) {
+            if (ImGui::IsMouseDown(0)) {
+                // Draw the preview line
+                const ImVec2 mousePos = ImGui::GetMousePos();
+                const uint16_t endX = static_cast<int>((mousePos.x - g_cam.x) / TILE_SIZE);
+                const uint16_t endY = static_cast<int>((mousePos.y - g_cam.y) / TILE_SIZE);
 
-            DrawLineOnCanvas(static_cast<int>((mouseStart.x - g_cam.x) / TILE_SIZE), static_cast<int>((mouseStart.y - g_cam.y) / TILE_SIZE), endX, endY, myCols[selColIndex], true);
+                DrawLineOnCanvas(static_cast<int>((mouseStart.x - g_cam.x) / TILE_SIZE), static_cast<int>((mouseStart.y - g_cam.y) / TILE_SIZE), endX, endY, myCols[selColIndex], true);
+            }
+            else
+                d.AddRectFilled({ g_cam.x + x * TILE_SIZE, g_cam.y + y * TILE_SIZE }, { g_cam.x + x * TILE_SIZE + TILE_SIZE, g_cam.y + y * TILE_SIZE + TILE_SIZE }, myCols[selColIndex]);
+
+            if (g_util.MouseReleased(0)) {
+                // Convert the screen coordinates to tile coordinates
+                const uint16_t startX = static_cast<int>((mouseStart.x - g_cam.x) / TILE_SIZE);
+                const uint16_t startY = static_cast<int>((mouseStart.y - g_cam.y) / TILE_SIZE);
+
+                // Draw the line on the canvas
+                DrawLineOnCanvas(startX, startY, x, y, myCols[selColIndex]);
+            }
         }
-        else
-            d.AddRectFilled({ g_cam.x + x * TILE_SIZE, g_cam.y + y * TILE_SIZE }, { g_cam.x + x * TILE_SIZE + TILE_SIZE, g_cam.y + y * TILE_SIZE + TILE_SIZE }, myCols[selColIndex]);
+        else if (paintToolSelected == TOOL_SQUARE) {
+            if (ImGui::IsMouseDown(0)) {
+                // Draw the preview rectangle
+                const ImVec2 mousePos = ImGui::GetMousePos();
+                const uint16_t endX = static_cast<int>((mousePos.x - g_cam.x) / TILE_SIZE);
+                const uint16_t endY = static_cast<int>((mousePos.y - g_cam.y) / TILE_SIZE);
 
-        if (g_util.MouseReleased(0)) {
-            // Convert the screen coordinates to tile coordinates
-            const uint16_t startX = static_cast<int>((mouseStart.x - g_cam.x) / TILE_SIZE);
-            const uint16_t startY = static_cast<int>((mouseStart.y - g_cam.y) / TILE_SIZE);
+                DrawRectangleOnCanvas(static_cast<int>((mouseStart.x - g_cam.x) / TILE_SIZE), static_cast<int>((mouseStart.y - g_cam.y) / TILE_SIZE), endX, endY, myCols[selColIndex], true);
+            }
+            else
+                d.AddRectFilled({ g_cam.x + x * TILE_SIZE, g_cam.y + y * TILE_SIZE }, { g_cam.x + x * TILE_SIZE + TILE_SIZE, g_cam.y + y * TILE_SIZE + TILE_SIZE }, myCols[selColIndex]);
 
-            // Draw the line on the canvas
-            DrawLineOnCanvas(startX, startY, x, y, myCols[selColIndex]);
+            if (g_util.MouseReleased(0)) {
+                // Convert the screen coordinates to tile coordinates
+                const uint16_t startX = static_cast<int>((mouseStart.x - g_cam.x) / TILE_SIZE);
+                const uint16_t startY = static_cast<int>((mouseStart.y - g_cam.y) / TILE_SIZE);
+
+                // Draw the rectangle on the canvas
+                DrawRectangleOnCanvas(startX, startY, x, y, myCols[selColIndex]);
+            }
+        }
+        else if (paintToolSelected == TOOL_ELIPSE) {
+            if (ImGui::IsMouseDown(0)) {
+                // Draw the preview ellipse
+                const ImVec2 mousePos = ImGui::GetMousePos();
+                const uint16_t endX = static_cast<int>((mousePos.x - g_cam.x) / TILE_SIZE);
+                const uint16_t endY = static_cast<int>((mousePos.y - g_cam.y) / TILE_SIZE);
+
+                DrawCircleOnCanvas(static_cast<int>((mouseStart.x - g_cam.x) / TILE_SIZE), static_cast<int>((mouseStart.y - g_cam.y) / TILE_SIZE), endX, endY, myCols[selColIndex], true);
+            }
+            else
+                d.AddRectFilled({ g_cam.x + x * TILE_SIZE, g_cam.y + y * TILE_SIZE }, { g_cam.x + x * TILE_SIZE + TILE_SIZE, g_cam.y + y * TILE_SIZE + TILE_SIZE }, myCols[selColIndex]);
+
+            if (g_util.MouseReleased(0)) {
+                // Convert the screen coordinates to tile coordinates
+                const uint16_t startX = static_cast<int>((mouseStart.x - g_cam.x) / TILE_SIZE);
+                const uint16_t startY = static_cast<int>((mouseStart.y - g_cam.y) / TILE_SIZE);
+
+                // Draw the ellipse on the canvas
+                DrawCircleOnCanvas(startX, startY, x, y, myCols[selColIndex]);
+            }
         }
     }
 

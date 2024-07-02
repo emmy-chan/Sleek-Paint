@@ -385,13 +385,17 @@ void cGUI::Display()
         if (ImGui::ImageButton((void*)g_assets.bucket_texture, ImVec2(16, 16))) g_canvas[g_cidx].paintToolSelected = 1; //u8"\uf573"
         ImGui::PushStyleColor(ImGuiCol_Button, g_canvas[g_cidx].paintToolSelected == 7 ? panelActiveColor : panelColor);
         if (ImGui::Button("/", ImVec2(25, 25))) g_canvas[g_cidx].paintToolSelected = 7;
+        ImGui::PushStyleColor(ImGuiCol_Button, g_canvas[g_cidx].paintToolSelected == TOOL_SQUARE ? panelActiveColor : panelColor);
+        if (ImGui::Button(ICON_FA_SQUARE, ImVec2(25, 25))) g_canvas[g_cidx].paintToolSelected = TOOL_SQUARE;
+        ImGui::PushStyleColor(ImGuiCol_Button, g_canvas[g_cidx].paintToolSelected == TOOL_ELIPSE ? panelActiveColor : panelColor);
+        if (ImGui::Button(ICON_FA_CIRCLE, ImVec2(25, 25))) g_canvas[g_cidx].paintToolSelected = TOOL_ELIPSE;
         ImGui::PushStyleColor(ImGuiCol_Button, g_canvas[g_cidx].paintToolSelected == 2 ? panelActiveColor : panelColor);
         if (ImGui::Button(ICON_FA_ERASER, ImVec2(25, 25))) g_canvas[g_cidx].paintToolSelected = 2;
         ImGui::PushStyleColor(ImGuiCol_Button, g_canvas[g_cidx].paintToolSelected == 3 ? panelActiveColor : panelColor);
         if (ImGui::Button(ICON_FA_EYE_DROPPER, ImVec2(25, 25))) g_canvas[g_cidx].paintToolSelected = 3;
         
         ImGui::PopStyleVar();
-        ImGui::PopStyleColor(6);
+        ImGui::PopStyleColor(8);
         ImGui::End();
     }
 

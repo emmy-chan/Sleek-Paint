@@ -15,7 +15,9 @@ enum eTools {
 	TOOL_SELECT,
 	TOOL_WAND,
 	TOOL_MOVE,
-	TOOL_LINE
+	TOOL_LINE,
+	TOOL_SQUARE,
+	TOOL_ELIPSE
 };
 
 class cCanvas
