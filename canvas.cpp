@@ -28,8 +28,8 @@ void floodFill(int x, int y, bool paint) {
     const ImU32 initialCol = g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex][x + y * g_canvas[g_cidx].width];
     const ImU32 fillCol = paint ? g_canvas[g_cidx].myCols[g_canvas[g_cidx].selColIndex] : initialCol;
 
-    // Scale the threshold from 0-100 to 0-255
-    const uint8_t threshold = static_cast<uint8_t>((paint ? g_canvas[g_cidx].bucket_fill_threshold : g_canvas[g_cidx].magic_wand_threshold) * 255 / 100);
+    // Scale the threshold from 0-100 to 0-765
+    const int threshold = (paint ? g_canvas[g_cidx].bucket_fill_threshold : g_canvas[g_cidx].magic_wand_threshold) * 765 / 100;
 
     std::stack<std::pair<int, int>> stack;
     stack.push({ x, y });
@@ -56,13 +56,13 @@ void floodFill(int x, int y, bool paint) {
         const ImU32 currentCol = g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex][currentIndex];
 
         if (paint) {
-            if (g_util.ColorDifference(currentCol, initialCol) >= threshold)
+            if (g_util.ColorDifference(currentCol, initialCol) > threshold)
                 continue;
 
             g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex][currentIndex] = fillCol;
         }
         else {
-            if (g_util.ColorDifference(currentCol, initialCol) >= threshold || selectedIndexes.find(currentIndex) != selectedIndexes.end())
+            if (g_util.ColorDifference(currentCol, initialCol) > threshold || selectedIndexes.find(currentIndex) != selectedIndexes.end())
                 continue;
 
             selectedIndexes.insert(currentIndex);
@@ -76,8 +76,6 @@ void floodFill(int x, int y, bool paint) {
 
     printf("FloodFill: Completed successfully!\n");
 }
-
-
 
 //Todo: split this up for palette and initializing our canvas.
 //Also todo in future: maybe make this func take a new size argument ?
