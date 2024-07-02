@@ -28,7 +28,7 @@ public:
 	uint16_t height = 1000;
 	void Initialize();
 	void NewLayer();
-	void AdaptNewSize();
+	void AdaptNewSize(int width, int height);
 	void Clear();
 	void UpdateCanvasHistory();
 	void LoadColorPalette(std::string input);

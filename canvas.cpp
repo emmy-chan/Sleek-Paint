@@ -105,20 +105,39 @@ void cCanvas::Clear() {
         tile = IM_COL32(255, 255, 255, 0);
 }
 
-void cCanvas::AdaptNewSize() {
-    // Calculate the new size required
-    const int newSize = g_canvas[g_cidx].width * g_canvas[g_cidx].height;
+void cCanvas::AdaptNewSize(int width, int height) {
+    // Create a temporary container for the resized image
+    std::vector<std::vector<ImU32>> newLayers(g_canvas[g_cidx].tiles.size(), std::vector<ImU32>(width * height, IM_COL32(0, 0, 0, 0)));
 
-    // Iterate over all layers
-    for (auto& layer : g_canvas[g_cidx].tiles) {
-        // Resize the layer to the new size
-        if (layer.size() < newSize) {
-            while (layer.size() < newSize)
-                layer.push_back(IM_COL32(0, 0, 0, 0));
+    // Calculate scaling factors
+    const float scaleX = static_cast<float>(width) / g_canvas[g_cidx].width;
+    const float scaleY = static_cast<float>(height) / g_canvas[g_cidx].height;
+
+    // Iterate over all layers and adapt the content
+    for (size_t layerIndex = 0; layerIndex < g_canvas[g_cidx].tiles.size(); ++layerIndex) {
+        const auto& oldLayer = g_canvas[g_cidx].tiles[layerIndex];
+        auto& newLayer = newLayers[layerIndex];
+
+        // Map old pixels to new positions with scaling
+        for (int y = 0; y < height; ++y) {
+            for (int x = 0; x < width; ++x) {
+                const int oldX = static_cast<int>(x / scaleX);
+                const int oldY = static_cast<int>(y / scaleY);
+                if (oldX < g_canvas[g_cidx].width && oldY < g_canvas[g_cidx].height) {
+                    const int oldIndex = oldX + oldY * g_canvas[g_cidx].width;
+                    const int newIndex = x + y * width;
+                    if (oldIndex < oldLayer.size() && newIndex < newLayer.size()) {
+                        newLayer[newIndex] = oldLayer[oldIndex];
+                    }
+                }
+            }
         }
-        else if (layer.size() > newSize)
-            layer.resize(newSize);
     }
+
+    // Replace old layers with new layers
+    g_canvas[g_cidx].tiles = std::move(newLayers);
+    g_canvas[g_cidx].width = width;
+    g_canvas[g_cidx].height = height;
 }
 
 // Helper function to compare two 1D vectors

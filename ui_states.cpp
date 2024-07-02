@@ -295,12 +295,8 @@ void cUIStateCanvasSize::Update()
         //ImGui::SetCursorPosX(ImGui::GetWindowSize().x / 2 - 20);
 
         if (ImGui::Button("Ok")) {
-            // Update canvas width and height
-            g_canvas[g_cidx].width = (int)wInput;
-            g_canvas[g_cidx].height = (int)hInput;
-
             // Adapt canvas size
-            g_canvas[g_cidx].AdaptNewSize();
+            g_canvas[g_cidx].AdaptNewSize((int)wInput, (int)hInput);
 
             // Reset our UI State
             g_app.ui_state.reset();
