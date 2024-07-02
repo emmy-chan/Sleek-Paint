@@ -40,32 +40,56 @@ ImU32 AdjustContrast(ImU32 color, float contrastFactor) {
     return IM_COL32((int)r, (int)g, (int)b, 255);
 }
 
-// PS1-style dithering function
-ImU32 applyDithering(ImU32 color, uint64_t x, uint64_t y) {
+// Distribute error to neighboring pixels
+void distributeError(uint64_t x, uint64_t y, int errR, int errG, int errB, double factor) {
+    if (x < 0 || x >= g_canvas[g_cidx].width || y < 0 || y >= g_canvas[g_cidx].height)
+        return;
+
+    uint64_t index = x + y * g_canvas[g_cidx].width;
+    ImU32& neighborColor = g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex][index];
+
+    // Check if the alpha component is not zero
+    if (((neighborColor >> IM_COL32_A_SHIFT) & 0xFF) == 0)
+        return;
+
+    uint8_t nr = (neighborColor >> IM_COL32_R_SHIFT) & 0xFF;
+    uint8_t ng = (neighborColor >> IM_COL32_G_SHIFT) & 0xFF;
+    uint8_t nb = (neighborColor >> IM_COL32_B_SHIFT) & 0xFF;
+
+    nr = std::clamp<int>(nr + errR * factor, 0, 255);
+    ng = std::clamp<int>(ng + errG * factor, 0, 255);
+    nb = std::clamp<int>(nb + errB * factor, 0, 255);
+
+    neighborColor = IM_COL32(nr, ng, nb, 255);
+}
+
+// PS1-style Floyd-Steinberg dithering function
+ImU32 applyFloydSteinbergDithering(ImU32 color, uint64_t x, uint64_t y) {
     // Extract color components
     uint8_t r = (color >> IM_COL32_R_SHIFT) & 0xFF;
     uint8_t g = (color >> IM_COL32_G_SHIFT) & 0xFF;
     uint8_t b = (color >> IM_COL32_B_SHIFT) & 0xFF;
 
-    // Apply PS1-style dithering pattern
-    const uint8_t ditherMatrix[4][4] = {
-        {0, 8, 2, 10},
-        {12, 4, 14, 6},
-        {3, 11, 1, 9},
-        {15, 7, 13, 5}
-    };
-
-    uint8_t ditherThreshold = ditherMatrix[y % 4][x % 4];
+    // Save original color components
+    const uint8_t origR = r;
+    const uint8_t origG = g;
+    const uint8_t origB = b;
 
     // Reduce color depth to 5 bits per channel
     r = (r & 0xF8) | (r >> 5);
     g = (g & 0xF8) | (g >> 5);
     b = (b & 0xF8) | (b >> 5);
 
-    // Apply dithering based on the threshold
-    if ((r & 7) > ditherThreshold) r |= 0x08;
-    if ((g & 7) > ditherThreshold) g |= 0x08;
-    if ((b & 7) > ditherThreshold) b |= 0x08;
+    // Calculate error
+    const int errR = origR - r;
+    const int errG = origG - g;
+    const int errB = origB - b;
+
+    // Distribute the error to neighboring pixels
+    distributeError(x + 1, y, errR, errG, errB, 7.0 / 16.0);
+    distributeError(x - 1, y + 1, errR, errG, errB, 3.0 / 16.0);
+    distributeError(x, y + 1, errR, errG, errB, 5.0 / 16.0);
+    distributeError(x + 1, y + 1, errR, errG, errB, 1.0 / 16.0);
 
     return IM_COL32(r, g, b, 255);
 }
@@ -207,7 +231,9 @@ void cGUI::Display()
                     for (uint64_t x = 0; x < g_canvas[g_cidx].width; x++) {
                         uint64_t index = x + y * g_canvas[g_cidx].width;
                         ImU32& currentColor = g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex][index];
-                        currentColor = applyDithering(currentColor, x, y);
+                        
+                        if (((currentColor >> IM_COL32_A_SHIFT) & 0xFF) != 0)
+                            currentColor = applyFloydSteinbergDithering(currentColor, x, y);
                     }
                 }
             }
