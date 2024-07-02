@@ -218,10 +218,8 @@ void cGUI::Display()
                         }
                     }
 
-                    if (duplicateFound) {
+                    if (duplicateFound)
                         g_canvas[g_cidx].myCols.erase(g_canvas[g_cidx].myCols.begin() + duplicateIndex);
-                        //goto retry_draw;
-                    }
                 }
             }
 
