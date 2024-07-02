@@ -212,14 +212,6 @@ void cCanvas::LoadColorPalette(std::string input) {
     //Load color palette!
     DataManager data;
     data.LoadColorData(input, myCols);
-
-    //TWO MAIN COLORS
-    //Create our two main colors
-    //std::vector<ImU32> main_cols = { IM_COL32(0, 0, 0, 255), IM_COL32(255, 255, 255, 255) };
-
-    ////Push our two main colors to the array
-    //for (auto& c : main_cols)
-    //    myCols.push_back(c);
 }
 
 void cCanvas::DestroyCanvas() {

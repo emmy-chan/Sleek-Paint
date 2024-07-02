@@ -26,6 +26,13 @@ bool DataManager::LoadColorData(const std::string& filepath, std::vector<ImU32>&
     const int jump_val = expectAlpha ? 4 : 3;
     data.clear();
 
+    // Create our two main colors at bottom
+    std::vector<ImU32> main_cols = { IM_COL32(0, 0, 0, 255), IM_COL32(255, 255, 255, 255) };
+
+    //Push our two main colors to the array
+    for (auto& c : main_cols)
+        data.push_back(c);
+
     for (size_t i = 0; i + jump_val <= values.size(); i += jump_val) {
         try {
             const int r = std::stoi(values[i]);

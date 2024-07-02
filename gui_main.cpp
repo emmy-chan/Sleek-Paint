@@ -412,7 +412,7 @@ void cGUI::Display()
     const float scroll_end_y = window.Scroll.y + window.Size.y;
 
     // Main color buttons rendering loop
-    for (uint16_t i = 0; i < g_canvas[g_cidx].myCols.size(); i++) {
+    for (uint16_t i = 2; i < g_canvas[g_cidx].myCols.size(); i++) {
         const std::string id = "Color " + std::to_string(i + 1);
 
         // Calculate the position of the current color button
@@ -421,18 +421,21 @@ void cGUI::Display()
 
         // Check if the color button is within the visible scroll region
         if (color_pos_y >= scroll_start_y && color_pos_y <= scroll_end_y) {
-            if (i % 8 != 0) ImGui::SameLine();
+            if ((i - 2) % 9 != 0)
+                ImGui::SameLine();
 
             ImGui::PushStyleColor(ImGuiCol_FrameBg, g_canvas[g_cidx].selColIndex == i ? ImVec4(1.0f, 1.0f, 1.0f, 1.f) : ImVec4(0.05f, 0.05f, 0.05f, 1));
 
-            if (ImGui::ColorButton(id.c_str(), ImGui::ColorConvertU32ToFloat4(g_canvas[g_cidx].myCols[i]), NULL, { 21, 21 }))
+            if (ImGui::ColorButton(id.c_str(), ImGui::ColorConvertU32ToFloat4(g_canvas[g_cidx].myCols[i]), NULL, { 20, 20 }))
                 g_canvas[g_cidx].selColIndex = i;
 
             ImGui::PopStyleColor();
         }
         else {
             // If the color button is not in the visible region, advance the cursor
-            if (i % 8 != 0) ImGui::SameLine();
+            if ((i - 2) % 9 != 0)
+                ImGui::SameLine();
+
             ImGui::Dummy({ 21, 21 });
         }
     }
@@ -455,9 +458,8 @@ void cGUI::Display()
         const bool isSelected = (g_canvas[g_cidx].selLayerIndex == i);
 
         // Start drag and drop source
-        if (ImGui::Selectable(name.c_str(), isSelected, 0, ImVec2(98, 0))) {
+        if (ImGui::Selectable(name.c_str(), isSelected, 0, ImVec2(98, 0)))
             g_canvas[g_cidx].selLayerIndex = i;
-        }
 
         // Add the eye button to toggle visibility, moving it to the right
         ImGui::SameLine(ImGui::GetContentRegionMax().x - 76);
@@ -565,7 +567,7 @@ void cGUI::Display()
     ImGui::PopItemWidth();
 
     // Main 2 colors
-    for (size_t i = g_canvas[g_cidx].myCols.size() - 2; i < g_canvas[g_cidx].myCols.size(); i++) {
+    for (size_t i = 0; i < 2; i++) {
         std::string id = "Color " + std::to_string(i + 1);
 
         ImGui::PushStyleColor(ImGuiCol_FrameBg, g_canvas[g_cidx].selColIndex == i ? ImVec4(1.0f, 1.0f, 1.0f, 1.f) : ImVec4(0.05f, 0.05f, 0.05f, 1));
