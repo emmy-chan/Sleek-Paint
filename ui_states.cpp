@@ -434,7 +434,12 @@ void cUIStateSavePalette::Update()
     {
         g_app.ui_state.reset();
 
-        std::string data = GetColorData(g_canvas[g_cidx].myCols, false);
+        std::vector<ImU32> myCols = g_canvas[g_cidx].myCols;
+
+        myCols.erase(myCols.begin());
+        myCols.erase(myCols.begin());
+
+        std::string data = GetColorData(myCols, false);
         std::string file_name = fileDialog.GetSelected().string();
 
         //Add extension to file for the user
