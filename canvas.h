@@ -12,7 +12,6 @@ class cCanvas
 public:
 	cCanvas(const std::string& new_name) { name = new_name; LoadColorPalette("palettes/default.pal"); Initialize(); }; //Set our idx to new scene idx!
 	std::string name;
-	float zoom = 0.f;
 	uint16_t TILE_SIZE = 16;
 	uint8_t paintToolSelected = 0;
 	uint16_t canvas_idx = 1;
