@@ -236,6 +236,8 @@ void cGUI::Display()
                             currentColor = applyFloydSteinbergDithering(currentColor, x, y);
                     }
                 }
+
+                g_canvas[g_cidx].UpdateCanvasHistory();
             }
 
             if (ImGui::CollapsingHeader("Color Adjustments")) {
