@@ -429,9 +429,10 @@ void cCanvas::Editor() {
     //y = glm::clamp<uint16_t>(y, (uint16_t)0, g_canvas[g_cidx].height - (uint16_t)1);
 
     const bool bCanDraw = IsClickingOutsideCanvas() && x >= 0 && x < g_canvas[g_cidx].width && y >= 0 && y < g_canvas[g_cidx].height;
-    static ImVec2 start;
+    static ImVec2 mouseStart;
+    if (g_util.MousePressed(0)) mouseStart = ImGui::GetMousePos();
 
-    float brushRadius = brush_size / 2.0f;
+    const float brushRadius = brush_size / 2.0f;
 
     if (bCanDraw && g_util.Hovering(g_cam.x + x * TILE_SIZE, g_cam.y + y * TILE_SIZE, g_cam.x + x * TILE_SIZE + TILE_SIZE, g_cam.y + y * TILE_SIZE + TILE_SIZE)) {
         switch (paintToolSelected) {
@@ -506,20 +507,18 @@ void cCanvas::Editor() {
             d.AddRectFilled({ g_cam.x + x * TILE_SIZE + 1, g_cam.y + y * TILE_SIZE + 1 }, { g_cam.x + x * TILE_SIZE + TILE_SIZE - 2, g_cam.y + y * TILE_SIZE + TILE_SIZE - 2 }, IM_COL32(255, 255, 255, 255));
             break;
         case 4:
-            if (g_util.MousePressed(0)) {
+            if (g_util.MousePressed(0))
                 selectedIndexes.clear();
-                start = ImGui::GetMousePos();
-            }
 
             if (ImGui::IsMouseDown(0))
-                d.AddRect(start, ImGui::GetMousePos(), IM_COL32_WHITE, 0, NULL, 4);
+                d.AddRect(mouseStart, ImGui::GetMousePos(), IM_COL32_WHITE, 0, NULL, 4);
 
             if (g_util.MouseReleased(0)) {
                 const ImVec2 end = ImGui::GetMousePos();
-                const float startX = std::floor(std::min(start.x, end.x) / TILE_SIZE) * TILE_SIZE;
-                const float startY = std::floor(std::min(start.y, end.y) / TILE_SIZE) * TILE_SIZE;
-                const float endX = std::ceil(std::max(start.x, end.x) / TILE_SIZE) * TILE_SIZE;
-                const float endY = std::ceil(std::max(start.y, end.y) / TILE_SIZE) * TILE_SIZE;
+                const float startX = std::floor(std::min(mouseStart.x, end.x) / TILE_SIZE) * TILE_SIZE;
+                const float startY = std::floor(std::min(mouseStart.y, end.y) / TILE_SIZE) * TILE_SIZE;
+                const float endX = std::ceil(std::max(mouseStart.x, end.x) / TILE_SIZE) * TILE_SIZE;
+                const float endY = std::ceil(std::max(mouseStart.y, end.y) / TILE_SIZE) * TILE_SIZE;
 
                 for (float selectY = 0; selectY < height; selectY++) {
                     for (float selectX = 0; selectX < width; selectX++) {
@@ -553,7 +552,6 @@ void cCanvas::Editor() {
         case 6:
             // move tool
             if (g_util.MousePressed(0)) {
-                start = ImGui::GetMousePos();
                 initialSelectedIndexes = selectedIndexes;
 
                 // Calculate selection bounds
@@ -572,7 +570,7 @@ void cCanvas::Editor() {
                 }
 
                 // Check if the click is outside the bounds
-                if (start.x < minX || start.x > maxX || start.y < minY || start.y > maxY) {
+                if (mouseStart.x < minX || mouseStart.x > maxX || mouseStart.y < minY || mouseStart.y > maxY) {
                     selectedIndexes.clear();
                     initialSelectedIndexes.clear();
                 }
@@ -580,7 +578,7 @@ void cCanvas::Editor() {
 
             if (ImGui::IsMouseDown(0)) {
                 ImVec2 offset = ImGui::GetMousePos();
-                offset.x -= start.x; offset.y -= start.y;
+                offset.x -= mouseStart.x; offset.y -= mouseStart.y;
 
                 for (const auto& index : initialSelectedIndexes) {
                     const int selectX = index % width;
@@ -592,7 +590,7 @@ void cCanvas::Editor() {
 
             if (g_util.MouseReleased(0)) {
                 ImVec2 offset = ImGui::GetMousePos();
-                offset.x -= start.x; offset.y -= start.y;
+                offset.x -= mouseStart.x; offset.y -= mouseStart.y;
 
                 std::unordered_set<uint16_t> newSelectedIndexes;
                 std::unordered_map<uint16_t, ImU32> newTileColors;
@@ -634,23 +632,18 @@ void cCanvas::Editor() {
     }
 
     // Line tool
-    static ImVec2 lineStart;
     if (paintToolSelected == 7) {
-        if (g_util.MousePressed(0)) {
-            lineStart = ImGui::GetMousePos();
-        }
-
         if (ImGui::IsMouseDown(0)) {
             // Draw the preview line
-            d.AddLine(lineStart, ImGui::GetMousePos(), myCols[selColIndex], 4);
+            d.AddLine(mouseStart, ImGui::GetMousePos(), myCols[selColIndex], 4);
         }
         else
             d.AddRectFilled({ g_cam.x + x * TILE_SIZE, g_cam.y + y * TILE_SIZE }, { g_cam.x + x * TILE_SIZE + TILE_SIZE, g_cam.y + y * TILE_SIZE + TILE_SIZE }, myCols[selColIndex]);
 
         if (g_util.MouseReleased(0)) {
             // Convert the screen coordinates to tile coordinates
-            const uint16_t startX = static_cast<int>((lineStart.x - g_cam.x) / TILE_SIZE);
-            const uint16_t startY = static_cast<int>((lineStart.y - g_cam.y) / TILE_SIZE);
+            const uint16_t startX = static_cast<int>((mouseStart.x - g_cam.x) / TILE_SIZE);
+            const uint16_t startY = static_cast<int>((mouseStart.y - g_cam.y) / TILE_SIZE);
 
             // Draw the line on the canvas
             DrawLineOnCanvas(startX, startY, x, y, myCols[selColIndex]);
