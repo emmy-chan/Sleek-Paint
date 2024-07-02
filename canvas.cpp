@@ -310,7 +310,7 @@ void cCanvas::DeleteSelection() {
     g_canvas[g_cidx].UpdateCanvasHistory();
 }
 
-void DrawLineOnCanvas(int x0, int y0, int x1, int y1, ImU32 color) {
+void DrawLineOnCanvas(int x0, int y0, int x1, int y1, ImU32 color, bool preview = false) {
     const int dx = abs(x1 - x0);
     const int dy = abs(y1 - y0);
     const int sx = (x0 < x1) ? 1 : -1;
@@ -319,7 +319,14 @@ void DrawLineOnCanvas(int x0, int y0, int x1, int y1, ImU32 color) {
 
     while (true) {
         if (x0 >= 0 && x0 < g_canvas[g_cidx].width && y0 >= 0 && y0 < g_canvas[g_cidx].height) {
-            g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex][y0 * g_canvas[g_cidx].width + x0] = color;
+            if (preview) {
+                // Draw the tile preview
+                ImVec2 topLeft = { g_cam.x + x0 * g_canvas[g_cidx].TILE_SIZE, g_cam.y + y0 * g_canvas[g_cidx].TILE_SIZE };
+                ImVec2 bottomRight = { topLeft.x + g_canvas[g_cidx].TILE_SIZE, topLeft.y + g_canvas[g_cidx].TILE_SIZE };
+                ImGui::GetBackgroundDrawList()->AddRectFilled(topLeft, bottomRight, color);
+            }
+            else
+                g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex][y0 * g_canvas[g_cidx].width + x0] = color;
         }
 
         if (x0 == x1 && y0 == y1) break;
@@ -654,10 +661,14 @@ void cCanvas::Editor() {
     }
 
     // Line tool
-    if (paintToolSelected == 7) {
+    if (paintToolSelected == 7 && bCanDraw) {
         if (ImGui::IsMouseDown(0)) {
             // Draw the preview line
-            d.AddLine(mouseStart, ImGui::GetMousePos(), myCols[selColIndex], 4);
+            const ImVec2 mousePos = ImGui::GetMousePos();
+            const uint16_t endX = static_cast<int>((mousePos.x - g_cam.x) / TILE_SIZE);
+            const uint16_t endY = static_cast<int>((mousePos.y - g_cam.y) / TILE_SIZE);
+
+            DrawLineOnCanvas(static_cast<int>((mouseStart.x - g_cam.x) / TILE_SIZE), static_cast<int>((mouseStart.y - g_cam.y) / TILE_SIZE), endX, endY, myCols[selColIndex], true);
         }
         else
             d.AddRectFilled({ g_cam.x + x * TILE_SIZE, g_cam.y + y * TILE_SIZE }, { g_cam.x + x * TILE_SIZE + TILE_SIZE, g_cam.y + y * TILE_SIZE + TILE_SIZE }, myCols[selColIndex]);
