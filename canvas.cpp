@@ -347,20 +347,24 @@ void cCanvas::Editor() {
 
         // Zooming
         if (io.MouseWheel != 0.f) {
-            //zoom = TILE_SIZE * 4;
-            if (TILE_SIZE >= 16) {
-                zoom += io.MouseWheel * 128;
-            }
-            zoom = glm::clamp(zoom, 0.f, 3520.f); //-592.f, 296.f
+            const float minZoom = 2.0f;
+            const float maxZoom = 126.0f;
 
-            //Prevent underflow
-            if (TILE_SIZE >= 4) {
-                TILE_SIZE += io.MouseWheel * 4;
-            }
-            else
-                TILE_SIZE += io.MouseWheel * 2;
+            // Calculate new zoom level
+            float newZoom = TILE_SIZE + io.MouseWheel * 4;
+            newZoom = glm::clamp(newZoom, minZoom, maxZoom);
+            const auto mousePos = ImGui::GetMousePos();
 
-            TILE_SIZE = glm::clamp<int>(TILE_SIZE, 2, 126); //io.DisplaySize.y * 0.1
+            // Adjust camera position to keep the zoom centered around the mouse position
+            ImVec2 offset = { mousePos.x - g_cam.x, mousePos.y - g_cam.y };
+            offset.x /= TILE_SIZE;
+            offset.y /= TILE_SIZE;
+            offset.x *= newZoom;
+            offset.y *= newZoom;
+            g_cam.x = mousePos.x - offset.x;
+            g_cam.y = mousePos.y - offset.y;
+
+            TILE_SIZE = newZoom;
         }
 
         // Delete our selection area
