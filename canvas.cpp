@@ -347,8 +347,8 @@ void cCanvas::Editor() {
 
         // Zooming
         if (io.MouseWheel != 0.f) {
-            const float minZoom = 2.0f;
-            const float maxZoom = 126.0f;
+            const float minZoom = 4.0f;
+            const float maxZoom = 50.0f;
 
             // Calculate new zoom level
             float newZoom = TILE_SIZE + io.MouseWheel * 4;
