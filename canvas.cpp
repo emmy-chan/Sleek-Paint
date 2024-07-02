@@ -56,6 +56,10 @@ void floodFill(int x, int y, bool paint) {
         const ImU32 currentCol = g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex][currentIndex];
 
         if (paint) {
+            // Check if the tile is in the selected tiles set (if there are any selected tiles)
+            if (!selectedIndexes.empty() && selectedIndexes.find(currentIndex) == selectedIndexes.end())
+                continue;
+
             if (g_util.ColorDifference(currentCol, initialCol) > threshold)
                 continue;
 
