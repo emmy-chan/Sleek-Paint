@@ -325,7 +325,7 @@ void cGUI::Display()
         ImGui::SetNextWindowPos({ io.DisplaySize.x - 60, 24 });
         ImGui::SetNextWindowSize({ 20, io.DisplaySize.y - 43 });
         ImGui::Begin("##ScrollV", NULL, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoBringToFrontOnFocus);
-        ImGui::VSliderFloat("##ScrollVertical", { 20, ImGui::GetWindowHeight() }, &g_cam.y, -glm::abs((g_canvas[g_cidx].height * 2 * g_canvas[g_cidx].TILE_SIZE) / 2) - g_canvas[g_cidx].zoom, glm::abs((io.DisplaySize.y - (g_canvas[g_cidx].height * g_canvas[g_cidx].TILE_SIZE) / 2) - 19 + g_canvas[g_cidx].zoom), "");
+        ImGui::VSliderFloat("##ScrollVertical", { 20, ImGui::GetWindowHeight() }, &g_cam.y, -glm::abs((g_canvas[g_cidx].height * g_canvas[g_cidx].TILE_SIZE) / 2) - g_canvas[g_cidx].zoom, glm::abs((io.DisplaySize.y - (g_canvas[g_cidx].height * g_canvas[g_cidx].TILE_SIZE) / 2) - 19 + g_canvas[g_cidx].zoom), "");
         ImGui::End();
 
         ImGui::PopStyleVar(2);
