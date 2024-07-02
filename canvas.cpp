@@ -106,12 +106,19 @@ void cCanvas::Clear() {
 }
 
 void cCanvas::AdaptNewSize() {
-    //g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex].clear();
+    // Calculate the new size required
+    const int newSize = g_canvas[g_cidx].width * g_canvas[g_cidx].height;
 
-    for (int i = g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex].size(); i < (g_canvas[g_cidx].width * g_canvas[g_cidx].height); i++)
-        g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex].push_back(IM_COL32(0, 0, 0, 0));
-
-    Clear();
+    // Iterate over all layers
+    for (auto& layer : g_canvas[g_cidx].tiles) {
+        // Resize the layer to the new size
+        if (layer.size() < newSize) {
+            while (layer.size() < newSize)
+                layer.push_back(IM_COL32(0, 0, 0, 0));
+        }
+        else if (layer.size() > newSize)
+            layer.resize(newSize);
+    }
 }
 
 // Helper function to compare two 1D vectors
