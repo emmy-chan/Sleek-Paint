@@ -239,7 +239,7 @@ ImVec2 GetTilePos(uint16_t index, float tileSize, float camX, float camY, int wi
     return ImVec2(camX + x * tileSize, camY + y * tileSize);
 }
 
-void DrawSelectionRectangle(ImDrawList* drawList, const std::unordered_set<uint16_t>& indexes, float tileSize, float camX, float camY, int width, ImU32 col) {
+void DrawSelectionRectangle(ImDrawList* drawList, const std::unordered_set<uint16_t>& indexes, float tileSize, float camX, float camY, int width, ImU32 col, uint8_t thickness) {
     if (indexes.empty()) return;
 
     float minX = FLT_MAX, minY = FLT_MAX;
@@ -253,8 +253,8 @@ void DrawSelectionRectangle(ImDrawList* drawList, const std::unordered_set<uint1
         maxY = std::max(maxY, pos.y + tileSize);
     }
 
-    drawList->AddRect(ImVec2(minX, minY), ImVec2(maxX, maxY), IM_COL32_BLACK, 0.0f, 0, 4);
-    drawList->AddRect(ImVec2(minX, minY), ImVec2(maxX, maxY), col, 0.0f, 0, 2);
+    drawList->AddRect(ImVec2(minX, minY), ImVec2(maxX, maxY), IM_COL32_BLACK, 0.0f, 0, thickness * 2);
+    drawList->AddRect(ImVec2(minX, minY), ImVec2(maxX, maxY), col, 0.0f, 0, thickness);
 }
 
 std::unordered_set<uint16_t> initialSelectedIndexes;
@@ -662,9 +662,8 @@ void cCanvas::Editor() {
                         const float tilePosX = g_cam.x + selectX * TILE_SIZE;
                         const float tilePosY = g_cam.y + selectY * TILE_SIZE;
 
-                        if (tilePosX >= startX && tilePosX < endX && tilePosY >= startY && tilePosY < endY) {
+                        if (tilePosX >= startX && tilePosX < endX && tilePosY >= startY && tilePosY < endY)
                             selectedIndexes.insert((uint16_t)(selectX + selectY * width));
-                        }
                     }
                 }
             }
@@ -743,14 +742,12 @@ void cCanvas::Editor() {
                 }
 
                 // Clear the original positions
-                for (const auto& index : initialSelectedIndexes) {
+                for (const auto& index : initialSelectedIndexes)
                     tiles[g_canvas[g_cidx].selLayerIndex][index] = IM_COL32(0, 0, 0, 0);
-                }
 
                 // Update new positions
-                for (const auto& [newIndex, color] : newTileColors) {
+                for (const auto& [newIndex, color] : newTileColors)
                     tiles[g_canvas[g_cidx].selLayerIndex][newIndex] = color;
-                }
 
                 selectedIndexes = newSelectedIndexes;
             }
@@ -827,8 +824,8 @@ void cCanvas::Editor() {
 
     // Draw a rectangle around the selected indexes
     if (!selectedIndexes.empty()) {
-        DrawSelectionRectangle(&d, selectedIndexes, TILE_SIZE, g_cam.x, g_cam.y, width, IM_COL32_WHITE);
-        DrawSelectionRectangle(&d, nonSelectedIndexes, TILE_SIZE, g_cam.x, g_cam.y, width, IM_COL32(175, 175, 175, 255));
+        DrawSelectionRectangle(&d, selectedIndexes, TILE_SIZE, g_cam.x, g_cam.y, width, IM_COL32_WHITE, 2);
+        DrawSelectionRectangle(&d, nonSelectedIndexes, TILE_SIZE, g_cam.x, g_cam.y, width, IM_COL32(175, 175, 175, 255), 1);
     }
 
     //TODO: when we click new project it makes one state for us right now... But we should make it create that state upon new creation only. Fix states being added during dialog.
