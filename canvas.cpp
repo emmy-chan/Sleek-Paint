@@ -757,17 +757,7 @@ void cCanvas::Editor() {
             }
 
             break;
-        }
-    }
-
-    // Draw a rectangle around the selected indexes
-    if (!selectedIndexes.empty()) {
-        DrawSelectionRectangle(&d, selectedIndexes, TILE_SIZE, g_cam.x, g_cam.y, width, IM_COL32_WHITE);
-        DrawSelectionRectangle(&d, nonSelectedIndexes, TILE_SIZE, g_cam.x, g_cam.y, width, IM_COL32(175, 175, 175, 255));
-    }
-
-    if (bCanDraw) {
-        if (paintToolSelected == TOOL_LINE) {
+        case TOOL_LINE:
             if (ImGui::IsMouseDown(0)) {
                 // Draw the preview line
                 const ImVec2 mousePos = ImGui::GetMousePos();
@@ -787,8 +777,9 @@ void cCanvas::Editor() {
                 // Draw the line on the canvas
                 DrawLineOnCanvas(startX, startY, x, y, myCols[selColIndex]);
             }
-        }
-        else if (paintToolSelected == TOOL_SQUARE) {
+
+            break;
+        case TOOL_SQUARE:
             if (ImGui::IsMouseDown(0)) {
                 // Draw the preview rectangle
                 const ImVec2 mousePos = ImGui::GetMousePos();
@@ -808,8 +799,9 @@ void cCanvas::Editor() {
                 // Draw the rectangle on the canvas
                 DrawRectangleOnCanvas(startX, startY, x, y, myCols[selColIndex]);
             }
-        }
-        else if (paintToolSelected == TOOL_ELIPSE) {
+
+            break;
+        case TOOL_ELIPSE:
             if (ImGui::IsMouseDown(0)) {
                 // Draw the preview ellipse
                 const ImVec2 mousePos = ImGui::GetMousePos();
@@ -829,7 +821,15 @@ void cCanvas::Editor() {
                 // Draw the ellipse on the canvas
                 DrawCircleOnCanvas(startX, startY, x, y, myCols[selColIndex]);
             }
+
+            break;
         }
+    }
+
+    // Draw a rectangle around the selected indexes
+    if (!selectedIndexes.empty()) {
+        DrawSelectionRectangle(&d, selectedIndexes, TILE_SIZE, g_cam.x, g_cam.y, width, IM_COL32_WHITE);
+        DrawSelectionRectangle(&d, nonSelectedIndexes, TILE_SIZE, g_cam.x, g_cam.y, width, IM_COL32(175, 175, 175, 255));
     }
 
     //TODO: when we click new project it makes one state for us right now... But we should make it create that state upon new creation only. Fix states being added during dialog.
