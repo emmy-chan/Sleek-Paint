@@ -481,6 +481,16 @@ void cCanvas::Editor() {
                 g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex] = g_canvas[g_cidx].previousCanvases[g_canvas[g_cidx].canvas_idx];
             }
         }
+        else if (GetAsyncKeyState(VK_DELETE)) // Delete our selection area
+            DeleteSelection();
+        else if (GetAsyncKeyState(VK_CONTROL) & GetAsyncKeyState('X')) { // Cut our selection area
+            g_canvas[g_cidx].CopySelection();
+            g_canvas[g_cidx].DeleteSelection();
+        }
+        else if (GetAsyncKeyState(VK_CONTROL) & GetAsyncKeyState('C')) // Copy our selection area
+            CopySelection();
+        else if (GetAsyncKeyState(VK_CONTROL) & GetAsyncKeyState('V') && !copiedTiles.empty()) // Paste our selection area
+            PasteSelection();
 
         // Zooming
         if (io.MouseWheel != 0.f) {
@@ -503,24 +513,6 @@ void cCanvas::Editor() {
 
             TILE_SIZE = newZoom;
         }
-
-        // Delete our selection area
-        if (GetAsyncKeyState(VK_DELETE))
-            DeleteSelection();
-
-        // Cut our selection area
-        if (GetAsyncKeyState(VK_CONTROL) & GetAsyncKeyState('X')) {
-            g_canvas[g_cidx].CopySelection();
-            g_canvas[g_cidx].DeleteSelection();
-        }
-
-        // Copy our selection area
-        if (GetAsyncKeyState(VK_CONTROL) & GetAsyncKeyState('C'))
-            CopySelection();
-
-        // Paste our selection area
-        if (GetAsyncKeyState(VK_CONTROL) & GetAsyncKeyState('V') && !copiedTiles.empty())
-            PasteSelection();
     }
 
     for (float y = 0; y < height; y++) {
