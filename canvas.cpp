@@ -83,18 +83,29 @@ void floodFill(int x, int y, bool paint) {
 
 //Todo: split this up for palette and initializing our canvas.
 //Also todo in future: maybe make this func take a new size argument ?
-void cCanvas::Initialize() {
+void cCanvas::Initialize(uint16_t new_width, uint16_t new_height) {
     tiles.clear();
     previousCanvases.clear();
+
+    // Initialize canvas dimensions
+    width = new_width;
+    height = new_height;
+
     NewLayer();
 }
 
-void cCanvas::NewLayer() {
+void cCanvas::NewLayer(const std::vector<ImU32>& initial_data) {
     std::vector<ImU32> layer0;
 
-    //Create our blank canvas
-    for (int i = 0; i < width * height; i++)
-        layer0.push_back(IM_COL32(0, 0, 0, 0));
+    // If initial data is provided, use it to initialize the layer
+    if (!initial_data.empty()) {
+        layer0 = initial_data;
+    }
+    else {
+        // Otherwise, create a blank canvas
+        for (int i = 0; i < width * height; i++)
+            layer0.push_back(IM_COL32(0, 0, 0, 0));
+    }
 
     tiles.push_back(layer0);
     layerVisibility.push_back(true);
@@ -473,6 +484,8 @@ void cCanvas::UpdateZoom() {
 }
 
 void cCanvas::Editor() {
+    if (g_canvas.empty() || g_canvas[g_cidx].tiles.empty() || g_canvas[g_cidx].layerVisibility.empty()) return;
+
     auto& d = *ImGui::GetBackgroundDrawList();
     auto& io = ImGui::GetIO();
 

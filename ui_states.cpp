@@ -252,9 +252,7 @@ void cUIStateNewProject::Update()
             
             // Add our new canvas to our canvases and set our idx
             // To the newly created canvas!
-            cCanvas canvas = cCanvas(scene_name);
-            canvas.width = (int)wInput;
-            canvas.height = (int)hInput;
+            cCanvas canvas = cCanvas(scene_name, (int)wInput, (int)hInput);
             g_canvas.push_back(canvas);
             g_cidx = (uint16_t)g_canvas.size() - 1;
 
@@ -358,26 +356,27 @@ void cUIStateLoadPalette::Update()
 //TODO: fix mem leak when loading images and closing the project...
 //Idk if its the image load function itself or lack of cleaning up canvas.
 //We shall do some tests
-void LoadImageFileToCanvas(const std::string& filename) {
+void LoadImageFileToCanvas(const std::string& filepath, const std::string& filename) {
     // Load from file
     int image_width = 0;
     int image_height = 0;
-    unsigned char* image_data = stbi_load(filename.c_str(), &image_width, &image_height, NULL, 4);
+    unsigned char* image_data = stbi_load(filepath.c_str(), &image_width, &image_height, NULL, 4);
     if (image_data == NULL)
         return;
 
-    //Clear our canvas tiles
-    g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex].clear();
+    // Set our canvas dimensions based on image
+    cCanvas canvas = cCanvas(filename.c_str(), image_width, image_height);
+    g_canvas.push_back(canvas);
+    g_cidx = (uint16_t)g_canvas.size() - 1;
 
-    g_canvas[g_cidx].width = image_width;
-    g_canvas[g_cidx].height = image_width;
-
+    std::vector<ImU32> image_layer;
     size_t image_size = image_width * image_height * 4;
-    for (size_t i = 0; i < image_size - 3; i+= 4)
-    {
-        g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex].push_back(ImColor(image_data[i], image_data[i+1], image_data[i+2], image_data[i+3]));
-        //printf("%x\n", image_data[i]);
+    for (size_t i = 0; i < image_size; i += 4) {
+        image_layer.push_back(ImColor(image_data[i], image_data[i + 1], image_data[i + 2], image_data[i + 3]));
     }
+
+    // Initialize canvas with the loaded image data
+    g_canvas[g_cidx].NewLayer(image_layer);
 
     stbi_image_free(image_data);
 }
@@ -397,21 +396,7 @@ void cUIStateOpenProject::Update()
     {
         g_app.ui_state.reset();
 
-        //Add our new canvas to our canvases and set our idx
-        //To the newly created canvas!
-        cCanvas canvas = cCanvas(fileDialog.GetSelected().filename().string());
-        canvas.width = 32;
-        canvas.height = 32;
-        g_canvas.push_back(canvas);
-        g_cidx = (uint16_t)g_canvas.size() - 1;
-        //g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex].clear();
-
-        //Load our scene file data!
-        //DataManager data;
-        //std::string input = fileDialog.GetSelected().string();
-        //data.LoadColorData(input, g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex]);
-
-        LoadImageFileToCanvas(fileDialog.GetSelected().string());
+        LoadImageFileToCanvas(fileDialog.GetSelected().string(), fileDialog.GetSelected().filename().string());
         g_canvas[g_cidx].UpdateCanvasHistory();
 
         //std::cout << "Selected filename " << fileDialog.GetSelected().string() << std::endl;
