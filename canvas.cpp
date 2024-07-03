@@ -192,9 +192,8 @@ bool IsClickingOutsideCanvas() {
     const bool bMouseOutsideCanvas = io.MousePos.x < 200 || io.MousePos.x > io.DisplaySize.x - 61 || io.MousePos.y > io.DisplaySize.y - 20 || io.MousePos.y < 24;
     static bool bCanDraw = !bMouseOutsideCanvas && !g_app.ui_state;
 
-    if (bMouseOutsideCanvas && g_util.MousePressed(0)) {
+    if (bMouseOutsideCanvas && g_util.MousePressed(0))
         bToolFlip = false;
-    }
 
     if (!bToolFlip) {
         if (g_util.MouseReleased(0))
@@ -203,7 +202,7 @@ bool IsClickingOutsideCanvas() {
     else
         bCanDraw = !bMouseOutsideCanvas && !g_app.ui_state;
 
-    return bCanDraw;
+    return !bCanDraw;
 }
 
 void cCanvas::LoadColorPalette(std::string input) {
@@ -566,7 +565,7 @@ void cCanvas::Editor() {
     uint16_t x = static_cast<int>((ImGui::GetMousePos().x - g_cam.x) / TILE_SIZE);
     uint16_t y = static_cast<int>((ImGui::GetMousePos().y - g_cam.y) / TILE_SIZE);
 
-    const bool bCanDraw = IsClickingOutsideCanvas() && x >= 0 && x < g_canvas[g_cidx].width && y >= 0 && y < g_canvas[g_cidx].height;
+    const bool bCanDraw = !IsClickingOutsideCanvas() && x >= 0 && x < g_canvas[g_cidx].width && y >= 0 && y < g_canvas[g_cidx].height;
     static ImVec2 mouseStart;
     if (g_util.MousePressed(0)) mouseStart = ImGui::GetMousePos();
 
