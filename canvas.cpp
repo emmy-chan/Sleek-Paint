@@ -463,8 +463,7 @@ void cCanvas::UpdateZoom() {
         const float maxZoom = 50.0f;
 
         // Calculate new zoom level
-        float newZoom = TILE_SIZE + ImGui::GetIO().MouseWheel * 4;
-        newZoom = glm::clamp(newZoom, minZoom, maxZoom);
+        const float newZoom = glm::clamp(TILE_SIZE + ImGui::GetIO().MouseWheel * 4, minZoom, maxZoom);
         const auto mousePos = ImGui::GetMousePos();
 
         // Adjust camera position to keep the zoom centered around the mouse position
