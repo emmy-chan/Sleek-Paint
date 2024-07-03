@@ -411,7 +411,7 @@ void cGUI::Display()
 
     // Child window for color buttons with scrollbar
     ImGui::BeginChild("##ColorButtons", ImVec2(0, io.DisplaySize.y * 0.25f), false);
-    const bool scrollbarVisible = g_canvas[g_cidx].myCols.size() > 64;
+    const bool scrollbarVisible = ImGui::GetScrollMaxY() > 0.0f;
 
     // Main color buttons rendering loop
     for (uint16_t i = 2; i < g_canvas[g_cidx].myCols.size(); i++) {
