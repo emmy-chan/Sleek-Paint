@@ -29,6 +29,7 @@ public:
 	uint8_t paintToolSelected = 0;
 	uint16_t canvas_idx = 1;
 	uint8_t brush_size = 1;
+	uint8_t line_size = 1;
 	uint8_t magic_wand_threshold = 1;
 	uint8_t bucket_fill_threshold = 1;
 	std::vector<std::vector<ImU32>> previousCanvases;

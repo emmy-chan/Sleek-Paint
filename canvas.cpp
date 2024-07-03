@@ -318,16 +318,27 @@ void DrawLineOnCanvas(int x0, int y0, int x1, int y1, ImU32 color, bool preview 
     const int sy = (y0 < y1) ? 1 : -1;
     int err = dx - dy;
 
+    // Calculate the half-thickness for offset calculations
+    const int halfThickness = static_cast<int>(g_canvas[g_cidx].line_size / 2.0f);
+
     while (true) {
-        if (x0 >= 0 && x0 < g_canvas[g_cidx].width && y0 >= 0 && y0 < g_canvas[g_cidx].height) {
-            if (preview) {
-                // Draw the tile preview
-                ImVec2 topLeft = { g_cam.x + x0 * g_canvas[g_cidx].TILE_SIZE, g_cam.y + y0 * g_canvas[g_cidx].TILE_SIZE };
-                ImVec2 bottomRight = { topLeft.x + g_canvas[g_cidx].TILE_SIZE, topLeft.y + g_canvas[g_cidx].TILE_SIZE };
-                ImGui::GetBackgroundDrawList()->AddRectFilled(topLeft, bottomRight, color);
+        for (int offsetX = -halfThickness; offsetX <= halfThickness; ++offsetX) {
+            for (int offsetY = -halfThickness; offsetY <= halfThickness; ++offsetY) {
+                int drawX = x0 + offsetX;
+                int drawY = y0 + offsetY;
+
+                if (drawX >= 0 && drawX < g_canvas[g_cidx].width && drawY >= 0 && drawY < g_canvas[g_cidx].height) {
+                    if (preview) {
+                        // Draw the tile preview
+                        ImVec2 topLeft = { g_cam.x + drawX * g_canvas[g_cidx].TILE_SIZE, g_cam.y + drawY * g_canvas[g_cidx].TILE_SIZE };
+                        ImVec2 bottomRight = { topLeft.x + g_canvas[g_cidx].TILE_SIZE, topLeft.y + g_canvas[g_cidx].TILE_SIZE };
+                        ImGui::GetBackgroundDrawList()->AddRectFilled(topLeft, bottomRight, color);
+                    }
+                    else {
+                        g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex][drawY * g_canvas[g_cidx].width + drawX] = color;
+                    }
+                }
             }
-            else
-                g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex][y0 * g_canvas[g_cidx].width + x0] = color;
         }
 
         if (x0 == x1 && y0 == y1) break;
