@@ -98,9 +98,8 @@ void cCanvas::NewLayer(const std::vector<ImU32>& initial_data) {
     std::vector<ImU32> layer0;
 
     // If initial data is provided, use it to initialize the layer
-    if (!initial_data.empty()) {
+    if (!initial_data.empty())
         layer0 = initial_data;
-    }
     else {
         // Otherwise, create a blank canvas
         for (int i = 0; i < width * height; i++)
@@ -207,8 +206,7 @@ bool IsClickingOutsideCanvas() {
         bToolFlip = false;
 
     if (!bToolFlip) {
-        if (g_util.MouseReleased(0))
-            bToolFlip = !g_app.ui_state;
+        if (g_util.MouseReleased(0)) bToolFlip = !g_app.ui_state;
     }
     else
         bCanDraw = !bMouseOutsideCanvas && !g_app.ui_state;
@@ -304,9 +302,8 @@ void cCanvas::CopySelection() {
         printf("CopySelection: No selected tiles to copy.\n");
         return;
     }
-    for (auto& index : selectedIndexes) {
+    for (auto& index : selectedIndexes)
         copiedTiles[index] = g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex][index];
-    }
 }
 
 void cCanvas::DeleteSelection() {
@@ -314,9 +311,8 @@ void cCanvas::DeleteSelection() {
         printf("DeleteSelection: No selected tiles to delete.\n");
         return;
     }
-    for (auto& index : selectedIndexes) {
+    for (auto& index : selectedIndexes)
         g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex][index] = IM_COL32(0, 0, 0, 0);
-    }
 
     g_canvas[g_cidx].UpdateCanvasHistory();
 }
@@ -365,7 +361,7 @@ void DrawLineOnCanvas(int x0, int y0, int x1, int y1, ImU32 color, bool preview 
 }
 
 void DrawCircleOnCanvas(int startX, int startY, int endX, int endY, ImU32 color, bool preview = false) {
-    int radius = static_cast<int>(sqrt(pow(endX - startX, 2) + pow(endY - startY, 2)));
+    const int radius = static_cast<int>(sqrt(pow(endX - startX, 2) + pow(endY - startY, 2)));
 
     int x = radius;
     int y = 0;
@@ -373,7 +369,7 @@ void DrawCircleOnCanvas(int startX, int startY, int endX, int endY, ImU32 color,
 
     while (x >= y) {
         auto plot8points = [&](int x, int y) {
-            int points[8][2] = {
+            const int points[8][2] = {
                 {startX + x, startY + y},
                 {startX - x, startY + y},
                 {startX + x, startY - y},
@@ -385,12 +381,12 @@ void DrawCircleOnCanvas(int startX, int startY, int endX, int endY, ImU32 color,
             };
 
             for (auto& point : points) {
-                int px = point[0];
-                int py = point[1];
+                const int px = point[0];
+                const int py = point[1];
                 if (px >= 0 && px < g_canvas[g_cidx].width && py >= 0 && py < g_canvas[g_cidx].height) {
                     if (preview) {
-                        ImVec2 topLeft = { g_cam.x + px * g_canvas[g_cidx].TILE_SIZE, g_cam.y + py * g_canvas[g_cidx].TILE_SIZE };
-                        ImVec2 bottomRight = { topLeft.x + g_canvas[g_cidx].TILE_SIZE, topLeft.y + g_canvas[g_cidx].TILE_SIZE };
+                        const ImVec2 topLeft = { g_cam.x + px * g_canvas[g_cidx].TILE_SIZE, g_cam.y + py * g_canvas[g_cidx].TILE_SIZE };
+                        const ImVec2 bottomRight = { topLeft.x + g_canvas[g_cidx].TILE_SIZE, topLeft.y + g_canvas[g_cidx].TILE_SIZE };
                         ImGui::GetBackgroundDrawList()->AddRectFilled(topLeft, bottomRight, color);
                     }
                     else {
@@ -425,8 +421,8 @@ void DrawRectangleOnCanvas(int x0, int y0, int x1, int y1, ImU32 color, bool pre
             if (x == startX || x == endX || y == startY || y == endY) {
                 if (x >= 0 && x < g_canvas[g_cidx].width && y >= 0 && y < g_canvas[g_cidx].height) {
                     if (preview) {
-                        ImVec2 topLeft = { g_cam.x + x * g_canvas[g_cidx].TILE_SIZE, g_cam.y + y * g_canvas[g_cidx].TILE_SIZE };
-                        ImVec2 bottomRight = { topLeft.x + g_canvas[g_cidx].TILE_SIZE, topLeft.y + g_canvas[g_cidx].TILE_SIZE };
+                        const ImVec2 topLeft = { g_cam.x + x * g_canvas[g_cidx].TILE_SIZE, g_cam.y + y * g_canvas[g_cidx].TILE_SIZE };
+                        const ImVec2 bottomRight = { topLeft.x + g_canvas[g_cidx].TILE_SIZE, topLeft.y + g_canvas[g_cidx].TILE_SIZE };
                         ImGui::GetBackgroundDrawList()->AddRectFilled(topLeft, bottomRight, color);
                     }
                     else {
