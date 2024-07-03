@@ -364,19 +364,16 @@ void LoadImageFileToCanvas(const std::string& filepath, const std::string& filen
     if (image_data == NULL)
         return;
 
+    std::vector<ImU32> image_layer;
+    const size_t image_size = image_width * image_height * 4;
+
+    for (size_t i = 0; i < image_size; i += 4)
+        image_layer.push_back(ImColor(image_data[i], image_data[i + 1], image_data[i + 2], image_data[i + 3]));
+
     // Set our canvas dimensions based on image
-    cCanvas canvas = cCanvas(filename.c_str(), image_width, image_height);
+    cCanvas canvas = cCanvas(filename.c_str(), image_width, image_height, image_layer);
     g_canvas.push_back(canvas);
     g_cidx = (uint16_t)g_canvas.size() - 1;
-
-    std::vector<ImU32> image_layer;
-    size_t image_size = image_width * image_height * 4;
-    for (size_t i = 0; i < image_size; i += 4) {
-        image_layer.push_back(ImColor(image_data[i], image_data[i + 1], image_data[i + 2], image_data[i + 3]));
-    }
-
-    // Initialize canvas with the loaded image data
-    g_canvas[g_cidx].NewLayer(image_layer);
 
     stbi_image_free(image_data);
 }

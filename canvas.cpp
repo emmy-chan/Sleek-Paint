@@ -83,7 +83,7 @@ void floodFill(int x, int y, bool paint) {
 
 //Todo: split this up for palette and initializing our canvas.
 //Also todo in future: maybe make this func take a new size argument ?
-void cCanvas::Initialize(uint16_t new_width, uint16_t new_height) {
+void cCanvas::Initialize(const std::vector<ImU32>& initial_data, uint16_t new_width, uint16_t new_height) {
     tiles.clear();
     previousCanvases.clear();
 
@@ -91,7 +91,8 @@ void cCanvas::Initialize(uint16_t new_width, uint16_t new_height) {
     width = new_width;
     height = new_height;
 
-    NewLayer();
+    // Create new layer
+    NewLayer(initial_data);
 }
 
 void cCanvas::NewLayer(const std::vector<ImU32>& initial_data) {

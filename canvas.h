@@ -23,7 +23,7 @@ enum eTools {
 class cCanvas
 {
 public:
-	cCanvas(const std::string& new_name, uint16_t new_width = 0, uint16_t new_height = 0) { name = new_name; LoadColorPalette("palettes/default.pal"); Initialize(new_width, new_height); }; //Set our idx to new scene idx!
+	cCanvas(const std::string& new_name, uint16_t new_width = 0, uint16_t new_height = 0, const std::vector<ImU32>&initial_data = {}) { name = new_name; LoadColorPalette("palettes/default.pal"); Initialize(initial_data, new_width, new_height); }; //Set our idx to new scene idx!
 	std::string name;
 	uint16_t TILE_SIZE = 16;
 	uint8_t paintToolSelected = 0;
@@ -40,7 +40,7 @@ public:
 	std::vector<uint8_t> layerVisibility;
 	uint16_t width;
 	uint16_t height;
-	void Initialize(uint16_t new_width, uint16_t new_height);
+	void Initialize(const std::vector<ImU32>& initial_data, uint16_t new_width, uint16_t new_height);
 	void NewLayer(const std::vector<ImU32>& initial_data = {});
 	void AdaptNewSize(int width, int height);
 	void Clear();
