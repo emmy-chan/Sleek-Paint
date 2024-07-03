@@ -407,41 +407,25 @@ void cGUI::Display()
 
     ImGui::Begin("##Colors", NULL, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoBringToFrontOnFocus);
     ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, { 0, 0 });
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, { 0, 0 });
 
-    // Get the current window scroll and position information
-    ImGuiWindow& window = *ImGui::GetCurrentWindow();
-
-    // Calculate the visible region (scroll region)
-    const float scroll_start_y = window.Scroll.y;
-    const float scroll_end_y = window.Scroll.y + window.Size.y;
+    // Child window for color buttons with scrollbar
+    ImGui::BeginChild("##ColorButtons", ImVec2(0, io.DisplaySize.y * 0.25f), false);
+    const bool scrollbarVisible = g_canvas[g_cidx].myCols.size() > 64;
 
     // Main color buttons rendering loop
     for (uint16_t i = 2; i < g_canvas[g_cidx].myCols.size(); i++) {
         const std::string id = "Color " + std::to_string(i + 1);
+        const uint8_t vis = scrollbarVisible ? 8 : 9;
 
-        // Calculate the position of the current color button
-        ImVec2 color_pos = ImGui::GetCursorScreenPos();
-        float color_pos_y = color_pos.y - window.Pos.y + window.Scroll.y;
+        if ((i - 2) % vis != 0) ImGui::SameLine();
 
-        // Check if the color button is within the visible scroll region
-        if (color_pos_y >= scroll_start_y && color_pos_y <= scroll_end_y) {
-            if ((i - 2) % 9 != 0)
-                ImGui::SameLine();
+        ImGui::PushStyleColor(ImGuiCol_FrameBg, g_canvas[g_cidx].selColIndex == i ? ImVec4(1.0f, 1.0f, 1.0f, 1.f) : ImVec4(0.05f, 0.05f, 0.05f, 1));
 
-            ImGui::PushStyleColor(ImGuiCol_FrameBg, g_canvas[g_cidx].selColIndex == i ? ImVec4(1.0f, 1.0f, 1.0f, 1.f) : ImVec4(0.05f, 0.05f, 0.05f, 1));
+        if (ImGui::ColorButton(id.c_str(), ImGui::ColorConvertU32ToFloat4(g_canvas[g_cidx].myCols[i]), NULL, { 20, 20 }))
+            g_canvas[g_cidx].selColIndex = i;
 
-            if (ImGui::ColorButton(id.c_str(), ImGui::ColorConvertU32ToFloat4(g_canvas[g_cidx].myCols[i]), NULL, { 20, 20 }))
-                g_canvas[g_cidx].selColIndex = i;
-
-            ImGui::PopStyleColor();
-        }
-        else {
-            // If the color button is not in the visible region, advance the cursor
-            if ((i - 2) % 9 != 0)
-                ImGui::SameLine();
-
-            ImGui::Dummy({ 20, 20 });
-        }
+        ImGui::PopStyleColor();
     }
 
     if (ImGui::Button("-")) {
@@ -454,8 +438,10 @@ void cGUI::Display()
     if (ImGui::Button("+"))
         g_canvas[g_cidx].myCols.push_back(ImColor(0, 0, 0, 255));
 
+    ImGui::EndChild();
+
     ImGui::SetCursorPosY(ImGui::GetWindowHeight() * 0.5f);
-    ImGui::PopStyleVar(); ImGui::Spacing(); ImGui::Separator();
+    ImGui::PopStyleVar(2); ImGui::Spacing(); ImGui::Separator();
 
     for (size_t i = 0; i < g_canvas[g_cidx].tiles.size(); i++) {
         std::string name = "Layer " + std::to_string(i + 1);
