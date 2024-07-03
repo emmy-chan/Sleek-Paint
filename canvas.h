@@ -50,6 +50,7 @@ public:
 	void PasteSelection();
 	void CopySelection();
 	void DeleteSelection();
+	void UpdateZoom();
 	void Editor();
 };
 

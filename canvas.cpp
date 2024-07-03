@@ -448,6 +448,30 @@ void DrawRectangleOnCanvas(int x0, int y0, int x1, int y1, ImU32 color, bool pre
     }*/
 }
 
+void cCanvas::UpdateZoom() {
+    // Zooming
+    if (ImGui::GetIO().MouseWheel != 0.f) {
+        const float minZoom = 4.0f;
+        const float maxZoom = 50.0f;
+
+        // Calculate new zoom level
+        float newZoom = TILE_SIZE + ImGui::GetIO().MouseWheel * 4;
+        newZoom = glm::clamp(newZoom, minZoom, maxZoom);
+        const auto mousePos = ImGui::GetMousePos();
+
+        // Adjust camera position to keep the zoom centered around the mouse position
+        ImVec2 offset = { mousePos.x - g_cam.x, mousePos.y - g_cam.y };
+        offset.x /= TILE_SIZE;
+        offset.y /= TILE_SIZE;
+        offset.x *= newZoom;
+        offset.y *= newZoom;
+        g_cam.x = mousePos.x - offset.x;
+        g_cam.y = mousePos.y - offset.y;
+
+        TILE_SIZE = newZoom;
+    }
+}
+
 void cCanvas::Editor() {
     auto& d = *ImGui::GetBackgroundDrawList();
     auto& io = ImGui::GetIO();
@@ -492,27 +516,7 @@ void cCanvas::Editor() {
         else if (GetAsyncKeyState(VK_CONTROL) & GetAsyncKeyState('V') && !copiedTiles.empty()) // Paste our selection area
             PasteSelection();
 
-        // Zooming
-        if (io.MouseWheel != 0.f) {
-            const float minZoom = 4.0f;
-            const float maxZoom = 50.0f;
-
-            // Calculate new zoom level
-            float newZoom = TILE_SIZE + io.MouseWheel * 4;
-            newZoom = glm::clamp(newZoom, minZoom, maxZoom);
-            const auto mousePos = ImGui::GetMousePos();
-
-            // Adjust camera position to keep the zoom centered around the mouse position
-            ImVec2 offset = { mousePos.x - g_cam.x, mousePos.y - g_cam.y };
-            offset.x /= TILE_SIZE;
-            offset.y /= TILE_SIZE;
-            offset.x *= newZoom;
-            offset.y *= newZoom;
-            g_cam.x = mousePos.x - offset.x;
-            g_cam.y = mousePos.y - offset.y;
-
-            TILE_SIZE = newZoom;
-        }
+        UpdateZoom();
     }
 
     for (float y = 0; y < height; y++) {
@@ -520,9 +524,8 @@ void cCanvas::Editor() {
             uint64_t index = static_cast<uint64_t>(x) + static_cast<uint64_t>(y) * width;
 
             // Add non-selected tiles to the list
-            if (selectedIndexes.find(index) == selectedIndexes.end()) {
+            if (selectedIndexes.find(index) == selectedIndexes.end())
                 nonSelectedIndexes.insert(index);
-            }
 
             // Draw grid background for the base layer
             const ImU32 col = (static_cast<int>(x) + static_cast<int>(y)) % 2 == 0 ? IM_COL32(110, 110, 110, 255) : IM_COL32(175, 175, 175, 255);
@@ -535,9 +538,8 @@ void cCanvas::Editor() {
             // Draw each layer from bottom to top, including layers after the selected layer index
             for (size_t layer = 0; layer < g_canvas[g_cidx].tiles.size(); layer++) {
                 // Check if the layer is visible
-                if (!g_canvas[g_cidx].layerVisibility[layer]) {
+                if (!g_canvas[g_cidx].layerVisibility[layer])
                     continue; // Skip drawing this layer if it is not visible
-                }
 
                 ImU32 tileColor = g_canvas[g_cidx].tiles[layer][index];
 
