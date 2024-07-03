@@ -440,7 +440,7 @@ void cGUI::Display()
             if ((i - 2) % 9 != 0)
                 ImGui::SameLine();
 
-            ImGui::Dummy({ 21, 21 });
+            ImGui::Dummy({ 20, 20 });
         }
     }
 
