@@ -82,8 +82,6 @@ void floodFill(int x, int y, bool paint) {
     printf("FloodFill: Completed successfully!\n");
 }
 
-//Todo: split this up for palette and initializing our canvas.
-//Also todo in future: maybe make this func take a new size argument ?
 void cCanvas::Initialize(const std::vector<ImU32>& initial_data, uint16_t new_width, uint16_t new_height) {
     tiles.clear();
     previousCanvases.clear();
@@ -182,9 +180,8 @@ void cCanvas::UpdateCanvasHistory() {
     }
 
     // Check if there are previous states and the current state index is valid
-    if (previousCanvases.size() > 1 && previousCanvases.size() > canvas_idx) {
+    if (previousCanvases.size() > 1 && previousCanvases.size() > canvas_idx)
         previousCanvases.resize(canvas_idx + 1);
-    }
 
     // Only add the current state to history if it's different from the last saved state
     if (previousCanvases.empty() || (!tiles[g_canvas[g_cidx].selLayerIndex].empty() && !previousCanvases.empty() && !isTilesEqual(tiles[g_canvas[g_cidx].selLayerIndex], previousCanvases.back()))) {
@@ -192,9 +189,8 @@ void cCanvas::UpdateCanvasHistory() {
         canvas_idx = previousCanvases.size() - 1;
         printf("Canvas state created.\n");
     }
-    else {
+    else
         printf("No changes detected; canvas state not updated.\n");
-    }
 }
 
 //This is used for fixing accidental brushing when using scroll bars.
@@ -238,9 +234,8 @@ void cCanvas::DestroyCanvas() {
     //std::vector<cCanvas> tempVector;
     //g_canvas.swap(tempVector);
 
-    //Prevent our canvas index from going out of bounds x3
-    if (g_cidx == g_canvas.size())
-        g_cidx--;
+    // Prevent our canvas index from going out of bounds
+    if (g_cidx == g_canvas.size()) g_cidx--;
 }
 
 // Function to calculate the bounding box of the selected indexes
@@ -434,27 +429,6 @@ void DrawRectangleOnCanvas(int x0, int y0, int x1, int y1, ImU32 color, bool pre
             }
         }
     }
-    
-    //FILLED RECT
-    /*const int startX = std::min(x0, x1);
-    const int endX = std::max(x0, x1);
-    const int startY = std::min(y0, y1);
-    const int endY = std::max(y0, y1);
-
-    for (int x = startX; x <= endX; ++x) {
-        for (int y = startY; y <= endY; ++y) {
-            if (x >= 0 && x < g_canvas[g_cidx].width && y >= 0 && y < g_canvas[g_cidx].height) {
-                if (preview) {
-                    ImVec2 topLeft = { g_cam.x + x * g_canvas[g_cidx].TILE_SIZE, g_cam.y + y * g_canvas[g_cidx].TILE_SIZE };
-                    ImVec2 bottomRight = { topLeft.x + g_canvas[g_cidx].TILE_SIZE, topLeft.y + g_canvas[g_cidx].TILE_SIZE };
-                    ImGui::GetBackgroundDrawList()->AddRectFilled(topLeft, bottomRight, color);
-                }
-                else {
-                    g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex][y * g_canvas[g_cidx].width + x] = color;
-                }
-            }
-        }
-    }*/
 }
 
 void cCanvas::UpdateZoom() {
@@ -584,7 +558,7 @@ void cCanvas::Editor() {
                     // Calculate the distance between the previous and current mouse positions
                     const float distX = x - lastX;
                     const float distY = y - lastY;
-                    const float distance = std::sqrt(distX * distX + distY * distY);
+                    const float distance = glm::sqrt(distX * distX + distY * distY);
 
                     // Number of steps to interpolate
                     const int steps = static_cast<int>(distance) + 1;
@@ -598,7 +572,7 @@ void cCanvas::Editor() {
                         if (selectedIndexes.empty() || selectedIndexes.find((uint64_t)brushX + (uint64_t)brushY * width) != selectedIndexes.end()) {
                             for (int offsetY = -brushRadius; offsetY <= brushRadius; ++offsetY) {
                                 for (int offsetX = -brushRadius; offsetX <= brushRadius; ++offsetX) {
-                                    float distance = std::sqrt(offsetX * offsetX + offsetY * offsetY);
+                                    float distance = glm::sqrt(offsetX * offsetX + offsetY * offsetY);
                                     if (distance <= brushRadius) {
                                         const int finalX = brushX + offsetX;
                                         const int finalY = brushY + offsetY;
@@ -636,7 +610,6 @@ void cCanvas::Editor() {
 
             break;
         case TOOL_BUCKET:
-            //paint bucket
             if (g_util.MousePressed(0))
                 if (selectedIndexes.empty() || selectedIndexes.find((uint64_t)x + (uint64_t)y * width) != selectedIndexes.end())
                     floodFill((int)x, (int)y, true);
@@ -844,8 +817,7 @@ void cCanvas::Editor() {
     if (!selectedIndexes.empty())
         DrawSelectionRectangle(&d, selectedIndexes, TILE_SIZE, g_cam.x, g_cam.y, width, IM_COL32_WHITE, 2);
 
-    //TODO: when we click new project it makes one state for us right now... But we should make it create that state upon new creation only. Fix states being added during dialog.
-    //Add canvas to history for undo-redo feature
+    // Add canvas to history for undo-redo feature
     if (!g_canvas.empty())
         if (paintToolSelected < 3 || paintToolSelected >= 6) // fix later
             if (bCanDraw && !g_app.ui_state)

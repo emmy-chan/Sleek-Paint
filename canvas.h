@@ -40,7 +40,7 @@ public:
 	std::vector<uint8_t> layerVisibility;
 	uint16_t width;
 	uint16_t height;
-	void Initialize(const std::vector<ImU32>& initial_data, uint16_t new_width, uint16_t new_height);
+	void Initialize(const std::vector<ImU32>& initial_data = {}, uint16_t new_width, uint16_t new_height);
 	void NewLayer(const std::vector<ImU32>& initial_data = {});
 	void AdaptNewSize(int width, int height);
 	void Clear();
