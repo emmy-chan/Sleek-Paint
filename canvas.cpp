@@ -592,8 +592,23 @@ void cCanvas::Editor() {
                 selectedIndexes.clear();
 
             if (ImGui::IsMouseDown(0)) {
-                d.AddRect(mouseStart, ImGui::GetMousePos(), IM_COL32_BLACK, 0, NULL, 4);
-                d.AddRect(mouseStart, ImGui::GetMousePos(), IM_COL32_WHITE, 0, NULL, 2);
+                const ImVec2 end = ImGui::GetMousePos();
+
+                // Calculate the mouse positions relative to the camera
+                const float mouseStartX = mouseStart.x - g_cam.x;
+                const float mouseStartY = mouseStart.y - g_cam.y;
+                const float mouseEndX = end.x - g_cam.x;
+                const float mouseEndY = end.y - g_cam.y;
+
+                // Snap the coordinates to the tile grid
+                const float startX = g_cam.x + std::floor(std::min(mouseStartX, mouseEndX) / TILE_SIZE) * TILE_SIZE;
+                const float startY = g_cam.y + std::floor(std::min(mouseStartY, mouseEndY) / TILE_SIZE) * TILE_SIZE;
+                const float endX = g_cam.x + std::ceil(std::max(mouseStartX, mouseEndX) / TILE_SIZE) * TILE_SIZE;
+                const float endY = g_cam.y + std::ceil(std::max(mouseStartY, mouseEndY) / TILE_SIZE) * TILE_SIZE;
+
+                // Draw the rectangle with snapping to the grid
+                d.AddRect({ startX, startY }, { endX, endY }, IM_COL32_BLACK, 0, NULL, 4);
+                d.AddRect({ startX, startY }, { endX, endY }, IM_COL32_WHITE, 0, NULL, 2);
             }
 
             if (g_util.MouseReleased(0)) {
