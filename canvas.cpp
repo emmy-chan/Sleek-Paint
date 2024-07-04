@@ -16,6 +16,7 @@ uint16_t g_cidx = uint16_t();
 #include <utility> // for std::pair
 #include <unordered_set>
 #include <set>
+#include "keystate.h"
 
 std::unordered_set<uint16_t> selectedIndexes;
 std::unordered_map<uint16_t, ImU32> copiedTiles; // Store copied tiles and their colors
@@ -486,27 +487,15 @@ void cCanvas::Editor() {
     auto& io = ImGui::GetIO();
 
     if (!g_app.ui_state) {
-        if (GetAsyncKeyState('B'))
-            paintToolSelected = TOOL_BRUSH;
-        else if (GetAsyncKeyState('G'))
-            paintToolSelected = TOOL_BUCKET;
-        else if (GetAsyncKeyState('E'))
-            paintToolSelected = TOOL_ERASER;
-        else if (GetAsyncKeyState('X'))
-            paintToolSelected = TOOL_DROPPER;
-        else if (GetAsyncKeyState('M'))
-            paintToolSelected = TOOL_MOVE;
-        else if (GetAsyncKeyState('W'))
-            paintToolSelected = TOOL_WAND;
-        else if (GetAsyncKeyState('S'))
-            paintToolSelected = TOOL_SELECT;
-        else if (GetAsyncKeyState(VK_CONTROL) && GetAsyncKeyState('Z') & 1) {
+        key_state.update();
+
+        if (GetAsyncKeyState(VK_CONTROL) && key_state.key_pressed('Z') & 1) {
             if (g_canvas[g_cidx].canvas_idx > 0) {
                 g_canvas[g_cidx].canvas_idx--;
                 g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex] = g_canvas[g_cidx].previousCanvases[g_canvas[g_cidx].canvas_idx];
             }
         }
-        else if (GetAsyncKeyState(VK_CONTROL) && GetAsyncKeyState('Y') & 1) {
+        else if (GetAsyncKeyState(VK_CONTROL) && key_state.key_pressed('Y') & 1) {
             if (g_canvas[g_cidx].canvas_idx < g_canvas[g_cidx].previousCanvases.size() - 1) {
                 g_canvas[g_cidx].canvas_idx++;
                 g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex] = g_canvas[g_cidx].previousCanvases[g_canvas[g_cidx].canvas_idx];
@@ -514,14 +503,28 @@ void cCanvas::Editor() {
         }
         else if (GetAsyncKeyState(VK_DELETE)) // Delete our selection area
             DeleteSelection();
-        else if (GetAsyncKeyState(VK_CONTROL) & GetAsyncKeyState('X')) { // Cut our selection area
+        else if (GetAsyncKeyState(VK_CONTROL) && key_state.key_pressed('X')) { // Cut our selection area
             g_canvas[g_cidx].CopySelection();
             g_canvas[g_cidx].DeleteSelection();
         }
-        else if (GetAsyncKeyState(VK_CONTROL) & GetAsyncKeyState('C')) // Copy our selection area
+        else if (GetAsyncKeyState(VK_CONTROL) && key_state.key_pressed('C')) // Copy our selection area
             CopySelection();
-        else if (GetAsyncKeyState(VK_CONTROL) & GetAsyncKeyState('V') && !copiedTiles.empty()) // Paste our selection area
+        else if (GetAsyncKeyState(VK_CONTROL) && key_state.key_pressed('V') && !copiedTiles.empty()) // Paste our selection area
             PasteSelection();
+        else if (key_state.key_pressed('B'))
+            paintToolSelected = TOOL_BRUSH;
+        else if (key_state.key_pressed('G'))
+            paintToolSelected = TOOL_BUCKET;
+        else if (key_state.key_pressed('E'))
+            paintToolSelected = TOOL_ERASER;
+        else if (key_state.key_pressed('X'))
+            paintToolSelected = TOOL_DROPPER;
+        else if (key_state.key_pressed('M'))
+            paintToolSelected = TOOL_MOVE;
+        else if (key_state.key_pressed('W'))
+            paintToolSelected = TOOL_WAND;
+        else if (key_state.key_pressed('S'))
+            paintToolSelected = TOOL_SELECT;
 
         UpdateZoom();
     }
