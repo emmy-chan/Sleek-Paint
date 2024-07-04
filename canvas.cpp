@@ -82,7 +82,7 @@ void floodFill(int x, int y, bool paint) {
     printf("FloodFill: Completed successfully!\n");
 }
 
-void cCanvas::Initialize(const std::vector<ImU32>& initial_data, uint16_t new_width, uint16_t new_height) {
+void cCanvas::Initialize(const std::vector<ImU32>& initial_data, const uint16_t& new_width, const uint16_t& new_height) {
     tiles.clear();
     previousCanvases.clear();
 
@@ -391,7 +391,7 @@ void DrawCircleOnCanvas(int startX, int startY, int endX, int endY, ImU32 color,
                     }
                 }
             }
-            };
+        };
 
         plot8points(x, y);
 
@@ -422,9 +422,8 @@ void DrawRectangleOnCanvas(int x0, int y0, int x1, int y1, ImU32 color, bool pre
                         const ImVec2 bottomRight = { topLeft.x + g_canvas[g_cidx].TILE_SIZE, topLeft.y + g_canvas[g_cidx].TILE_SIZE };
                         ImGui::GetBackgroundDrawList()->AddRectFilled(topLeft, bottomRight, color);
                     }
-                    else {
+                    else
                         g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex][y * g_canvas[g_cidx].width + x] = color;
-                    }
                 }
             }
         }
@@ -577,12 +576,10 @@ void cCanvas::Editor() {
                                         const int finalX = brushX + offsetX;
                                         const int finalY = brushY + offsetY;
                                         if (finalX >= 0 && finalX < width && finalY >= 0 && finalY < height) {
-                                            if (io.MouseDown[0]) {
+                                            if (io.MouseDown[0])
                                                 tiles[g_canvas[g_cidx].selLayerIndex][finalX + finalY * width] = myCols[selColIndex];
-                                            }
-                                            else if (io.MouseDown[1]) {
+                                            else if (io.MouseDown[1])
                                                 tiles[g_canvas[g_cidx].selLayerIndex][finalX + finalY * width] = IM_COL32(0, 0, 0, 0);
-                                            }
                                         }
                                     }
                                 }
