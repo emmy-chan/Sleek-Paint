@@ -659,6 +659,10 @@ void cCanvas::Editor() {
                 ImVec2 offset = ImGui::GetMousePos();
                 offset.x -= mouseStart.x; offset.y -= mouseStart.y;
 
+                // Snap offset to grid
+                offset.x = static_cast<int>(offset.x / TILE_SIZE) * TILE_SIZE;
+                offset.y = static_cast<int>(offset.y / TILE_SIZE) * TILE_SIZE;
+
                 for (const auto& index : initialSelectedIndexes) {
                     const int selectX = index % width;
                     const int selectY = index / width;
