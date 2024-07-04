@@ -485,8 +485,6 @@ void cCanvas::Editor() {
     auto& d = *ImGui::GetBackgroundDrawList();
     auto& io = ImGui::GetIO();
 
-    std::unordered_set<uint16_t> nonSelectedIndexes;
-
     if (!g_app.ui_state) {
         if (GetAsyncKeyState('B'))
             paintToolSelected = TOOL_BRUSH;
@@ -530,11 +528,7 @@ void cCanvas::Editor() {
 
     for (float y = 0; y < height; y++) {
         for (float x = 0; x < width; x++) {
-            uint64_t index = static_cast<uint64_t>(x) + static_cast<uint64_t>(y) * width;
-
-            // Add non-selected tiles to the list
-            if (selectedIndexes.find(index) == selectedIndexes.end())
-                nonSelectedIndexes.insert(index);
+            const uint64_t index = static_cast<uint64_t>(x) + static_cast<uint64_t>(y) * width;
 
             // Draw grid background for the base layer
             const ImU32 col = (static_cast<int>(x) + static_cast<int>(y)) % 2 == 0 ? IM_COL32(110, 110, 110, 255) : IM_COL32(175, 175, 175, 255);
@@ -550,7 +544,7 @@ void cCanvas::Editor() {
                 if (!g_canvas[g_cidx].layerVisibility[layer])
                     continue; // Skip drawing this layer if it is not visible
 
-                ImU32 tileColor = g_canvas[g_cidx].tiles[layer][index];
+                const ImU32 tileColor = g_canvas[g_cidx].tiles[layer][index];
 
                 // Check for transparency in the tile color
                 if (((tileColor >> 24) & 0xFF) > 0) {
@@ -570,15 +564,9 @@ void cCanvas::Editor() {
 
     const bool bCanDraw = !IsClickingOutsideCanvas() && x >= 0 && x < g_canvas[g_cidx].width && y >= 0 && y < g_canvas[g_cidx].height;
     static ImVec2 mouseStart;
-    if (g_util.MousePressed(0)) mouseStart = ImGui::GetMousePos();
-
-    const float brushRadius = brush_size / 2.0f;
-
-    // Declare variables to store the previous mouse position
     static ImVec2 lastMousePos = ImVec2(-1, -1);
-
-    // Get the current mouse position
-    ImVec2 currentMousePos = ImGui::GetMousePos();
+    if (g_util.MousePressed(0)) mouseStart = ImGui::GetMousePos();
+    const float brushRadius = brush_size / 2.0f;
 
     if (bCanDraw && g_util.Hovering(g_cam.x + x * TILE_SIZE, g_cam.y + y * TILE_SIZE, g_cam.x + x * TILE_SIZE + TILE_SIZE, g_cam.y + y * TILE_SIZE + TILE_SIZE)) {
         switch (paintToolSelected) {
@@ -850,10 +838,8 @@ void cCanvas::Editor() {
     }
 
     // Draw a rectangle around the selected indexes
-    if (!selectedIndexes.empty()) {
+    if (!selectedIndexes.empty())
         DrawSelectionRectangle(&d, selectedIndexes, TILE_SIZE, g_cam.x, g_cam.y, width, IM_COL32_WHITE, 2);
-        DrawSelectionRectangle(&d, nonSelectedIndexes, TILE_SIZE, g_cam.x, g_cam.y, width, IM_COL32(175, 175, 175, 255), 1);
-    }
 
     //TODO: when we click new project it makes one state for us right now... But we should make it create that state upon new creation only. Fix states being added during dialog.
     //Add canvas to history for undo-redo feature
@@ -872,5 +858,5 @@ void cCanvas::Editor() {
     }
 
     // Update the previous mouse position for the next frame
-    lastMousePos = currentMousePos;
+    lastMousePos = ImGui::GetMousePos();
 }
