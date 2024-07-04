@@ -3,10 +3,7 @@
 #include <filesystem>
 
 void DataManager::SaveDataToFile(const std::string& input, const std::string& data) {
-    std::ofstream file;
-    file.open(input);
-    file << data;
-    file.close();
+    std::ofstream file; file.open(input); file << data; file.close();
 }
 
 bool DataManager::LoadColorData(const std::string& filepath, std::vector<ImU32>& data) {
@@ -20,18 +17,16 @@ bool DataManager::LoadColorData(const std::string& filepath, std::vector<ImU32>&
     std::string value;
 
     // Push our data to our values vector
-    while (file >> value)
-        values.push_back(value);
-
-    const int jump_val = expectAlpha ? 4 : 3;
+    while (file >> value) values.push_back(value);
     data.clear();
 
     // Create our two main colors at bottom
     std::vector<ImU32> main_cols = { IM_COL32(0, 0, 0, 255), IM_COL32(255, 255, 255, 255) };
 
     //Push our two main colors to the array
-    for (auto& c : main_cols)
-        data.push_back(c);
+    for (auto& c : main_cols) data.push_back(c);
+
+    const int jump_val = expectAlpha ? 4 : 3;
 
     for (size_t i = 0; i + jump_val <= values.size(); i += jump_val) {
         try {
