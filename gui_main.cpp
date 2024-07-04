@@ -10,6 +10,8 @@
 #include "utils.h"
 #include <unordered_set>
 #include "imgui_internal.h"
+#include <numeric>
+#include <random>
 
 ImU32 AdjustSaturation(ImU32 color, float saturationFactor) {
     float r = (color >> IM_COL32_R_SHIFT) & 0xFF;
@@ -94,6 +96,29 @@ ImU32 applyFloydSteinbergDithering(ImU32 color, uint64_t x, uint64_t y) {
     return IM_COL32(r, g, b, 255);
 }
 
+// Function to generate a permutation of indices
+std::vector<uint64_t> GeneratePermutation(uint64_t size, uint64_t seed) {
+    std::vector<uint64_t> permutation(size);
+    std::iota(permutation.begin(), permutation.end(), 0);
+    std::shuffle(permutation.begin(), permutation.end(), std::default_random_engine(seed));
+    return permutation;
+}
+
+// Function to apply XOR to a color
+ImU32 XorColor(ImU32 color, ImU32 key) {
+    return color ^ key;
+}
+
+void GenerateRandomKeyAndSeed(ImU32& key, uint64_t& seed) {
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::uniform_int_distribution<uint32_t> disKey;
+    std::uniform_int_distribution<uint64_t> disSeed;
+
+    key = disKey(gen);
+    seed = disSeed(gen);
+}
+
 void cGUI::Display()
 {
     auto& io = ImGui::GetIO();
@@ -147,7 +172,7 @@ void cGUI::Display()
                     g_canvas[g_cidx].PasteSelection();
             }
             
-            if (ImGui::MenuItem(ICON_FA_EXCHANGE " Convert color to palette") && g_canvas.size() > 0) {
+            if (ImGui::MenuItem(ICON_FA_EXCHANGE " Convert Canvas Colors To Palette") && g_canvas.size() > 0) {
                 for (uint64_t y = 0; y < g_canvas[g_cidx].height; y++) {
                     for (uint64_t x = 0; x < g_canvas[g_cidx].width; x++) {
                         const uint64_t index = x + y * g_canvas[g_cidx].width;
@@ -237,6 +262,62 @@ void cGUI::Display()
 
                 g_canvas[g_cidx].UpdateCanvasHistory();
             }
+
+            // Define your encryption/decryption key and seed for permutation
+            static ImU32 key = 0xA5A5A5A5; // Example key, you can choose any value
+            static uint64_t seed = 12345;   // Seed for the random permutation
+
+            // Encrypt and Decrypt buttons
+            if (ImGui::MenuItem(ICON_FA_LOCK " Scramble") && g_canvas.size() > 0) {
+                const uint64_t size = g_canvas[g_cidx].width * g_canvas[g_cidx].height;
+                const std::vector<uint64_t> permutation = GeneratePermutation(size, seed);
+
+                // Encrypt the colors on the canvas
+                std::vector<ImU32> tempColors(size);
+                for (uint64_t i = 0; i < size; i++) {
+                    const uint64_t permutedIndex = permutation[i];
+
+                    // Encrypt the color with XOR
+                    const ImU32 currentColor = XorColor(g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex][i], key);
+                    tempColors[permutedIndex] = currentColor;
+                }
+                // Copy the encrypted colors back to the canvas
+                for (uint64_t i = 0; i < size; i++)
+                    g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex][i] = tempColors[i];
+            }
+
+            if (ImGui::MenuItem(ICON_FA_UNLOCK " Descramble") && g_canvas.size() > 0) {
+                const uint64_t size = g_canvas[g_cidx].width * g_canvas[g_cidx].height;
+                const std::vector<uint64_t> permutation = GeneratePermutation(size, seed);
+                std::vector<uint64_t> inversePermutation(size);
+
+                // Create the inverse permutation
+                for (uint64_t i = 0; i < size; i++)
+                    inversePermutation[permutation[i]] = i;
+
+                // Decrypt the colors on the canvas
+                std::vector<ImU32> tempColors(size);
+                for (uint64_t i = 0; i < size; i++) {
+                    const uint64_t originalIndex = inversePermutation[i];
+                    const ImU32 encryptedColor = g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex][i];
+
+                    // Decrypt the color with XOR
+                    const ImU32 decryptedColor = XorColor(encryptedColor, key);
+
+                    tempColors[originalIndex] = decryptedColor;
+                }
+                // Copy the decrypted colors back to the canvas
+                for (uint64_t i = 0; i < size; i++)
+                    g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex][i] = tempColors[i];
+            }
+
+            // Input fields for key and seed
+            ImGui::InputScalar("Key", ImGuiDataType_U32, &key, nullptr, nullptr, "%08X", ImGuiInputTextFlags_CharsHexadecimal);
+            ImGui::InputScalar("Seed", ImGuiDataType_U64, &seed, nullptr, nullptr, "%016llX", ImGuiInputTextFlags_CharsHexadecimal);
+
+            // Button to generate random key and seed
+            if (ImGui::Button(ICON_FA_KEY " Generate Random Key & Seed"))
+                GenerateRandomKeyAndSeed(key, seed);
 
             if (ImGui::CollapsingHeader("Color Adjustments")) {
                 static float saturationFactor = 1.0f; // Default to no change in saturation
@@ -329,8 +410,7 @@ void cGUI::Display()
         ImGui::EndMainMenuBar();
 
         // Dont show any tools if we dont have any projects open.
-        if (g_canvas.empty())
-            return;
+        if (g_canvas.empty()) return;
 
         auto& style = ImGui::GetStyle();
         ImGui::SetNextWindowPos({ 197, io.DisplaySize.y - 19 });
