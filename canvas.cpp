@@ -14,12 +14,8 @@ uint16_t g_cidx = uint16_t();
 
 #include <stack>
 #include <utility> // for std::pair
-#include <unordered_set>
 #include <set>
 #include "keystate.h"
-
-std::unordered_set<uint16_t> selectedIndexes;
-std::unordered_map<uint16_t, ImU32> copiedTiles; // Store copied tiles and their colors
 
 // Flood fill function
 void floodFill(int x, int y, bool paint) {
@@ -217,7 +213,7 @@ ImVec2 GetTilePos(uint16_t index, float tileSize, float camX, float camY, int wi
     return ImVec2(camX + x * tileSize, camY + y * tileSize);
 }
 
-void DrawSelectionRectangle(ImDrawList* drawList, const std::unordered_set<uint16_t>& indexes, float tileSize, float camX, float camY, int width, ImU32 col, uint8_t thickness) {
+void DrawSelectionRectangle(ImDrawList* drawList, const std::unordered_set<uint64_t>& indexes, float tileSize, float camX, float camY, int width, ImU32 col, uint8_t thickness) {
     if (indexes.empty()) return;
 
     float minX = FLT_MAX, minY = FLT_MAX;
@@ -235,7 +231,7 @@ void DrawSelectionRectangle(ImDrawList* drawList, const std::unordered_set<uint1
     drawList->AddRect(ImVec2(minX, minY), ImVec2(maxX, maxY), col, 0.0f, 0, float(thickness));
 }
 
-std::unordered_set<uint16_t> initialSelectedIndexes;
+std::unordered_set<uint64_t> initialSelectedIndexes;
 
 void cCanvas::PasteSelection() {
     // Ensure there is something to paste
@@ -248,7 +244,7 @@ void cCanvas::PasteSelection() {
     NewLayer();
     g_canvas[g_cidx].selLayerIndex = g_canvas[g_cidx].tiles.size() - 1; // Set to the newly created layer
 
-    std::unordered_set<uint16_t> newSelectedIndexes;
+    std::unordered_set<uint64_t> newSelectedIndexes;
     for (auto& tile : copiedTiles) {
         const int selectX = tile.first % g_canvas[g_cidx].width;
         const int selectY = tile.first / g_canvas[g_cidx].width;
@@ -690,8 +686,8 @@ void cCanvas::Editor() {
                 ImVec2 offset = ImGui::GetMousePos();
                 offset.x -= mouseStart.x; offset.y -= mouseStart.y;
 
-                std::unordered_set<uint16_t> newSelectedIndexes;
-                std::unordered_map<uint16_t, ImU32> newTileColors;
+                std::unordered_set<uint64_t> newSelectedIndexes;
+                std::unordered_map<uint64_t, ImU32> newTileColors;
 
                 for (const auto& index : initialSelectedIndexes) {
                     const int selectX = index % width;

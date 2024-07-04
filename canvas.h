@@ -2,10 +2,13 @@
 #include "imgui.h"
 #include "app.h"
 #include "includes.h"
+#include <unordered_set>
 #include <string>
 
 //The id of our current selected canvas project!
 extern uint16_t g_cidx;
+inline std::unordered_set<uint64_t> selectedIndexes;
+inline std::unordered_map<uint64_t, ImU32> copiedTiles; // Store copied tiles and their colors
 
 enum eTools {
 	TOOL_BRUSH,
