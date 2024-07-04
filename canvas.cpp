@@ -220,7 +220,7 @@ void DrawSelectionRectangle(ImDrawList* drawList, const std::unordered_set<uint6
     float maxX = -FLT_MAX, maxY = -FLT_MAX;
 
     for (uint16_t index : indexes) {
-        ImVec2 pos = GetTilePos(index, tileSize, camX, camY, width);
+        const ImVec2 pos = GetTilePos(index, tileSize, camX, camY, width);
         minX = std::min(minX, pos.x);
         minY = std::min(minY, pos.y);
         maxX = std::max(maxX, pos.x + tileSize);
@@ -245,13 +245,13 @@ void cCanvas::PasteSelection() {
     g_canvas[g_cidx].selLayerIndex = g_canvas[g_cidx].tiles.size() - 1; // Set to the newly created layer
 
     std::unordered_set<uint64_t> newSelectedIndexes;
-    for (auto& tile : copiedTiles) {
+    for (const auto& tile : copiedTiles) {
         const int selectX = tile.first % g_canvas[g_cidx].width;
         const int selectY = tile.first / g_canvas[g_cidx].width;
 
         // Ensure the coordinates are within the canvas boundaries
         if (selectX >= 0 && selectX < g_canvas[g_cidx].width && selectY >= 0 && selectY < g_canvas[g_cidx].height) {
-            uint16_t newIndex = selectX + selectY * g_canvas[g_cidx].width;
+            const uint16_t newIndex = selectX + selectY * g_canvas[g_cidx].width;
             g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex][newIndex] = tile.second;
             newSelectedIndexes.insert(newIndex);
         }
@@ -267,7 +267,7 @@ void cCanvas::CopySelection() {
         printf("CopySelection: No selected tiles to copy.\n");
         return;
     }
-    for (auto& index : selectedIndexes)
+    for (const auto& index : selectedIndexes)
         copiedTiles[index] = g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex][index];
 }
 
@@ -354,9 +354,8 @@ void DrawCircleOnCanvas(int startX, int startY, int endX, int endY, ImU32 color,
                         const ImVec2 bottomRight = { topLeft.x + g_canvas[g_cidx].TILE_SIZE, topLeft.y + g_canvas[g_cidx].TILE_SIZE };
                         ImGui::GetBackgroundDrawList()->AddRectFilled(topLeft, bottomRight, color);
                     }
-                    else {
+                    else
                         g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex][py * g_canvas[g_cidx].width + px] = color;
-                    }
                 }
             }
         };
