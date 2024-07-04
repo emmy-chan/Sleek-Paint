@@ -405,8 +405,7 @@ void DrawRectangleOnCanvas(int x0, int y0, int x1, int y1, ImU32 color, bool pre
 void cCanvas::UpdateZoom() {
     // Zooming
     if (ImGui::GetIO().MouseWheel != 0.f) {
-        const float minZoom = 2.0f;
-        const float maxZoom = 50.0f;
+        const float minZoom = 2.0f, maxZoom = 50.0f;
 
         // Calculate new zoom level
         const float newZoom = glm::clamp(TILE_SIZE + ImGui::GetIO().MouseWheel * 4, minZoom, maxZoom);
@@ -414,13 +413,9 @@ void cCanvas::UpdateZoom() {
 
         // Adjust camera position to keep the zoom centered around the mouse position
         ImVec2 offset = { mousePos.x - g_cam.x, mousePos.y - g_cam.y };
-        offset.x /= TILE_SIZE;
-        offset.y /= TILE_SIZE;
-        offset.x *= newZoom;
-        offset.y *= newZoom;
-        g_cam.x = mousePos.x - offset.x;
-        g_cam.y = mousePos.y - offset.y;
-
+        offset.x /= TILE_SIZE; offset.y /= TILE_SIZE;
+        offset.x *= newZoom; offset.y *= newZoom;
+        g_cam.x = mousePos.x - offset.x; g_cam.y = mousePos.y - offset.y;
         TILE_SIZE = newZoom;
     }
 }
@@ -498,8 +493,8 @@ void cCanvas::Editor() {
     }
 
     // Convert the screen coordinates to tile coordinates
-    uint16_t x = static_cast<int>((ImGui::GetMousePos().x - g_cam.x) / TILE_SIZE);
-    uint16_t y = static_cast<int>((ImGui::GetMousePos().y - g_cam.y) / TILE_SIZE);
+    const uint16_t x = static_cast<int>((ImGui::GetMousePos().x - g_cam.x) / TILE_SIZE);
+    const uint16_t y = static_cast<int>((ImGui::GetMousePos().y - g_cam.y) / TILE_SIZE);
 
     const bool bCanDraw = !g_util.IsClickingOutsideCanvas() && x >= 0 && x < g_canvas[g_cidx].width && y >= 0 && y < g_canvas[g_cidx].height;
     static ImVec2 mouseStart; static ImVec2 lastMousePos = ImVec2(-1, -1);
@@ -533,7 +528,7 @@ void cCanvas::Editor() {
                         if (selectedIndexes.empty() || selectedIndexes.find((uint64_t)brushX + (uint64_t)brushY * width) != selectedIndexes.end()) {
                             for (int offsetY = -brushRadius; offsetY <= brushRadius; ++offsetY) {
                                 for (int offsetX = -brushRadius; offsetX <= brushRadius; ++offsetX) {
-                                    float distance = glm::sqrt(offsetX * offsetX + offsetY * offsetY);
+                                    const float distance = glm::sqrt(offsetX * offsetX + offsetY * offsetY);
                                     if (distance <= brushRadius) {
                                         const int finalX = brushX + offsetX;
                                         const int finalY = brushY + offsetY;

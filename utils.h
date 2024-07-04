@@ -16,7 +16,7 @@ public:
 	int ColorDistanceSquared(const ImU32& col1, const ImU32& col2);
 	int ColorDifference(const ImU32& col1, const ImU32& col2);
 	bool IsTilesEqual(const std::vector<ImU32>& a, const std::vector<ImU32>& b);
-	bool IsClickingOutsideCanvas();
+	const bool IsClickingOutsideCanvas();
 	//bool InitializeInputState(void);
 	//void UpdateInputState();
 	//int m_mouse_x;
