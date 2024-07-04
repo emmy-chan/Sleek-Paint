@@ -574,26 +574,50 @@ void cCanvas::Editor() {
 
     const float brushRadius = brush_size / 2.0f;
 
+    // Declare variables to store the previous mouse position
+    static ImVec2 lastMousePos = ImVec2(-1, -1);
+
+    // Get the current mouse position
+    ImVec2 currentMousePos = ImGui::GetMousePos();
+
     if (bCanDraw && g_util.Hovering(g_cam.x + x * TILE_SIZE, g_cam.y + y * TILE_SIZE, g_cam.x + x * TILE_SIZE + TILE_SIZE, g_cam.y + y * TILE_SIZE + TILE_SIZE)) {
         switch (paintToolSelected) {
         case TOOL_BRUSH:
             //brush
-            if (selectedIndexes.empty() || selectedIndexes.find((uint64_t)x + (uint64_t)y * width) != selectedIndexes.end()) {
-                if (io.MouseDown[0] || io.MouseDown[1]) {
-                    for (int offsetY = -brushRadius; offsetY <= brushRadius; ++offsetY) {
-                        for (int offsetX = -brushRadius; offsetX <= brushRadius; ++offsetX) {
-                            float distance = std::sqrt(offsetX * offsetX + offsetY * offsetY);
-                            if (distance <= brushRadius) {
-                                const int brushX = x + offsetX;
-                                const int brushY = y + offsetY;
-                                if (brushX >= 0 && brushX < width && brushY >= 0 && brushY < height) {
-                                    if (ImGui::GetMousePos().x > 0 && ImGui::GetMousePos().x < io.DisplaySize.x - 1 &&
-                                        ImGui::GetMousePos().y > 0 && ImGui::GetMousePos().y < io.DisplaySize.y - 1) {
-                                        if (io.MouseDown[0]) {
-                                            tiles[g_canvas[g_cidx].selLayerIndex][brushX + brushY * width] = myCols[selColIndex];
-                                        }
-                                        else if (io.MouseDown[1]) {
-                                            tiles[g_canvas[g_cidx].selLayerIndex][brushX + brushY * width] = IM_COL32(0, 0, 0, 0);
+            if (io.MouseDown[0] || io.MouseDown[1]) {
+                // Check if there is a valid previous position
+                if (lastMousePos.x >= 0 && lastMousePos.y >= 0) {
+                    const int lastX = static_cast<int>((lastMousePos.x - g_cam.x) / TILE_SIZE);
+                    const int lastY = static_cast<int>((lastMousePos.y - g_cam.y) / TILE_SIZE);
+
+                    // Calculate the distance between the previous and current mouse positions
+                    const float distX = x - lastX;
+                    const float distY = y - lastY;
+                    const float distance = std::sqrt(distX * distX + distY * distY);
+
+                    // Number of steps to interpolate
+                    const int steps = static_cast<int>(distance) + 1;
+
+                    for (int i = 0; i <= steps; ++i) {
+                        const float t = static_cast<float>(i) / steps;
+                        const int brushX = static_cast<int>(lastX + t * distX);
+                        const int brushY = static_cast<int>(lastY + t * distY);
+
+                        // Apply brush effect at the interpolated position
+                        if (selectedIndexes.empty() || selectedIndexes.find((uint64_t)brushX + (uint64_t)brushY * width) != selectedIndexes.end()) {
+                            for (int offsetY = -brushRadius; offsetY <= brushRadius; ++offsetY) {
+                                for (int offsetX = -brushRadius; offsetX <= brushRadius; ++offsetX) {
+                                    float distance = std::sqrt(offsetX * offsetX + offsetY * offsetY);
+                                    if (distance <= brushRadius) {
+                                        const int finalX = brushX + offsetX;
+                                        const int finalY = brushY + offsetY;
+                                        if (finalX >= 0 && finalX < width && finalY >= 0 && finalY < height) {
+                                            if (io.MouseDown[0]) {
+                                                tiles[g_canvas[g_cidx].selLayerIndex][finalX + finalY * width] = myCols[selColIndex];
+                                            }
+                                            else if (io.MouseDown[1]) {
+                                                tiles[g_canvas[g_cidx].selLayerIndex][finalX + finalY * width] = IM_COL32(0, 0, 0, 0);
+                                            }
                                         }
                                     }
                                 }
@@ -606,7 +630,7 @@ void cCanvas::Editor() {
             // Adjust the visualization of the brush size
             for (int offsetY = -brushRadius; offsetY <= brushRadius; ++offsetY) {
                 for (int offsetX = -brushRadius; offsetX <= brushRadius; ++offsetX) {
-                    float distance = std::sqrt(offsetX * offsetX + offsetY * offsetY);
+                    const float distance = std::sqrt(offsetX * offsetX + offsetY * offsetY);
                     if (distance <= brushRadius) {
                         const int brushX = x + offsetX;
                         const int brushY = y + offsetY;
@@ -846,4 +870,7 @@ void cCanvas::Editor() {
             g_cam.y += io.MouseDelta.y;
         }
     }
+
+    // Update the previous mouse position for the next frame
+    lastMousePos = currentMousePos;
 }
