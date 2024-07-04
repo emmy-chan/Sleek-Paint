@@ -427,9 +427,7 @@ void cCanvas::UpdateZoom() {
 
 void cCanvas::Editor() {
     if (g_canvas.empty() || g_canvas[g_cidx].tiles.empty() || g_canvas[g_cidx].layerVisibility.empty()) return;
-
-    auto& d = *ImGui::GetBackgroundDrawList();
-    auto& io = ImGui::GetIO();
+    auto& d = *ImGui::GetBackgroundDrawList(); auto& io = ImGui::GetIO();
 
     if (!g_app.ui_state) {
         key_state.update();
@@ -456,20 +454,13 @@ void cCanvas::Editor() {
             CopySelection();
         else if (GetAsyncKeyState(VK_CONTROL) && key_state.key_pressed('V') && !copiedTiles.empty()) // Paste our selection area
             PasteSelection();
-        else if (key_state.key_pressed('B'))
-            paintToolSelected = TOOL_BRUSH;
-        else if (key_state.key_pressed('G'))
-            paintToolSelected = TOOL_BUCKET;
-        else if (key_state.key_pressed('E'))
-            paintToolSelected = TOOL_ERASER;
-        else if (key_state.key_pressed('X'))
-            paintToolSelected = TOOL_DROPPER;
-        else if (key_state.key_pressed('M'))
-            paintToolSelected = TOOL_MOVE;
-        else if (key_state.key_pressed('W'))
-            paintToolSelected = TOOL_WAND;
-        else if (key_state.key_pressed('S'))
-            paintToolSelected = TOOL_SELECT;
+        else if (key_state.key_pressed('B')) paintToolSelected = TOOL_BRUSH;
+        else if (key_state.key_pressed('G')) paintToolSelected = TOOL_BUCKET;
+        else if (key_state.key_pressed('E')) paintToolSelected = TOOL_ERASER;
+        else if (key_state.key_pressed('X')) paintToolSelected = TOOL_DROPPER;
+        else if (key_state.key_pressed('M')) paintToolSelected = TOOL_MOVE;
+        else if (key_state.key_pressed('W')) paintToolSelected = TOOL_WAND;
+        else if (key_state.key_pressed('S')) paintToolSelected = TOOL_SELECT;
 
         UpdateZoom();
     }
