@@ -172,7 +172,7 @@ void cGUI::Display()
                     g_canvas[g_cidx].PasteSelection();
             }
             
-            if (ImGui::MenuItem(ICON_FA_EXCHANGE " Convert Canvas Colors To Palette") && g_canvas.size() > 0) {
+            if (ImGui::MenuItem(ICON_FA_ARROW_RIGHT " Convert Canvas Colors To Palette") && g_canvas.size() > 0) {
                 for (uint64_t y = 0; y < g_canvas[g_cidx].height; y++) {
                     for (uint64_t x = 0; x < g_canvas[g_cidx].width; x++) {
                         const uint64_t index = x + y * g_canvas[g_cidx].width;
