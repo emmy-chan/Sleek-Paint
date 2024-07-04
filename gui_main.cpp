@@ -502,6 +502,7 @@ void cGUI::Display()
     if (ImGui::Button("Remove Layer", { ImGui::GetColumnWidth(), ImGui::GetFrameHeight() })) {
         if (g_canvas[g_cidx].tiles.size() > 1) {
             g_canvas[g_cidx].tiles.erase(g_canvas[g_cidx].tiles.begin() + g_canvas[g_cidx].selLayerIndex);
+            g_canvas[g_cidx].layerVisibility.erase(g_canvas[g_cidx].layerVisibility.begin() + g_canvas[g_cidx].selLayerIndex);
             if (g_canvas[g_cidx].selLayerIndex > 0) g_canvas[g_cidx].selLayerIndex--;
         }
     }
