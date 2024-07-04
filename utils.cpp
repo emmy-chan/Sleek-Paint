@@ -96,7 +96,7 @@ int cUtils::ColorDifference(const ImU32& col1, const ImU32& col2) {
     const int g2 = (col2 >> IM_COL32_G_SHIFT) & 0xFF;
     const int b2 = (col2 >> IM_COL32_B_SHIFT) & 0xFF;
     const int a2 = (col2 >> IM_COL32_A_SHIFT) & 0xFF;
-    const int diff = std::sqrt((r1 - r2) * (r1 - r2) + (g1 - g2) * (g1 - g2) + (b1 - b2) * (b1 - b2) + (a1 - a2) * (a1 - a2));
+    const int diff = std::sqrt<int>((r1 - r2) * (r1 - r2) + (g1 - g2) * (g1 - g2) + (b1 - b2) * (b1 - b2) + (a1 - a2) * (a1 - a2));
     return diff;
 }
 

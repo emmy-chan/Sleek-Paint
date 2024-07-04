@@ -212,8 +212,8 @@ void cCanvas::DestroyCanvas() {
 
 // Function to calculate the bounding box of the selected indexes
 ImVec2 GetTilePos(uint16_t index, float tileSize, float camX, float camY, int width) {
-    const float x = index % width;
-    const float y = index / width;
+    const float x = float(index % width);
+    const float y = float(index / width);
     return ImVec2(camX + x * tileSize, camY + y * tileSize);
 }
 
@@ -231,8 +231,8 @@ void DrawSelectionRectangle(ImDrawList* drawList, const std::unordered_set<uint1
         maxY = std::max(maxY, pos.y + tileSize);
     }
 
-    drawList->AddRect(ImVec2(minX, minY), ImVec2(maxX, maxY), IM_COL32_BLACK, 0.0f, 0, thickness * 2);
-    drawList->AddRect(ImVec2(minX, minY), ImVec2(maxX, maxY), col, 0.0f, 0, thickness);
+    drawList->AddRect(ImVec2(minX, minY), ImVec2(maxX, maxY), IM_COL32_BLACK, 0.0f, 0, float(thickness * 2));
+    drawList->AddRect(ImVec2(minX, minY), ImVec2(maxX, maxY), col, 0.0f, 0, float(thickness));
 }
 
 std::unordered_set<uint16_t> initialSelectedIndexes;
@@ -498,10 +498,11 @@ void cCanvas::Editor() {
 
     const bool bCanDraw = !g_util.IsClickingOutsideCanvas() && x >= 0 && x < g_canvas[g_cidx].width && y >= 0 && y < g_canvas[g_cidx].height;
     static ImVec2 mouseStart; static ImVec2 lastMousePos = ImVec2(-1, -1);
-    if (g_util.MousePressed(0)) mouseStart = ImGui::GetMousePos();
-    const float brushRadius = brush_size / 2.0f;
 
     if (bCanDraw && g_util.Hovering(g_cam.x + x * TILE_SIZE, g_cam.y + y * TILE_SIZE, g_cam.x + x * TILE_SIZE + TILE_SIZE, g_cam.y + y * TILE_SIZE + TILE_SIZE)) {
+        if (g_util.MousePressed(0)) mouseStart = ImGui::GetMousePos();
+        const int brushRadius = brush_size / 2.0f;
+        
         switch (paintToolSelected) {
         case TOOL_BRUSH:
             //brush
