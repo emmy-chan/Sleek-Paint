@@ -262,123 +262,150 @@ void cGUI::Display()
                 g_canvas[g_cidx].UpdateCanvasHistory();
             }
 
+            
+
             // Function to center horizontally
-            if (ImGui::MenuItem(ICON_FA_ALIGN_CENTER " Center Horizontally") && g_canvas.size() > 0) {
-                int minX = g_canvas[g_cidx].width, maxX = 0;
+            if (ImGui::MenuItem(ICON_FA_ALIGN_CENTER " Center Selection Horizontally") && g_canvas.size() > 0) {
+                if (!selectedIndexes.empty()) {
+                    int minX = g_canvas[g_cidx].width, maxX = 0;
 
-                // Find the horizontal bounding box of the non-transparent tiles
-                for (uint64_t y = 0; y < g_canvas[g_cidx].height; y++) {
-                    for (uint64_t x = 0; x < g_canvas[g_cidx].width; x++) {
-                        if (selectedIndexes.find(x + y * g_canvas[g_cidx].width) == selectedIndexes.end())
-                            continue;
+                    // Find the horizontal bounding box of the non-transparent tiles
+                    for (uint64_t y = 0; y < g_canvas[g_cidx].height; y++) {
+                        for (uint64_t x = 0; x < g_canvas[g_cidx].width; x++) {
+                            if (selectedIndexes.find(x + y * g_canvas[g_cidx].width) == selectedIndexes.end())
+                                continue;
 
-                        const uint64_t index = x + y * g_canvas[g_cidx].width;
-                        const ImU32& currentColor = g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex][index];
+                            const uint64_t index = x + y * g_canvas[g_cidx].width;
+                            const ImU32& currentColor = g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex][index];
 
-                        if (((currentColor >> IM_COL32_A_SHIFT) & 0xFF) != 0) {
-                            if (x < minX) minX = x;
-                            if (x > maxX) maxX = x;
-                        }
-                    }
-                }
-
-                // Calculate the horizontal center position
-                const int boundingBoxWidth = maxX - minX + 1;
-                const int canvasCenterX = g_canvas[g_cidx].width / 2;
-                const int offsetX = canvasCenterX - boundingBoxWidth / 2 - minX;
-
-                // Create a new tile array to hold the centered tiles
-                std::vector<ImU32> newTiles(g_canvas[g_cidx].width * g_canvas[g_cidx].height, 0);
-                std::unordered_set<uint64_t> newSelectedIndexes;
-
-                // Move the non-transparent tiles to the new horizontally centered positions
-                for (uint64_t y = 0; y < g_canvas[g_cidx].height; y++) {
-                    for (uint64_t x = 0; x < g_canvas[g_cidx].width; x++) {
-                        if (selectedIndexes.find(x + y * g_canvas[g_cidx].width) == selectedIndexes.end())
-                            continue;
-
-                        const uint64_t oldIndex = x + y * g_canvas[g_cidx].width;
-                        const ImU32& currentColor = g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex][oldIndex];
-
-                        if (((currentColor >> IM_COL32_A_SHIFT) & 0xFF) != 0) {
-                            const int newX = x + offsetX;
-
-                            if (newX >= 0 && newX < g_canvas[g_cidx].width) {
-                                const uint64_t newIndex = newX + y * g_canvas[g_cidx].width;
-                                newTiles[newIndex] = currentColor;
-                                newSelectedIndexes.insert(newIndex);
+                            if (((currentColor >> IM_COL32_A_SHIFT) & 0xFF) != 0) {
+                                if (x < minX) minX = x;
+                                if (x > maxX) maxX = x;
                             }
                         }
                     }
+
+                    // Calculate the horizontal center position
+                    const int boundingBoxWidth = maxX - minX + 1;
+                    const int canvasCenterX = g_canvas[g_cidx].width / 2;
+                    const int offsetX = canvasCenterX - boundingBoxWidth / 2 - minX;
+
+                    // Create a copy of the current tiles
+                    std::vector<ImU32> newTiles = g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex];
+                    std::unordered_set<uint64_t> newSelectedIndexes;
+
+                    // Clear the area within the bounding box
+                    for (uint64_t y = 0; y < g_canvas[g_cidx].height; y++) {
+                        for (uint64_t x = minX; x <= maxX; x++) {
+                            const uint64_t oldIndex = x + y * g_canvas[g_cidx].width;
+                            if (selectedIndexes.find(oldIndex) != selectedIndexes.end()) {
+                                newTiles[oldIndex] = 0;
+                            }
+                        }
+                    }
+
+                    // Move the non-transparent tiles to the new horizontally centered positions
+                    for (uint64_t y = 0; y < g_canvas[g_cidx].height; y++) {
+                        for (uint64_t x = 0; x < g_canvas[g_cidx].width; x++) {
+                            if (selectedIndexes.find(x + y * g_canvas[g_cidx].width) == selectedIndexes.end())
+                                continue;
+
+                            const uint64_t oldIndex = x + y * g_canvas[g_cidx].width;
+                            const ImU32& currentColor = g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex][oldIndex];
+
+                            if (((currentColor >> IM_COL32_A_SHIFT) & 0xFF) != 0) {
+                                const int newX = x + offsetX;
+
+                                if (newX >= 0 && newX < g_canvas[g_cidx].width) {
+                                    const uint64_t newIndex = newX + y * g_canvas[g_cidx].width;
+                                    newTiles[newIndex] = currentColor;
+                                    newSelectedIndexes.insert(newIndex);
+                                }
+                            }
+                        }
+                    }
+
+                    // Copy the new tiles back to the canvas
+                    g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex] = std::move(newTiles);
+
+                    // Update the selectedIndexes
+                    selectedIndexes.swap(newSelectedIndexes);
+
+                    g_canvas[g_cidx].UpdateCanvasHistory();
                 }
-
-                // Copy the new tiles back to the canvas
-                g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex] = std::move(newTiles);
-
-                // Update the selectedIndexes
-                selectedIndexes.swap(newSelectedIndexes);
-
-                g_canvas[g_cidx].UpdateCanvasHistory();
             }
 
             // Function to center vertically
-            if (ImGui::MenuItem(ICON_FA_ALIGN_CENTER " Center Vertically") && g_canvas.size() > 0) {
-                int minY = g_canvas[g_cidx].height, maxY = 0;
+            if (ImGui::MenuItem(ICON_FA_ALIGN_CENTER " Center Selection Vertically") && g_canvas.size() > 0) {
+                if (!selectedIndexes.empty()) {
+                    int minY = g_canvas[g_cidx].height, maxY = 0;
 
-                // Find the vertical bounding box of the non-transparent tiles
-                for (uint64_t y = 0; y < g_canvas[g_cidx].height; y++) {
-                    for (uint64_t x = 0; x < g_canvas[g_cidx].width; x++) {
-                        if (selectedIndexes.find(x + y * g_canvas[g_cidx].width) == selectedIndexes.end())
-                            continue;
+                    // Find the vertical bounding box of the non-transparent tiles
+                    for (uint64_t y = 0; y < g_canvas[g_cidx].height; y++) {
+                        for (uint64_t x = 0; x < g_canvas[g_cidx].width; x++) {
+                            if (selectedIndexes.find(x + y * g_canvas[g_cidx].width) == selectedIndexes.end())
+                                continue;
 
-                        const uint64_t index = x + y * g_canvas[g_cidx].width;
-                        const ImU32& currentColor = g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex][index];
+                            const uint64_t index = x + y * g_canvas[g_cidx].width;
+                            const ImU32& currentColor = g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex][index];
 
-                        if (((currentColor >> IM_COL32_A_SHIFT) & 0xFF) != 0) {
-                            if (y < minY) minY = y;
-                            if (y > maxY) maxY = y;
-                        }
-                    }
-                }
-
-                // Calculate the vertical center position
-                const int boundingBoxHeight = maxY - minY + 1;
-                const int canvasCenterY = g_canvas[g_cidx].height / 2;
-                const int offsetY = canvasCenterY - boundingBoxHeight / 2 - minY;
-
-                // Create a new tile array to hold the centered tiles
-                std::vector<ImU32> newTiles(g_canvas[g_cidx].width * g_canvas[g_cidx].height, 0);
-                std::unordered_set<uint64_t> newSelectedIndexes;
-
-                // Move the non-transparent tiles to the new vertically centered positions
-                for (uint64_t y = 0; y < g_canvas[g_cidx].height; y++) {
-                    for (uint64_t x = 0; x < g_canvas[g_cidx].width; x++) {
-                        if (selectedIndexes.find(x + y * g_canvas[g_cidx].width) == selectedIndexes.end())
-                            continue;
-
-                        const uint64_t oldIndex = x + y * g_canvas[g_cidx].width;
-                        const ImU32& currentColor = g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex][oldIndex];
-
-                        if (((currentColor >> IM_COL32_A_SHIFT) & 0xFF) != 0) {
-                            const int newY = y + offsetY;
-
-                            if (newY >= 0 && newY < g_canvas[g_cidx].height) {
-                                const uint64_t newIndex = x + newY * g_canvas[g_cidx].width;
-                                newTiles[newIndex] = currentColor;
-                                newSelectedIndexes.insert(newIndex);
+                            if (((currentColor >> IM_COL32_A_SHIFT) & 0xFF) != 0) {
+                                if (y < minY) minY = y;
+                                if (y > maxY) maxY = y;
                             }
                         }
                     }
+
+                    // Calculate the vertical center position
+                    const int boundingBoxHeight = maxY - minY + 1;
+                    const int canvasCenterY = g_canvas[g_cidx].height / 2;
+                    const int offsetY = canvasCenterY - boundingBoxHeight / 2 - minY;
+
+                    // Create a copy of the current tiles
+                    std::vector<ImU32> newTiles = g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex];
+                    std::unordered_set<uint64_t> newSelectedIndexes;
+
+                    // Clear the area within the bounding box
+                    for (uint64_t y = minY; y <= maxY; y++) {
+                        for (uint64_t x = 0; x < g_canvas[g_cidx].width; x++) {
+                            const uint64_t oldIndex = x + y * g_canvas[g_cidx].width;
+                            if (selectedIndexes.find(oldIndex) != selectedIndexes.end()) {
+                                newTiles[oldIndex] = 0;
+                            }
+                        }
+                    }
+
+                    // Move the non-transparent tiles to the new vertically centered positions
+                    for (uint64_t y = 0; y < g_canvas[g_cidx].height; y++) {
+                        for (uint64_t x = 0; x < g_canvas[g_cidx].width; x++) {
+                            if (selectedIndexes.find(x + y * g_canvas[g_cidx].width) == selectedIndexes.end())
+                                continue;
+
+                            const uint64_t oldIndex = x + y * g_canvas[g_cidx].width;
+                            const ImU32& currentColor = g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex][oldIndex];
+
+                            if (((currentColor >> IM_COL32_A_SHIFT) & 0xFF) != 0) {
+                                const int newY = y + offsetY;
+
+                                if (newY >= 0 && newY < g_canvas[g_cidx].height) {
+                                    const uint64_t newIndex = x + newY * g_canvas[g_cidx].width;
+                                    newTiles[newIndex] = currentColor;
+                                    newSelectedIndexes.insert(newIndex);
+                                }
+                            }
+                        }
+                    }
+
+                    // Copy the new tiles back to the canvas
+                    g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex] = std::move(newTiles);
+
+                    // Update the selectedIndexes
+                    selectedIndexes.swap(newSelectedIndexes);
+
+                    g_canvas[g_cidx].UpdateCanvasHistory();
                 }
-
-                // Copy the new tiles back to the canvas
-                g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex] = std::move(newTiles);
-
-                // Update the selectedIndexes
-                selectedIndexes.swap(newSelectedIndexes);
-
-                g_canvas[g_cidx].UpdateCanvasHistory();
             }
+
 
 
             // Define your encryption/decryption key and seed for permutation
