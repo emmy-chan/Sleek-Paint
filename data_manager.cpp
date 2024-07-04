@@ -8,13 +8,8 @@ void DataManager::SaveDataToFile(const std::string& input, const std::string& da
 
 bool DataManager::LoadColorData(const std::string& filepath, std::vector<ImU32>& data) {
     bool expectAlpha = false;
-    
-    if (!std::filesystem::exists(filepath))
-        return false;
-
-    std::vector<std::string> values;
-    std::ifstream file(filepath);
-    std::string value;
+    if (!std::filesystem::exists(filepath)) return false;
+    std::vector<std::string> values; std::ifstream file(filepath); std::string value;
 
     // Push our data to our values vector
     while (file >> value) values.push_back(value);
@@ -23,9 +18,8 @@ bool DataManager::LoadColorData(const std::string& filepath, std::vector<ImU32>&
     // Create our two main colors at bottom
     std::vector<ImU32> main_cols = { IM_COL32(0, 0, 0, 255), IM_COL32(255, 255, 255, 255) };
 
-    //Push our two main colors to the array
+    // Push our two main colors to the array
     for (auto& c : main_cols) data.push_back(c);
-
     const int jump_val = expectAlpha ? 4 : 3;
 
     for (size_t i = 0; i + jump_val <= values.size(); i += jump_val) {
@@ -37,8 +31,7 @@ bool DataManager::LoadColorData(const std::string& filepath, std::vector<ImU32>&
             data.push_back(IM_COL32(r, g, b, a));
         }
         catch (const std::exception& e) {
-            // Handle conversion error
-            //std::cerr << "Error converting color data: " << e.what() << std::endl;
+            //std::cerr << "Error converting color data: " << e.what() << std::endl; // Handle conversion error
             return false;
         }
     }

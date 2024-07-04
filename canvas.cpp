@@ -101,7 +101,7 @@ void cCanvas::NewLayer(const std::vector<ImU32>& initial_data) {
     if (!initial_data.empty())
         layer0 = initial_data;
     else {
-        // Otherwise, create a blank canvas
+        // Create a blank canvas
         for (int i = 0; i < width * height; i++)
             layer0.push_back(IM_COL32(0, 0, 0, 0));
     }
@@ -111,7 +111,7 @@ void cCanvas::NewLayer(const std::vector<ImU32>& initial_data) {
 }
 
 void cCanvas::Clear() {
-    for (auto& tile : g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex]) //int i = 0; i < g_canvas[g_cidx].width * g_canvas[g_cidx].height; i++
+    for (auto& tile : g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex])
         tile = IM_COL32(255, 255, 255, 0);
 }
 
@@ -150,15 +150,6 @@ void cCanvas::AdaptNewSize(int width, int height) {
     g_canvas[g_cidx].height = height;
 }
 
-// Helper function to compare two 1D vectors
-bool isTilesEqual(const std::vector<ImU32>& a, const std::vector<ImU32>& b) {
-    if (a.size() != b.size()) return false;
-    for (size_t i = 0; i < a.size(); ++i) {
-        if (a[i] != b[i]) return false;
-    }
-    return true;
-}
-
 // Function to update the canvas history
 void cCanvas::UpdateCanvasHistory() {
     // Ensure g_cidx is valid
@@ -184,32 +175,13 @@ void cCanvas::UpdateCanvasHistory() {
         previousCanvases.resize(canvas_idx + 1);
 
     // Only add the current state to history if it's different from the last saved state
-    if (previousCanvases.empty() || (!tiles[g_canvas[g_cidx].selLayerIndex].empty() && !previousCanvases.empty() && !isTilesEqual(tiles[g_canvas[g_cidx].selLayerIndex], previousCanvases.back()))) {
+    if (previousCanvases.empty() || (!tiles[g_canvas[g_cidx].selLayerIndex].empty() && !previousCanvases.empty() && !g_util.IsTilesEqual(tiles[g_canvas[g_cidx].selLayerIndex], previousCanvases.back()))) {
         previousCanvases.push_back(tiles[g_canvas[g_cidx].selLayerIndex]);
         canvas_idx = previousCanvases.size() - 1;
         printf("Canvas state created.\n");
     }
     else
         printf("No changes detected; canvas state not updated.\n");
-}
-
-//This is used for fixing accidental brushing when using scroll bars.
-bool IsClickingOutsideCanvas() {
-    auto& io = ImGui::GetIO();
-    static bool bToolFlip = true;
-    const bool bMouseOutsideCanvas = io.MousePos.x < 200 || io.MousePos.x > io.DisplaySize.x - 61 || io.MousePos.y > io.DisplaySize.y - 20 || io.MousePos.y < 24;
-    static bool bCanDraw = !bMouseOutsideCanvas && !g_app.ui_state;
-
-    if (bMouseOutsideCanvas && g_util.MousePressed(0))
-        bToolFlip = false;
-
-    if (!bToolFlip) {
-        if (g_util.MouseReleased(0)) bToolFlip = !g_app.ui_state;
-    }
-    else
-        bCanDraw = !bMouseOutsideCanvas && !g_app.ui_state;
-
-    return !bCanDraw;
 }
 
 void cCanvas::LoadColorPalette(std::string input) {
@@ -538,9 +510,8 @@ void cCanvas::Editor() {
     uint16_t x = static_cast<int>((ImGui::GetMousePos().x - g_cam.x) / TILE_SIZE);
     uint16_t y = static_cast<int>((ImGui::GetMousePos().y - g_cam.y) / TILE_SIZE);
 
-    const bool bCanDraw = !IsClickingOutsideCanvas() && x >= 0 && x < g_canvas[g_cidx].width && y >= 0 && y < g_canvas[g_cidx].height;
-    static ImVec2 mouseStart;
-    static ImVec2 lastMousePos = ImVec2(-1, -1);
+    const bool bCanDraw = !g_util.IsClickingOutsideCanvas() && x >= 0 && x < g_canvas[g_cidx].width && y >= 0 && y < g_canvas[g_cidx].height;
+    static ImVec2 mouseStart; static ImVec2 lastMousePos = ImVec2(-1, -1);
     if (g_util.MousePressed(0)) mouseStart = ImGui::GetMousePos();
     const float brushRadius = brush_size / 2.0f;
 
@@ -592,7 +563,7 @@ void cCanvas::Editor() {
             // Adjust the visualization of the brush size
             for (int offsetY = -brushRadius; offsetY <= brushRadius; ++offsetY) {
                 for (int offsetX = -brushRadius; offsetX <= brushRadius; ++offsetX) {
-                    const float distance = std::sqrt(offsetX * offsetX + offsetY * offsetY);
+                    const float distance = glm::sqrt(offsetX * offsetX + offsetY * offsetY);
                     if (distance <= brushRadius) {
                         const int brushX = x + offsetX;
                         const int brushY = y + offsetY;

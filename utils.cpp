@@ -99,3 +99,30 @@ int cUtils::ColorDifference(const ImU32& col1, const ImU32& col2) {
     const int diff = std::sqrt((r1 - r2) * (r1 - r2) + (g1 - g2) * (g1 - g2) + (b1 - b2) * (b1 - b2) + (a1 - a2) * (a1 - a2));
     return diff;
 }
+
+// Helper function to compare two 1D vectors
+bool cUtils::IsTilesEqual(const std::vector<ImU32>& a, const std::vector<ImU32>& b) {
+    if (a.size() != b.size()) return false;
+    for (size_t i = 0; i < a.size(); ++i) {
+        if (a[i] != b[i]) return false;
+    }
+    return true;
+}
+
+bool cUtils::IsClickingOutsideCanvas() {
+    auto& io = ImGui::GetIO();
+    static bool bToolFlip = true;
+    const bool bMouseOutsideCanvas = io.MousePos.x < 200 || io.MousePos.x > io.DisplaySize.x - 61 || io.MousePos.y > io.DisplaySize.y - 20 || io.MousePos.y < 24;
+    static bool bCanDraw = !bMouseOutsideCanvas && !g_app.ui_state;
+
+    if (bMouseOutsideCanvas && g_util.MousePressed(0))
+        bToolFlip = false;
+
+    if (!bToolFlip) {
+        if (g_util.MouseReleased(0)) bToolFlip = !g_app.ui_state;
+    }
+    else
+        bCanDraw = !bMouseOutsideCanvas && !g_app.ui_state;
+
+    return !bCanDraw;
+}
