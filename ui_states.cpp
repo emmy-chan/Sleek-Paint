@@ -48,10 +48,10 @@ void SaveCanvasToPng(const char* name) {
                 const ImU32 color = g_canvas[g_cidx].tiles[layer][i + j * g_canvas[g_cidx].width];
 
                 // Extract RGBA components
-                const float srcR = ((color >> 0) & 0xFF) / 255.0f;
-                const float srcG = ((color >> 8) & 0xFF) / 255.0f;
-                const float srcB = ((color >> 16) & 0xFF) / 255.0f;
-                const float srcA = ((color >> 24) & 0xFF) / 255.0f;
+                const float srcR = ((color >> IM_COL32_R_SHIFT) & 0xFF) / 255.0f;
+                const float srcG = ((color >> IM_COL32_G_SHIFT) & 0xFF) / 255.0f;
+                const float srcB = ((color >> IM_COL32_B_SHIFT) & 0xFF) / 255.0f;
+                const float srcA = ((color >> IM_COL32_A_SHIFT) & 0xFF) / 255.0f;
 
                 // Blend the source color onto the final color using alpha blending
                 finalR = srcR * srcA + finalR * (1.0f - srcA);
