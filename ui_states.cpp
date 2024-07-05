@@ -42,36 +42,29 @@ void SaveCanvasToPng(const char* name) {
     // Blend all layers
     for (int j = 0; j < g_canvas[g_cidx].height; j++) {
         for (int i = 0; i < g_canvas[g_cidx].width; i++) {
-            ImU32 finalColor = IM_COL32(0, 0, 0, 0); // Start with transparent black
+            float finalR = 0, finalG = 0, finalB = 0, finalA = 0;
+
             for (size_t layer = 0; layer < g_canvas[g_cidx].tiles.size(); layer++) {
                 const ImU32 color = g_canvas[g_cidx].tiles[layer][i + j * g_canvas[g_cidx].width];
 
                 // Extract RGBA components
-                const int srcR = (color >> 0) & 0xFF;
-                const int srcG = (color >> 8) & 0xFF;
-                const int srcB = (color >> 16) & 0xFF;
-                const int srcA = (color >> 24) & 0xFF;
+                const float srcR = ((color >> 0) & 0xFF) / 255.0f;
+                const float srcG = ((color >> 8) & 0xFF) / 255.0f;
+                const float srcB = ((color >> 16) & 0xFF) / 255.0f;
+                const float srcA = ((color >> 24) & 0xFF) / 255.0f;
 
-                const int dstR = (finalColor >> 0) & 0xFF;
-                const int dstG = (finalColor >> 8) & 0xFF;
-                const int dstB = (finalColor >> 16) & 0xFF;
-                const int dstA = (finalColor >> 24) & 0xFF;
-
-                // Blend the source color onto the destination color using alpha blending
-                const float alpha = srcA / 255.0f;
-                const int outR = static_cast<int>(srcR * alpha + dstR * (1 - alpha));
-                const int outG = static_cast<int>(srcG * alpha + dstG * (1 - alpha));
-                const int outB = static_cast<int>(srcB * alpha + dstB * (1 - alpha));
-                const int outA = static_cast<int>(srcA + dstA * (1 - alpha));
-
-                finalColor = IM_COL32(outR, outG, outB, outA);
+                // Blend the source color onto the final color using alpha blending
+                finalR = srcR * srcA + finalR * (1.0f - srcA);
+                finalG = srcG * srcA + finalG * (1.0f - srcA);
+                finalB = srcB * srcA + finalB * (1.0f - srcA);
+                finalA = srcA + finalA * (1.0f - srcA);
             }
 
-            // Store the final blended color into imageData
-            imageData[imagePos++] = (finalColor >> 0) & 0xFF;  // Red
-            imageData[imagePos++] = (finalColor >> 8) & 0xFF;  // Green
-            imageData[imagePos++] = (finalColor >> 16) & 0xFF; // Blue
-            imageData[imagePos++] = (finalColor >> 24) & 0xFF; // Alpha
+            // Convert final blended color back to integer format and store in imageData
+            imageData[imagePos++] = static_cast<char>(finalR * 255);  // Red
+            imageData[imagePos++] = static_cast<char>(finalG * 255);  // Green
+            imageData[imagePos++] = static_cast<char>(finalB * 255);  // Blue
+            imageData[imagePos++] = static_cast<char>(finalA * 255);  // Alpha
         }
     }
 
@@ -368,7 +361,7 @@ void LoadImageFileToCanvas(const std::string& filepath, const std::string& filen
     const size_t image_size = image_width * image_height * 4;
 
     for (size_t i = 0; i < image_size; i += 4)
-        image_layer.push_back(ImColor(image_data[i], image_data[i + 1], image_data[i + 2], image_data[i + 3]));
+        image_layer.push_back(IM_COL32(image_data[i], image_data[i + 1], image_data[i + 2], image_data[i + 3]));
 
     // Set our canvas dimensions based on image
     cCanvas canvas = cCanvas(filename.c_str(), image_width, image_height, image_layer);
