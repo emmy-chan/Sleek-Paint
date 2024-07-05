@@ -106,7 +106,14 @@ std::vector<uint64_t> GeneratePermutation(uint64_t size, uint64_t seed) {
 
 // Function to apply XOR to a color
 ImU32 XorColor(ImU32 color, ImU32 key) {
-    return color ^ key;
+    // Extract the alpha channel
+    ImU32 alpha = color & 0xFF000000;
+    // XOR only the RGB channels
+    ImU32 rgb = color & 0x00FFFFFF;
+    ImU32 key_rgb = key & 0x00FFFFFF;
+    ImU32 xor_rgb = rgb ^ key_rgb;
+    // Combine the unchanged alpha channel with the XORed RGB channels
+    return alpha | xor_rgb;
 }
 
 void GenerateRandomKeyAndSeed(ImU32& key, uint64_t& seed) {
