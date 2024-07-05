@@ -608,18 +608,28 @@ void cCanvas::Editor() {
 
             if (g_util.MouseReleased(0)) {
                 const ImVec2 end = ImGui::GetMousePos();
-                const float startX = std::floor(std::min(mouseStart.x, end.x) / TILE_SIZE) * TILE_SIZE;
-                const float startY = std::floor(std::min(mouseStart.y, end.y) / TILE_SIZE) * TILE_SIZE;
-                const float endX = std::ceil(std::max(mouseStart.x, end.x) / TILE_SIZE) * TILE_SIZE;
-                const float endY = std::ceil(std::max(mouseStart.y, end.y) / TILE_SIZE) * TILE_SIZE;
 
-                for (float selectY = 0; selectY < height; selectY++) {
-                    for (float selectX = 0; selectX < width; selectX++) {
-                        const float tilePosX = g_cam.x + selectX * TILE_SIZE;
-                        const float tilePosY = g_cam.y + selectY * TILE_SIZE;
+                // Calculate the mouse positions relative to the camera
+                const float mouseStartX = mouseStart.x - g_cam.x;
+                const float mouseStartY = mouseStart.y - g_cam.y;
+                const float mouseEndX = end.x - g_cam.x;
+                const float mouseEndY = end.y - g_cam.y;
 
-                        if (tilePosX >= startX && tilePosX < endX && tilePosY >= startY && tilePosY < endY)
-                            selectedIndexes.insert((uint16_t)(selectX + selectY * width));
+                // Snap the coordinates to the tile grid
+                const float startX = std::floor(std::min(mouseStartX, mouseEndX) / TILE_SIZE) * TILE_SIZE;
+                const float startY = std::floor(std::min(mouseStartY, mouseEndY) / TILE_SIZE) * TILE_SIZE;
+                const float endX = std::ceil(std::max(mouseStartX, mouseEndX) / TILE_SIZE) * TILE_SIZE;
+                const float endY = std::ceil(std::max(mouseStartY, mouseEndY) / TILE_SIZE) * TILE_SIZE;
+
+                // Calculate the selection dimensions
+                const int startTileX = startX / TILE_SIZE;
+                const int startTileY = startY / TILE_SIZE;
+                const int endTileX = endX / TILE_SIZE;
+                const int endTileY = endY / TILE_SIZE;
+
+                for (int tileY = startTileY; tileY < endTileY; tileY++) {
+                    for (int tileX = startTileX; tileX < endTileX; tileX++) {
+                        selectedIndexes.insert((uint16_t)(tileX + tileY * width));
                     }
                 }
             }
