@@ -628,9 +628,8 @@ void cCanvas::Editor() {
                 const int endTileY = endY / TILE_SIZE;
 
                 for (int tileY = startTileY; tileY < endTileY; tileY++) {
-                    for (int tileX = startTileX; tileX < endTileX; tileX++) {
+                    for (int tileX = startTileX; tileX < endTileX; tileX++)
                         selectedIndexes.insert((uint16_t)(tileX + tileY * width));
-                    }
                 }
             }
 

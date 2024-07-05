@@ -277,8 +277,7 @@ void cGUI::Display()
                             const ImU32& currentColor = g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex][index];
 
                             if (((currentColor >> IM_COL32_A_SHIFT) & 0xFF) != 0) {
-                                if (x < minX) minX = x;
-                                if (x > maxX) maxX = x;
+                                if (x < minX) minX = x; if (x > maxX) maxX = x;
                             }
                         }
                     }
@@ -296,9 +295,8 @@ void cGUI::Display()
                     for (uint64_t y = 0; y < g_canvas[g_cidx].height; y++) {
                         for (uint64_t x = minX; x <= maxX; x++) {
                             const uint64_t oldIndex = x + y * g_canvas[g_cidx].width;
-                            if (selectedIndexes.find(oldIndex) != selectedIndexes.end()) {
+                            if (selectedIndexes.find(oldIndex) != selectedIndexes.end())
                                 newTiles[oldIndex] = 0;
-                            }
                         }
                     }
 
@@ -467,9 +465,8 @@ void cGUI::Display()
             }
 
             if (ImGui::CollapsingHeader("Color Adjustments") && g_canvas.size() > 0) {
-                static float saturationFactor = 1.0f; // Default to no change in saturation
-                static float contrastFactor = 1.0f;   // Default to no change in contrast
-                bool changed = false; // Track if any adjustments are made
+                static float saturationFactor = 1.0f, contrastFactor = 1.0f;
+                bool changed = false;
 
                 // Store the original colors if not already stored
                 static std::vector<ImU32> originalColors;
@@ -506,6 +503,8 @@ void cGUI::Display()
                         }
                     }
                 }
+                else
+                    saturationFactor = 1.0f, contrastFactor = 1.0f;
 
                 if (ImGui::IsMouseReleased(0)) g_canvas[g_cidx].UpdateCanvasHistory(); // Update history to record the state 
             }
