@@ -17,19 +17,18 @@
 std::string GetColorData(const std::vector<ImU32>& colors, bool includeAlpha) {
     std::string data;
     for (uint16_t i = 0; i < colors.size(); i++) {
-        ImU32 color = colors[i];
-        int red = (color >> 0) & 0xFF;
-        int green = (color >> 8) & 0xFF;
-        int blue = (color >> 16) & 0xFF;
-        int alpha = (color >> 24) & 0xFF;
+        const ImU32 color = colors[i];
+        const int red = (color >> 0) & 0xFF;
+        const int green = (color >> 8) & 0xFF;
+        const int blue = (color >> 16) & 0xFF;
+        const int alpha = (color >> 24) & 0xFF;
 
         data.append(std::to_string(red) + " ");
         data.append(std::to_string(green) + " ");
         data.append(std::to_string(blue) + " ");
 
-        if (includeAlpha) {
+        if (includeAlpha)
             data.append(std::to_string(alpha) + " ");
-        }
     }
     return data;
 }
@@ -75,32 +74,11 @@ void SaveCanvasToPng(const char* name) {
 
 void cUIStateSaveProject::Update()
 {
-    //if (ImGui::Begin("Save Project", NULL, ImGuiWindowFlags_NoCollapse)) {
-    //    static char file_name[MAX_PATH + 1];
-    //    ImGui::Text("File");
-    //    ImGui::PushItemWidth(176);
-    //    ImGui::InputText("##ss", file_name, IM_ARRAYSIZE(file_name));
-    //    ImGui::PopItemWidth();
-    //    //ImGui::SetCursorPosX(ImGui::GetWindowSize().x / 2 - 20);
-
-    //    if (ImGui::Button("Save")) {
-    //        //Do save stuff here!
-    //        g_app.ui_state.reset();
-    //    }
-
-    //    ImGui::SameLine();
-    //    if (ImGui::Button("Cancel")) g_app.ui_state.reset();
-
-    //    ImGui::End();
-    //}
-
     static bool bDisplayed = false;
     static ImGui::FileBrowser fileDialog(ImGuiFileBrowserFlags_EnterNewFilename | ImGuiFileBrowserFlags_CloseOnEsc | ImGuiFileBrowserFlags_CreateNewDir);
     fileDialog.SetTitle("Save Project");
-    //fileDialog.SetTypeFilters({ ".pal" });
 
-    if (!bDisplayed && !fileDialog.IsOpened())
-        fileDialog.Open();
+    if (!bDisplayed && !fileDialog.IsOpened()) fileDialog.Open();
 
     fileDialog.Display();
 
@@ -186,26 +164,6 @@ void cUIStateNewProject::Update()
     auto& io = ImGui::GetIO();
     ImGui::SetNextWindowSize({ 145, 120 }, ImGuiCond_Appearing);
     ImGui::SetNextWindowPos({ io.DisplaySize.x / 2 - 88, io.DisplaySize.y / 2 - 50 }, ImGuiCond_Appearing);
-
-    //if (ImGui::BeginPopupModal("Delete?", NULL, ImGuiWindowFlags_AlwaysAutoResize))
-    //{
-    //    ImGui::Text("All those beautiful files will be deleted.\nThis operation cannot be undone!\n\n");
-    //    ImGui::Separator();
-
-    //    //static int unused_i = 0;
-    //    //ImGui::Combo("Combo", &unused_i, "Delete\0Delete harder\0");
-
-    //    static bool dont_ask_me_next_time = false;
-    //    ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0, 0));
-    //    ImGui::Checkbox("Don't ask me next time", &dont_ask_me_next_time);
-    //    ImGui::PopStyleVar();
-
-    //    if (ImGui::Button("OK", ImVec2(120, 0))) { ImGui::CloseCurrentPopup(); }
-    //    ImGui::SetItemDefaultFocus();
-    //    ImGui::SameLine();
-    //    if (ImGui::Button("Cancel", ImVec2(120, 0))) { ImGui::CloseCurrentPopup(); }
-    //    ImGui::EndPopup();
-    //}
 
     if (ImGui::BeginPopupModal("New Project", NULL, ImGuiWindowFlags_NoResize)) { //ImGuiWindowFlags_AlwaysAutoResize
         static int wInput = 32;
@@ -330,8 +288,7 @@ void cUIStateLoadPalette::Update()
     fileDialog.SetTitle("Load Palette");
     fileDialog.SetTypeFilters({ ".pal" });
 
-    if (!fileDialog.IsOpened())
-        fileDialog.Open();
+    if (!fileDialog.IsOpened()) fileDialog.Open();
 
     fileDialog.Display();
 
@@ -345,25 +302,28 @@ void cUIStateLoadPalette::Update()
     }
 }
 
-//TODO: add multiple file formats?
-//TODO: fix mem leak when loading images and closing the project...
-//Idk if its the image load function itself or lack of cleaning up canvas.
-//We shall do some tests
+// Load from file
 void LoadImageFileToCanvas(const std::string& filepath, const std::string& filename) {
-    // Load from file
     int image_width = 0;
     int image_height = 0;
-    unsigned char* image_data = stbi_load(filepath.c_str(), &image_width, &image_height, NULL, 4);
+    int channels = 0;
+    unsigned char* image_data = stbi_load(filepath.c_str(), &image_width, &image_height, &channels, 0);
     if (image_data == NULL)
         return;
 
     std::vector<ImU32> image_layer;
-    const size_t image_size = image_width * image_height * 4;
+    const size_t image_size = image_width * image_height;
 
-    for (size_t i = 0; i < image_size; i += 4)
-        image_layer.push_back(IM_COL32(image_data[i], image_data[i + 1], image_data[i + 2], image_data[i + 3]));
+    // Ensure we have 4 channels (RGBA)
+    for (size_t i = 0; i < image_size; ++i) {
+        const unsigned char r = image_data[i * channels];
+        const unsigned char g = (channels > 1) ? image_data[i * channels + 1] : r;
+        const unsigned char b = (channels > 2) ? image_data[i * channels + 2] : r;
+        const unsigned char a = (channels > 3) ? image_data[i * channels + 3] : 255;
+        image_layer.push_back(IM_COL32(r, g, b, a));
+    }
 
-    // Set our canvas dimensions based on image
+    // Set our canvas dimensions based on the image
     cCanvas canvas = cCanvas(filename.c_str(), image_width, image_height, image_layer);
     g_canvas.push_back(canvas);
     g_cidx = (uint16_t)g_canvas.size() - 1;
@@ -375,10 +335,9 @@ void cUIStateOpenProject::Update()
 {
     static ImGui::FileBrowser fileDialog(ImGuiFileBrowserFlags_EnterNewFilename | ImGuiFileBrowserFlags_CloseOnEsc | ImGuiFileBrowserFlags_CreateNewDir | ImGuiFileBrowserFlags_NoStatusBar);
     fileDialog.SetTitle("Load Project");
-    fileDialog.SetTypeFilters({ ".spr", ".png" });
+    fileDialog.SetTypeFilters({ ".spr", ".jpg", ".png"});
 
-    if (!fileDialog.IsOpened())
-        fileDialog.Open();
+    if (!fileDialog.IsOpened()) fileDialog.Open();
 
     fileDialog.Display();
 
@@ -400,8 +359,7 @@ void cUIStateSavePalette::Update()
     fileDialog.SetTitle("Save Palette");
     fileDialog.SetTypeFilters({ ".pal" });
 
-    if (!fileDialog.IsOpened())
-        fileDialog.Open();
+    if (!fileDialog.IsOpened()) fileDialog.Open();
 
     fileDialog.Display();
 
@@ -410,23 +368,15 @@ void cUIStateSavePalette::Update()
         g_app.ui_state.reset();
 
         std::vector<ImU32> myCols = g_canvas[g_cidx].myCols;
+        if (myCols.size() > 2) myCols.erase(myCols.begin(), myCols.begin() + 2);
 
-        myCols.erase(myCols.begin());
-        myCols.erase(myCols.begin());
-
-        std::string data = GetColorData(myCols, false);
-        std::string file_name = fileDialog.GetSelected().string();
-
-        //Add extension to file for the user
-        if (!file_name.find(".pal") != std::string::npos) //file_name.size() > 0 && file_name[file_name.size() - 3] != '.'
-        {
-            file_name.append(".pal");
-        }
+        const std::string data = GetColorData(myCols, false);
+        const std::string file_name = (fileDialog.GetSelected().string().find(".pal") == std::string::npos) ? fileDialog.GetSelected().string() + ".pal" : fileDialog.GetSelected().string();
 
         DataManager dm;
         dm.SaveDataToFile(file_name, data);
 
-        std::cout << "Selected filename " << file_name << std::endl;
+        //std::cout << "Selected filename " << file_name << std::endl;
         fileDialog.ClearSelected();
     }
 }
