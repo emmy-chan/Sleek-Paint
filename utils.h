@@ -17,6 +17,12 @@ public:
 	int ColorDifference(const ImU32& col1, const ImU32& col2);
 	bool IsTilesEqual(const std::vector<ImU32>& a, const std::vector<ImU32>& b);
 	const bool IsClickingOutsideCanvas();
+	std::vector<uint64_t> GeneratePermutation(uint64_t size, uint64_t seed);
+	ImU32 XorColor(ImU32 color, ImU32 key);
+	void GenerateRandomKeyAndSeed(ImU32& key, uint64_t& seed);
+	ImU32 AdjustSaturation(ImU32 color, float saturationFactor);
+	ImU32 AdjustContrast(ImU32 color, float contrastFactor);
+	ImU32 ApplyFloydSteinbergDithering(ImU32 color, uint64_t x, uint64_t y);
 	//bool InitializeInputState(void);
 	//void UpdateInputState();
 	//int m_mouse_x;

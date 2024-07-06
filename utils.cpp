@@ -4,6 +4,8 @@
 #include "canvas.h"
 #include "camera.h"
 #include "imgui.h"
+#include <numeric>
+#include <random>
 
 cUtils g_util = cUtils();
 
@@ -125,4 +127,116 @@ const bool cUtils::IsClickingOutsideCanvas() {
         bCanDraw = !bMouseOutsideCanvas && !g_app.ui_state;
 
     return !bCanDraw;
+}
+
+// Function to generate a permutation of indices
+std::vector<uint64_t> cUtils::GeneratePermutation(uint64_t size, uint64_t seed) {
+    std::vector<uint64_t> permutation(size);
+    std::iota(permutation.begin(), permutation.end(), 0);
+    std::shuffle(permutation.begin(), permutation.end(), std::default_random_engine(seed));
+    return permutation;
+}
+
+// Function to apply XOR to a color
+ImU32 cUtils::XorColor(ImU32 color, ImU32 key) {
+    // Extract the alpha channel
+    const ImU32 alpha = color & 0xFF000000;
+    // XOR only the RGB channels
+    const ImU32 rgb = color & 0x00FFFFFF;
+    const ImU32 key_rgb = key & 0x00FFFFFF;
+    const ImU32 xor_rgb = rgb ^ key_rgb;
+    // Combine the unchanged alpha channel with the XORed RGB channels
+    return alpha | xor_rgb;
+}
+
+void cUtils::GenerateRandomKeyAndSeed(ImU32& key, uint64_t& seed) {
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::uniform_int_distribution<uint32_t> disKey;
+    std::uniform_int_distribution<uint64_t> disSeed;
+
+    key = disKey(gen);
+    seed = disSeed(gen);
+}
+
+ImU32 cUtils::AdjustSaturation(ImU32 color, float saturationFactor) {
+    float r = (color >> IM_COL32_R_SHIFT) & 0xFF;
+    float g = (color >> IM_COL32_G_SHIFT) & 0xFF;
+    float b = (color >> IM_COL32_B_SHIFT) & 0xFF;
+
+    const float gray = 0.299 * r + 0.587 * g + 0.114 * b;
+    r = min(255.0f, gray + (r - gray) * saturationFactor);
+    g = min(255.0f, gray + (g - gray) * saturationFactor);
+    b = min(255.0f, gray + (b - gray) * saturationFactor);
+
+    return IM_COL32((int)r, (int)g, (int)b, 255);
+}
+
+ImU32 cUtils::AdjustContrast(ImU32 color, float contrastFactor) {
+    float r = (color >> IM_COL32_R_SHIFT) & 0xFF;
+    float g = (color >> IM_COL32_G_SHIFT) & 0xFF;
+    float b = (color >> IM_COL32_B_SHIFT) & 0xFF;
+
+    r = 128 + (r - 128) * contrastFactor;
+    g = 128 + (g - 128) * contrastFactor;
+    b = 128 + (b - 128) * contrastFactor;
+
+    r = min(255.0f, max(0.0f, r));
+    g = min(255.0f, max(0.0f, g));
+    b = min(255.0f, max(0.0f, b));
+
+    return IM_COL32((int)r, (int)g, (int)b, 255);
+}
+
+// Distribute error to neighboring pixels
+void DistributeError(uint64_t x, uint64_t y, int errR, int errG, int errB, double factor) {
+    if (x < 0 || x >= g_canvas[g_cidx].width || y < 0 || y >= g_canvas[g_cidx].height)
+        return;
+
+    const uint64_t index = x + y * g_canvas[g_cidx].width;
+    ImU32& neighborColor = g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex][index];
+
+    // Check if the alpha component is not zero
+    if (((neighborColor >> IM_COL32_A_SHIFT) & 0xFF) == 0) return;
+
+    uint8_t nr = (neighborColor >> IM_COL32_R_SHIFT) & 0xFF;
+    uint8_t ng = (neighborColor >> IM_COL32_G_SHIFT) & 0xFF;
+    uint8_t nb = (neighborColor >> IM_COL32_B_SHIFT) & 0xFF;
+
+    nr = std::clamp<int>(nr + errR * factor, 0, 255);
+    ng = std::clamp<int>(ng + errG * factor, 0, 255);
+    nb = std::clamp<int>(nb + errB * factor, 0, 255);
+
+    neighborColor = IM_COL32(nr, ng, nb, 255);
+}
+
+// PS1-style Floyd-Steinberg dithering function
+ImU32 cUtils::ApplyFloydSteinbergDithering(ImU32 color, uint64_t x, uint64_t y) {
+    // Extract color components
+    uint8_t r = (color >> IM_COL32_R_SHIFT) & 0xFF;
+    uint8_t g = (color >> IM_COL32_G_SHIFT) & 0xFF;
+    uint8_t b = (color >> IM_COL32_B_SHIFT) & 0xFF;
+
+    // Save original color components
+    const uint8_t origR = r;
+    const uint8_t origG = g;
+    const uint8_t origB = b;
+
+    // Reduce color depth to 5 bits per channel
+    r = (r & 0xF8) | (r >> 5);
+    g = (g & 0xF8) | (g >> 5);
+    b = (b & 0xF8) | (b >> 5);
+
+    // Calculate error
+    const int errR = origR - r;
+    const int errG = origG - g;
+    const int errB = origB - b;
+
+    // Distribute the error to neighboring pixels
+    DistributeError(x + 1, y, errR, errG, errB, 7.0 / 16.0);
+    DistributeError(x - 1, y + 1, errR, errG, errB, 3.0 / 16.0);
+    DistributeError(x, y + 1, errR, errG, errB, 5.0 / 16.0);
+    DistributeError(x + 1, y + 1, errR, errG, errB, 1.0 / 16.0);
+
+    return IM_COL32(r, g, b, 255);
 }
