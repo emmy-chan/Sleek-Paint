@@ -98,7 +98,7 @@ void cGUI::Display()
                 // Create our two main colors
                 std::vector<ImU32> main_cols = { IM_COL32(0, 0, 0, 255), IM_COL32(255, 255, 255, 255) };
 
-                //Push our two main colors to the array
+                // Push our two main colors to the array
                 for (auto& c : main_cols)
                     g_canvas[g_cidx].myCols.push_back(c);
 
@@ -108,9 +108,12 @@ void cGUI::Display()
                 // Iterate over the canvas to collect unique colors
                 for (uint64_t y = 0; y < g_canvas[g_cidx].height; y++) {
                     for (uint64_t x = 0; x < g_canvas[g_cidx].width; x++) {
-                        uint64_t index = x + y * g_canvas[g_cidx].width;
-                        ImU32 currentColor = g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex][index];
-                        uniqueColors.insert(currentColor);
+                        const uint64_t index = x + y * g_canvas[g_cidx].width;
+                        const ImU32 currentColor = g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex][index];
+
+                        // Check the alpha value
+                        if (((currentColor >> IM_COL32_A_SHIFT) & 0xFF) != 0)
+                            uniqueColors.insert(currentColor);
                     }
                 }
 
@@ -118,8 +121,8 @@ void cGUI::Display()
                 for (const auto& color : uniqueColors)
                     g_canvas[g_cidx].myCols.push_back(color);
 
-                // Make sure colors are not duplicates
-                for (int i = 0; i < g_canvas[g_cidx].myCols.size() - 1; i++) {
+                // Make sure colors are not duplicates, starting from the third element
+                for (int i = 2; i < g_canvas[g_cidx].myCols.size() - 1; i++) {
                     bool duplicateFound = false;
                     int duplicateIndex = -1;
 
@@ -136,6 +139,7 @@ void cGUI::Display()
                         g_canvas[g_cidx].myCols.erase(g_canvas[g_cidx].myCols.begin() + duplicateIndex);
                 }
             }
+
 
             if (ImGui::MenuItem(ICON_FA_ASTERISK " Apply dithering") && g_canvas.size() > 0) {
                 // Apply the changes to the canvas
