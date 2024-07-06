@@ -33,18 +33,31 @@ std::string GetColorData(const std::vector<ImU32>& colors, bool includeAlpha) {
     return data;
 }
 
-void SaveCanvasToPng(const char* name) {
+void SaveCanvasToImage(const char* name, const char* format) {
+    int width = g_canvas[g_cidx].width;
+    int height = g_canvas[g_cidx].height;
+
     // Allocate memory for RGBA data: width * height * 4 bytes (for R, G, B, and A)
-    char* imageData = new char[g_canvas[g_cidx].width * g_canvas[g_cidx].height * 4];
+    char* imageData = new char[width * height * 4];
     int imagePos = 0;
 
+    // Place all white in the imageData to start
+    for (int j = 0; j < height; j++) {
+        for (int i = 0; i < width; i++) {
+            imageData[imagePos++] = 255; // Red
+            imageData[imagePos++] = 255; // Green
+            imageData[imagePos++] = 255; // Blue
+            imageData[imagePos++] = 255; // Alpha
+        }
+    }
+
     // Blend all layers
-    for (int j = 0; j < g_canvas[g_cidx].height; j++) {
-        for (int i = 0; i < g_canvas[g_cidx].width; i++) {
-            float finalR = 0, finalG = 0, finalB = 0, finalA = 0;
+    for (int j = 0; j < height; j++) {
+        for (int i = 0; i < width; i++) {
+            float finalR = 1.0f, finalG = 1.0f, finalB = 1.0f, finalA = 1.0f; // Start with white background
 
             for (size_t layer = 0; layer < g_canvas[g_cidx].tiles.size(); layer++) {
-                const ImU32 color = g_canvas[g_cidx].tiles[layer][i + j * g_canvas[g_cidx].width];
+                const ImU32 color = g_canvas[g_cidx].tiles[layer][i + j * width];
 
                 // Extract RGBA components
                 const float srcR = ((color >> IM_COL32_R_SHIFT) & 0xFF) / 255.0f;
@@ -60,15 +73,41 @@ void SaveCanvasToPng(const char* name) {
             }
 
             // Convert final blended color back to integer format and store in imageData
-            imageData[imagePos++] = static_cast<char>(finalR * 255);  // Red
-            imageData[imagePos++] = static_cast<char>(finalG * 255);  // Green
-            imageData[imagePos++] = static_cast<char>(finalB * 255);  // Blue
-            imageData[imagePos++] = static_cast<char>(finalA * 255);  // Alpha
+            int idx = (i + j * width) * 4;
+            imageData[idx] = static_cast<char>(finalR * 255);  // Red
+            imageData[idx + 1] = static_cast<char>(finalG * 255);  // Green
+            imageData[idx + 2] = static_cast<char>(finalB * 255);  // Blue
+            imageData[idx + 3] = static_cast<char>(finalA * 255);  // Alpha
         }
     }
 
-    // The '4' argument specifies 4 bytes per pixel (RGBA)
-    stbi_write_png(name, g_canvas[g_cidx].width, g_canvas[g_cidx].height, 4, imageData, g_canvas[g_cidx].width * 4);
+    // Save image based on the specified format
+    bool success = false;
+    if (strcmp(format, "png") == 0)
+        success = stbi_write_png(name, width, height, 4, imageData, width * 4);
+    else if (strcmp(format, "jpg") == 0) {
+        // Convert RGBA to RGB by ignoring the alpha channel
+        char* rgbData = new char[width * height * 3];
+        for (int k = 0; k < width * height; k++) {
+            rgbData[k * 3] = imageData[k * 4];
+            rgbData[k * 3 + 1] = imageData[k * 4 + 1];
+            rgbData[k * 3 + 2] = imageData[k * 4 + 2];
+        }
+        success = stbi_write_jpg(name, width, height, 3, rgbData, 100); // 100 is the quality parameter for JPG
+        delete[] rgbData;
+    }
+    else if (strcmp(format, "bmp") == 0)
+        success = stbi_write_bmp(name, width, height, 4, imageData);
+    else if (strcmp(format, "tga") == 0)
+        success = stbi_write_tga(name, width, height, 4, imageData);
+    else
+        std::cerr << "Unsupported format: " << format << std::endl;
+
+    if (success)
+        std::cout << "File saved successfully: " << name << std::endl;
+    else
+        std::cerr << "Failed to save file: " << name << std::endl;
+
     delete[] imageData;
 }
 
@@ -83,10 +122,11 @@ void cUIStateSaveProject::Update()
     fileDialog.Display();
 
     static std::string file_name;
+    static std::string extension;
     static std::string data;
 
-    fileDialog.SetTypeFilters({ ".spr", ".png" });
-    fileDialog.SetCurrentTypeFilterIndex(2);
+    fileDialog.SetTypeFilters({ ".spr", ".jpg", ".png", ".bmp", ".tga" });
+    if (fileDialog.GetTypeFilterIndex() == 0) fileDialog.SetCurrentTypeFilterIndex(3);
 
     if (fileDialog.HasSelected())
     {
@@ -95,18 +135,29 @@ void cUIStateSaveProject::Update()
         if (fileDialog.GetTypeFilterIndex() == 1) data = GetColorData(g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex], true);
         file_name = fileDialog.GetSelected().string();
 
-        if (!fileDialog.GetTypeFilterIndex() == 1 && !file_name.find(".spr") != std::string::npos)
-            file_name.append(".spr");
-        else if (fileDialog.GetTypeFilterIndex() == 2 && !file_name.find(".png") != std::string::npos)
-            file_name.append(".png");
+        // Get the file extension
+        if (fileDialog.GetTypeFilterIndex() == 1 && file_name.find(".spr") == std::string::npos)
+            extension = ".spr";
+        else if (fileDialog.GetTypeFilterIndex() == 2 && file_name.find(".jpg") == std::string::npos)
+            extension = ".jpg";
+        else if (fileDialog.GetTypeFilterIndex() == 3 && file_name.find(".png") == std::string::npos)
+            extension = ".png";
+        else if (fileDialog.GetTypeFilterIndex() == 4 && file_name.find(".bmp") == std::string::npos)
+            extension = ".bmp";
+        else if (fileDialog.GetTypeFilterIndex() == 5 && file_name.find(".tga") == std::string::npos)
+            extension = ".tga";
+
+        file_name.append(extension);
+
+        std::cout << "Saving file to: " << file_name << " with format: " << extension << std::endl;
 
         if (!std::filesystem::exists(file_name)) {
             if (fileDialog.GetTypeFilterIndex() == 1) {
                 DataManager dm;
                 dm.SaveDataToFile(file_name, data);
             }
-            else if (fileDialog.GetTypeFilterIndex() == 2)
-                SaveCanvasToPng(file_name.c_str());
+            else
+                SaveCanvasToImage(file_name.c_str(), extension.c_str() + 1);  // Skip the dot in the extension
 
             g_canvas[g_cidx].name = fileDialog.GetSelected().filename().string();
             g_app.ui_state.reset();
@@ -124,8 +175,7 @@ void cUIStateSaveProject::Update()
 
     if (bDisplayed) {
         if (ImGui::BeginPopupModal("Warning", NULL, ImGuiWindowFlags_AlwaysAutoResize)) {
-            std::string warning_txt = "File already exists, overwrite anyways?\n'" + g_canvas[g_cidx].name + "'";
-
+            const std::string warning_txt = "File already exists, overwrite anyways?\n'" + g_canvas[g_cidx].name + "'";
             ImGui::Text(warning_txt.c_str());
 
             if (ImGui::Button("Yes")) {
@@ -133,8 +183,8 @@ void cUIStateSaveProject::Update()
                     DataManager dm;
                     dm.SaveDataToFile(file_name, data);
                 }
-                else if (fileDialog.GetTypeFilterIndex() == 2)
-                    SaveCanvasToPng(file_name.c_str());
+                else
+                    SaveCanvasToImage(file_name.c_str(), extension.c_str() + 1);  // Skip the dot in the extension
 
                 g_app.ui_state.reset();
                 bDisplayed = false;
