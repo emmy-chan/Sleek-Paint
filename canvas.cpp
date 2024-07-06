@@ -676,7 +676,8 @@ void cCanvas::Editor() {
 
             if (ImGui::IsMouseDown(0)) {
                 ImVec2 offset = ImGui::GetMousePos();
-                offset.x -= mouseStart.x; offset.y -= mouseStart.y;
+                offset.x -= mouseStart.x;
+                offset.y -= mouseStart.y;
 
                 // Snap offset to grid
                 offset.x = static_cast<int>(offset.x / TILE_SIZE) * TILE_SIZE;
@@ -692,7 +693,12 @@ void cCanvas::Editor() {
 
             if (g_util.MouseReleased(0)) {
                 ImVec2 offset = ImGui::GetMousePos();
-                offset.x -= mouseStart.x; offset.y -= mouseStart.y;
+                offset.x -= mouseStart.x;
+                offset.y -= mouseStart.y;
+
+                // Snap offset to grid
+                offset.x = static_cast<int>(offset.x / TILE_SIZE) * TILE_SIZE;
+                offset.y = static_cast<int>(offset.y / TILE_SIZE) * TILE_SIZE;
 
                 std::unordered_set<uint64_t> newSelectedIndexes;
                 std::unordered_map<uint64_t, ImU32> newTileColors;
