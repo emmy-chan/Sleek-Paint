@@ -259,9 +259,8 @@ void cGUI::Display()
                     for (uint64_t y = minY; y <= maxY; y++) {
                         for (uint64_t x = 0; x < g_canvas[g_cidx].width; x++) {
                             const uint64_t oldIndex = x + y * g_canvas[g_cidx].width;
-                            if (selectedIndexes.find(oldIndex) != selectedIndexes.end()) {
+                            if (selectedIndexes.find(oldIndex) != selectedIndexes.end())
                                 newTiles[oldIndex] = 0;
-                            }
                         }
                     }
 
@@ -342,6 +341,7 @@ void cGUI::Display()
 
                         tempColors[originalIndex] = decryptedColor;
                     }
+
                     // Copy the decrypted colors back to the canvas
                     for (uint64_t i = 0; i < size; i++)
                         g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex][i] = tempColors[i];
@@ -368,7 +368,7 @@ void cGUI::Display()
                     originalColors.resize(g_canvas[g_cidx].width * g_canvas[g_cidx].height);
                     for (uint64_t y = 0; y < g_canvas[g_cidx].height; y++) {
                         for (uint64_t x = 0; x < g_canvas[g_cidx].width; x++) {
-                            uint64_t index = x + y * g_canvas[g_cidx].width;
+                            const uint64_t index = x + y * g_canvas[g_cidx].width;
                             originalColors[index] = g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex][index];
                         }
                     }
@@ -387,13 +387,8 @@ void cGUI::Display()
                     for (uint64_t y = 0; y < g_canvas[g_cidx].height; y++) {
                         for (uint64_t x = 0; x < g_canvas[g_cidx].width; x++) {
                             const uint64_t index = x + y * g_canvas[g_cidx].width;
-                            ImU32 currentColor = originalColors[index];
-
-                            // Adjust saturation and contrast
-                            currentColor = g_util.AdjustSaturation(currentColor, saturationFactor);
-                            currentColor = g_util.AdjustContrast(currentColor, contrastFactor);
-
-                            g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex][index] = currentColor;
+                            g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex][index] = 
+                                g_util.AdjustSaturation(g_util.AdjustContrast(originalColors[index], contrastFactor), saturationFactor);
                         }
                     }
                 }
@@ -495,7 +490,6 @@ void cGUI::Display()
         if (ImGui::ImageButton((void*)g_assets.selection_texture, ImVec2(16, 16))) g_canvas[g_cidx].paintToolSelected = 4;
         ImGui::PopStyleVar();
         ImGui::PopStyleColor();
-        //if (ImGui::Button(ICON_FA_PEN_FANCY, ImVec2(25, 25))) g_canvas[g_cidx].paintToolSelected = 4; //ICON_FA_ARROWS
         ImGui::PushStyleColor(ImGuiCol_Button, g_canvas[g_cidx].paintToolSelected == 6 ? panelActiveColor : panelColor);
         if (ImGui::Button(ICON_FA_MOUSE_POINTER, ImVec2(25, 25))) g_canvas[g_cidx].paintToolSelected = 6;
         ImGui::PushStyleColor(ImGuiCol_Button, g_canvas[g_cidx].paintToolSelected == 0 ? panelActiveColor : panelColor);
@@ -566,11 +560,9 @@ void cGUI::Display()
         std::string name = "Layer " + std::to_string(i + 1);
         const bool isSelected = (g_canvas[g_cidx].selLayerIndex == i);
 
-        // Start drag and drop source
         if (ImGui::Selectable(name.c_str(), isSelected, 0, ImVec2(98, 0)))
             g_canvas[g_cidx].selLayerIndex = i;
 
-        // Add the eye button to toggle visibility, moving it to the right
         ImGui::SameLine(ImGui::GetContentRegionMax().x - 76);
         ImGui::SetCursorPosY(ImGui::GetCursorPosY() - 2);
 
@@ -610,9 +602,9 @@ void cGUI::Display()
         ImGui::SameLine(ImGui::GetContentRegionMax().x - 24);
         const char* eyeIcon = g_canvas[g_cidx].layerVisibility[i] ? ICON_FA_EYE : ICON_FA_EYE_SLASH;
         const std::string label = std::string(eyeIcon) + "##" + std::to_string(i); // Append unique identifier
-        if (ImGui::Button(label.c_str(), { 0, 22 })) {
+        
+        if (ImGui::Button(label.c_str(), { 0, 22 }))
             g_canvas[g_cidx].layerVisibility[i] = !g_canvas[g_cidx].layerVisibility[i];
-        }
     }
 
     if (ImGui::Button("Add Layer", { ImGui::GetColumnWidth(), ImGui::GetFrameHeight() }))
@@ -629,39 +621,31 @@ void cGUI::Display()
     ImGui::Spacing(); ImGui::Separator();
     if (g_canvas[g_cidx].paintToolSelected == TOOL_BRUSH) {
         ImGui::Text("Brush Size:");
-        const std::string string = "##Brush Size";
-        int temp_brush_size = static_cast<int>(g_canvas[g_cidx].brush_size); // Create a temporary int variable
+        int temp_brush_size = static_cast<int>(g_canvas[g_cidx].brush_size);
 
-        // Use the temporary int variable with ImGui::SliderInt
-        if (ImGui::SliderInt(string.c_str(), &temp_brush_size, 1, 10))
-            g_canvas[g_cidx].brush_size = static_cast<uint8_t>(temp_brush_size); // Assign the value back to your uint8_t variable
+        if (ImGui::SliderInt("##Brush Size", &temp_brush_size, 1, 10))
+            g_canvas[g_cidx].brush_size = static_cast<uint8_t>(temp_brush_size);
     }
     else if (g_canvas[g_cidx].paintToolSelected == TOOL_BUCKET) {
         ImGui::Text("Bucket Threshold:");
-        const std::string string = "##Bucket Threshold";
-        int temp = static_cast<int>(g_canvas[g_cidx].bucket_fill_threshold); // Create a temporary int variable
+        int temp = static_cast<int>(g_canvas[g_cidx].bucket_fill_threshold);
 
-        // Use the temporary int variable with ImGui::SliderInt
-        if (ImGui::SliderInt(string.c_str(), &temp, 1, 100))
-            g_canvas[g_cidx].bucket_fill_threshold = static_cast<uint8_t>(temp); // Assign the value back to your uint8_t variable
+        if (ImGui::SliderInt("##Bucket Threshold", &temp, 1, 100))
+            g_canvas[g_cidx].bucket_fill_threshold = static_cast<uint8_t>(temp);
     }
     else if (g_canvas[g_cidx].paintToolSelected == TOOL_WAND) {
         ImGui::Text("Wand Threshold:");
-        const std::string string = "##Wand Threshold";
-        int temp = static_cast<int>(g_canvas[g_cidx].magic_wand_threshold); // Create a temporary int variable
+        int temp = static_cast<int>(g_canvas[g_cidx].magic_wand_threshold);
 
-        // Use the temporary int variable with ImGui::SliderInt
-        if (ImGui::SliderInt(string.c_str(), &temp, 1, 100))
-            g_canvas[g_cidx].magic_wand_threshold = static_cast<uint8_t>(temp); // Assign the value back to your uint8_t variable
+        if (ImGui::SliderInt("##Wand Threshold", &temp, 1, 100))
+            g_canvas[g_cidx].magic_wand_threshold = static_cast<uint8_t>(temp);
     }
     else if (g_canvas[g_cidx].paintToolSelected == TOOL_LINE) {
         ImGui::Text("Line Size:");
-        const std::string string = "##Line Size";
-        int temp = static_cast<int>(g_canvas[g_cidx].line_size); // Create a temporary int variable
+        int temp = static_cast<int>(g_canvas[g_cidx].line_size);
 
-        // Use the temporary int variable with ImGui::SliderInt
-        if (ImGui::SliderInt(string.c_str(), &temp, 1, 10))
-            g_canvas[g_cidx].line_size = static_cast<uint8_t>(temp); // Assign the value back to your uint8_t variable
+        if (ImGui::SliderInt("##Line Size", &temp, 1, 10))
+            g_canvas[g_cidx].line_size = static_cast<uint8_t>(temp);
     }
 
     ImGui::End();
