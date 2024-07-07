@@ -98,8 +98,7 @@ void cCanvas::NewLayer(const std::vector<ImU32>& initial_data) {
         layer0 = initial_data;
     else {
         // Create a blank canvas
-        for (int i = 0; i < width * height; i++)
-            layer0.push_back(IM_COL32(0, 0, 0, 0));
+        for (int i = 0; i < width * height; i++) layer0.push_back(IM_COL32(0, 0, 0, 0));
     }
 
     tiles.push_back(layer0);
@@ -132,9 +131,9 @@ void cCanvas::AdaptNewSize(int width, int height) {
                 if (oldX < g_canvas[g_cidx].width && oldY < g_canvas[g_cidx].height) {
                     const int oldIndex = oldX + oldY * g_canvas[g_cidx].width;
                     const int newIndex = x + y * width;
-                    if (oldIndex < oldLayer.size() && newIndex < newLayer.size()) {
+
+                    if (oldIndex < oldLayer.size() && newIndex < newLayer.size())
                         newLayer[newIndex] = oldLayer[oldIndex];
-                    }
                 }
             }
         }
@@ -183,7 +182,7 @@ void cCanvas::UpdateCanvasHistory() {
 void cCanvas::LoadColorPalette(std::string input) {
     myCols.clear();
 
-    //Load color palette!
+    // Load color palette!
     DataManager data;
     data.LoadColorData(input, myCols);
 }
@@ -196,20 +195,13 @@ void cCanvas::DestroyCanvas() {
     g_canvas.erase(g_canvas.begin() + g_cidx);
     g_canvas.shrink_to_fit();
 
-    //Reset memory dedicated to the canvas we are deleting?
-    //Todo: we need to do more than just 'erase'
-    //The memory will NOT be de-allocated
-    //std::vector<cCanvas> tempVector;
-    //g_canvas.swap(tempVector);
-
     // Prevent our canvas index from going out of bounds
     if (g_cidx == g_canvas.size()) g_cidx--;
 }
 
 // Function to calculate the bounding box of the selected indexes
 ImVec2 GetTilePos(uint16_t index, float tileSize, float camX, float camY, int width) {
-    const float x = float(index % width);
-    const float y = float(index / width);
+    const float x = float(index % width), y = float(index / width);
     return ImVec2(camX + x * tileSize, camY + y * tileSize);
 }
 
@@ -295,19 +287,18 @@ void DrawLineOnCanvas(int x0, int y0, int x1, int y1, ImU32 color, bool preview 
     while (true) {
         for (int offsetX = -halfThickness; offsetX <= halfThickness; ++offsetX) {
             for (int offsetY = -halfThickness; offsetY <= halfThickness; ++offsetY) {
-                int drawX = x0 + offsetX;
-                int drawY = y0 + offsetY;
+                const int drawX = x0 + offsetX;
+                const int drawY = y0 + offsetY;
 
                 if (drawX >= 0 && drawX < g_canvas[g_cidx].width && drawY >= 0 && drawY < g_canvas[g_cidx].height) {
                     if (preview) {
                         // Draw the tile preview
-                        ImVec2 topLeft = { g_cam.x + drawX * g_canvas[g_cidx].TILE_SIZE, g_cam.y + drawY * g_canvas[g_cidx].TILE_SIZE };
-                        ImVec2 bottomRight = { topLeft.x + g_canvas[g_cidx].TILE_SIZE, topLeft.y + g_canvas[g_cidx].TILE_SIZE };
+                        const ImVec2 topLeft = { g_cam.x + drawX * g_canvas[g_cidx].TILE_SIZE, g_cam.y + drawY * g_canvas[g_cidx].TILE_SIZE };
+                        const ImVec2 bottomRight = { topLeft.x + g_canvas[g_cidx].TILE_SIZE, topLeft.y + g_canvas[g_cidx].TILE_SIZE };
                         ImGui::GetBackgroundDrawList()->AddRectFilled(topLeft, bottomRight, color);
                     }
-                    else {
+                    else
                         g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex][drawY * g_canvas[g_cidx].width + drawX] = color;
-                    }
                 }
             }
         }
@@ -363,9 +354,8 @@ void DrawCircleOnCanvas(int startX, int startY, int endX, int endY, ImU32 color,
         plot8points(x, y);
 
         y++;
-        if (radiusError < 0) {
+        if (radiusError < 0)
             radiusError += 2 * y + 1;
-        }
         else {
             x--;
             radiusError += 2 * (y - x + 1);
@@ -470,8 +460,7 @@ void cCanvas::Editor() {
             // Draw each layer from bottom to top, including layers after the selected layer index
             for (size_t layer = 0; layer < g_canvas[g_cidx].tiles.size(); layer++) {
                 // Check if the layer is visible
-                if (!g_canvas[g_cidx].layerVisibility[layer])
-                    continue; // Skip drawing this layer if it is not visible
+                if (!g_canvas[g_cidx].layerVisibility[layer]) continue;
 
                 const ImU32 tileColor = g_canvas[g_cidx].tiles[layer][index];
 
@@ -676,8 +665,7 @@ void cCanvas::Editor() {
 
             if (ImGui::IsMouseDown(0)) {
                 ImVec2 offset = ImGui::GetMousePos();
-                offset.x -= mouseStart.x;
-                offset.y -= mouseStart.y;
+                offset.x -= mouseStart.x; offset.y -= mouseStart.y;
 
                 // Snap offset to grid
                 offset.x = static_cast<int>(offset.x / TILE_SIZE) * TILE_SIZE;
@@ -693,8 +681,7 @@ void cCanvas::Editor() {
 
             if (g_util.MouseReleased(0)) {
                 ImVec2 offset = ImGui::GetMousePos();
-                offset.x -= mouseStart.x;
-                offset.y -= mouseStart.y;
+                offset.x -= mouseStart.x; offset.y -= mouseStart.y;
 
                 // Snap offset to grid
                 offset.x = static_cast<int>(offset.x / TILE_SIZE) * TILE_SIZE;
