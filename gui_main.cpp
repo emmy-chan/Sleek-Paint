@@ -339,6 +339,71 @@ void cGUI::Display()
                 }
             }
 
+            // Function to flip horizontally
+            if (ImGui::MenuItem(ICON_FA_ARROW_RIGHT " Flip Selection Horizontal") && g_canvas.size() > 0) {
+                if (!selectedIndexes.empty()) {
+                    int minX = g_canvas[g_cidx].width, maxX = 0;
+
+                    // Find the horizontal bounding box of the non-transparent tiles
+                    for (uint64_t y = 0; y < g_canvas[g_cidx].height; y++) {
+                        for (uint64_t x = 0; x < g_canvas[g_cidx].width; x++) {
+                            if (selectedIndexes.find(x + y * g_canvas[g_cidx].width) == selectedIndexes.end())
+                                continue;
+
+                            const uint64_t index = x + y * g_canvas[g_cidx].width;
+                            const ImU32& currentColor = g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex][index];
+
+                            if (((currentColor >> IM_COL32_A_SHIFT) & 0xFF) != 0) {
+                                if (x < minX) minX = x;
+                                if (x > maxX) maxX = x;
+                            }
+                        }
+                    }
+
+                    // Create a copy of the current tiles
+                    std::vector<ImU32> newTiles = g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex];
+                    std::unordered_set<uint64_t> newSelectedIndexes;
+
+                    // Clear the area within the bounding box
+                    for (uint64_t y = 0; y < g_canvas[g_cidx].height; y++) {
+                        for (uint64_t x = minX; x <= maxX; x++) {
+                            const uint64_t oldIndex = x + y * g_canvas[g_cidx].width;
+                            if (selectedIndexes.find(oldIndex) != selectedIndexes.end())
+                                newTiles[oldIndex] = 0;
+                        }
+                    }
+
+                    // Flip the non-transparent tiles to the new horizontally flipped positions
+                    for (uint64_t y = 0; y < g_canvas[g_cidx].height; y++) {
+                        for (uint64_t x = minX; x <= maxX; x++) {
+                            const uint64_t oldIndex = x + y * g_canvas[g_cidx].width;
+                            if (selectedIndexes.find(oldIndex) == selectedIndexes.end())
+                                continue;
+
+                            const ImU32& currentColor = g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex][oldIndex];
+
+                            if (((currentColor >> IM_COL32_A_SHIFT) & 0xFF) != 0) {
+                                const int newX = maxX - (x - minX);
+
+                                if (newX >= 0 && newX < g_canvas[g_cidx].width) {
+                                    const uint64_t newIndex = newX + y * g_canvas[g_cidx].width;
+                                    newTiles[newIndex] = currentColor;
+                                    newSelectedIndexes.insert(newIndex);
+                                }
+                            }
+                        }
+                    }
+
+                    // Copy the new tiles back to the canvas
+                    g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex] = std::move(newTiles);
+
+                    // Update the selectedIndexes
+                    selectedIndexes.swap(newSelectedIndexes);
+
+                    g_canvas[g_cidx].UpdateCanvasHistory();
+                }
+            }
+
             if (ImGui::CollapsingHeader("Scrambler")) {
                 // Scramble Key / Seed
                 static ImU32 key = 0xA5A5A5A5;
