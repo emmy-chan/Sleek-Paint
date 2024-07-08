@@ -130,8 +130,7 @@ void cUIStateSaveProject::Update()
 
     if (fileDialog.HasSelected())
     {
-        //Get our canvas and push it to our data string!
-        //GetColorData caused freezing one time... very strange... maybe issues with width height variables?
+        // Get our canvas and push it to our data string!
         if (fileDialog.GetTypeFilterIndex() == 1) data = GetColorData(g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex], true);
         file_name = fileDialog.GetSelected().string();
 
@@ -216,8 +215,7 @@ void cUIStateNewProject::Update()
     ImGui::SetNextWindowPos({ io.DisplaySize.x / 2 - 88, io.DisplaySize.y / 2 - 50 }, ImGuiCond_Appearing);
 
     if (ImGui::BeginPopupModal("New Project", NULL, ImGuiWindowFlags_NoResize)) { //ImGuiWindowFlags_AlwaysAutoResize
-        static int wInput = 32;
-        static int hInput = 32;
+        static int wInput = 32, hInput = 32;
 
         ImGui::Text("Width:");
         ImGui::SameLine();
@@ -228,16 +226,10 @@ void cUIStateNewProject::Update()
         ImGui::SameLine();
         ImGui::SetCursorPosX(100);
         ImGui::InputInt("##Height", &hInput);
-        //ImGui::SetCursorPosX(ImGui::GetWindowSize().x / 2 - 20);
 
         if (ImGui::Button("Ok")) {
             //Todo: just call our canvas initialize function and pass the width / height
             std::string scene_name = "Sprite " + std::to_string(g_canvas.size() + 1);
-            
-            //Idk if this is practical in the long run... but...
-            //...It should work for now!
-            //Fix duplicate names... maybe? Without a global
-            //...Tracking var... lol
             uint16_t scene_idx = (uint16_t)g_canvas.size() + 2;
 
             for (auto& cnvs : g_canvas) {
@@ -310,7 +302,7 @@ void cUIStateCanvasSize::Update()
 void cUIStateSaveWarning::Update()
 {
     if (ImGui::BeginPopupModal("Warning", NULL, ImGuiWindowFlags_AlwaysAutoResize)) {
-        std::string warning_txt = "Save changes to '" + g_canvas[g_cidx].name + "' before closing?";
+        const std::string warning_txt = "Save changes to '" + g_canvas[g_cidx].name + "' before closing?";
 
         ImGui::Text(warning_txt.c_str());
 
