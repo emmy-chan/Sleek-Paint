@@ -156,6 +156,50 @@ void cGUI::Display()
                 g_canvas[g_cidx].UpdateCanvasHistory();
             }
 
+            if (ImGui::MenuItem(ICON_FA_ASTERISK " Apply pixelate") && g_canvas.size() > 0) {
+                // Define the pixelation block size
+                const uint64_t blockSize = 8; // Adjust this value as needed
+
+                // Apply pixelation to the canvas
+                for (uint64_t y = 0; y < g_canvas[g_cidx].height; y += blockSize) {
+                    for (uint64_t x = 0; x < g_canvas[g_cidx].width; x += blockSize) {
+                        // Compute the average color of the block
+                        uint64_t redSum = 0, greenSum = 0, blueSum = 0, alphaSum = 0;
+                        uint64_t pixelCount = 0;
+
+                        for (uint64_t by = 0; by < blockSize && (y + by) < g_canvas[g_cidx].height; ++by) {
+                            for (uint64_t bx = 0; bx < blockSize && (x + bx) < g_canvas[g_cidx].width; ++bx) {
+                                uint64_t index = (x + bx) + (y + by) * g_canvas[g_cidx].width;
+                                ImU32 color = g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex][index];
+
+                                redSum += (color >> IM_COL32_R_SHIFT) & 0xFF;
+                                greenSum += (color >> IM_COL32_G_SHIFT) & 0xFF;
+                                blueSum += (color >> IM_COL32_B_SHIFT) & 0xFF;
+                                alphaSum += (color >> IM_COL32_A_SHIFT) & 0xFF;
+                                ++pixelCount;
+                            }
+                        }
+
+                        const ImU32 avgColor = IM_COL32(
+                            redSum / pixelCount,
+                            greenSum / pixelCount,
+                            blueSum / pixelCount,
+                            alphaSum / pixelCount
+                        );
+
+                        // Assign the average color to the entire block
+                        for (uint64_t by = 0; by < blockSize && (y + by) < g_canvas[g_cidx].height; ++by) {
+                            for (uint64_t bx = 0; bx < blockSize && (x + bx) < g_canvas[g_cidx].width; ++bx) {
+                                uint64_t index = (x + bx) + (y + by) * g_canvas[g_cidx].width;
+                                g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex][index] = avgColor;
+                            }
+                        }
+                    }
+                }
+
+                g_canvas[g_cidx].UpdateCanvasHistory();
+            }
+
             // Function to center horizontally
             if (ImGui::MenuItem(ICON_FA_ARROW_RIGHT " Center Selection Horizontal") && g_canvas.size() > 0) {
                 if (!selectedIndexes.empty()) {
