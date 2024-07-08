@@ -158,7 +158,7 @@ void cGUI::Display()
 
             if (ImGui::MenuItem(ICON_FA_ASTERISK " Apply pixelate") && g_canvas.size() > 0) {
                 // Define the pixelation block size
-                const uint64_t blockSize = 8; // Adjust this value as needed
+                const uint64_t blockSize = 8;
 
                 // Apply pixelation to the canvas
                 for (uint64_t y = 0; y < g_canvas[g_cidx].height; y += blockSize) {
@@ -169,8 +169,8 @@ void cGUI::Display()
 
                         for (uint64_t by = 0; by < blockSize && (y + by) < g_canvas[g_cidx].height; ++by) {
                             for (uint64_t bx = 0; bx < blockSize && (x + bx) < g_canvas[g_cidx].width; ++bx) {
-                                uint64_t index = (x + bx) + (y + by) * g_canvas[g_cidx].width;
-                                ImU32 color = g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex][index];
+                                const uint64_t index = (x + bx) + (y + by) * g_canvas[g_cidx].width;
+                                const ImU32 color = g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex][index];
 
                                 redSum += (color >> IM_COL32_R_SHIFT) & 0xFF;
                                 greenSum += (color >> IM_COL32_G_SHIFT) & 0xFF;
@@ -190,7 +190,7 @@ void cGUI::Display()
                         // Assign the average color to the entire block
                         for (uint64_t by = 0; by < blockSize && (y + by) < g_canvas[g_cidx].height; ++by) {
                             for (uint64_t bx = 0; bx < blockSize && (x + bx) < g_canvas[g_cidx].width; ++bx) {
-                                uint64_t index = (x + bx) + (y + by) * g_canvas[g_cidx].width;
+                                const uint64_t index = (x + bx) + (y + by) * g_canvas[g_cidx].width;
                                 g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex][index] = avgColor;
                             }
                         }

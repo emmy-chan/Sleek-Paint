@@ -6,6 +6,8 @@
 #include "imgui.h"
 #include <numeric>
 #include <random>
+#include <stack>
+#include <set>
 
 cUtils g_util = cUtils();
 
@@ -239,4 +241,65 @@ ImU32 cUtils::ApplyFloydSteinbergDithering(ImU32 color, uint64_t x, uint64_t y) 
     DistributeError(x + 1, y + 1, errR, errG, errB, 1.0 / 16.0);
 
     return IM_COL32(r, g, b, 255);
+}
+
+// Flood fill function
+void cUtils::FloodFill(const int& x, const int& y, bool paint) {
+    if (x < 0 || x >= g_canvas[g_cidx].width || y < 0 || y >= g_canvas[g_cidx].height)
+        return;
+
+    const ImU32 initialCol = g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex][x + y * g_canvas[g_cidx].width];
+    const ImU32 fillCol = paint ? g_canvas[g_cidx].myCols[g_canvas[g_cidx].selColIndex] : initialCol;
+
+    // Scale the threshold from 0-100 to 0-765
+    const int threshold = (paint ? g_canvas[g_cidx].bucket_fill_threshold : g_canvas[g_cidx].magic_wand_threshold) * 765 / 100;
+
+    std::stack<std::pair<int, int>> stack;
+    stack.push({ x, y });
+
+    if (!paint) selectedIndexes.clear();
+
+    std::set<uint16_t> visited; // To avoid processing the same pixel multiple times
+
+    while (!stack.empty()) {
+        std::pair<int, int> p = stack.top();
+        stack.pop();
+        const int curX = p.first,
+            curY = p.second;
+
+        if (curX < 0 || curX >= g_canvas[g_cidx].width || curY < 0 || curY >= g_canvas[g_cidx].height)
+            continue;
+
+        const uint16_t currentIndex = curX + curY * g_canvas[g_cidx].width;
+
+        if (visited.find(currentIndex) != visited.end())
+            continue; // Skip already processed pixels
+
+        visited.insert(currentIndex);
+        const ImU32 currentCol = g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex][currentIndex];
+
+        if (paint) {
+            // Check if the tile is in the selected tiles set (if there are any selected tiles)
+            if (!selectedIndexes.empty() && selectedIndexes.find(currentIndex) == selectedIndexes.end())
+                continue;
+
+            if (g_util.ColorDifference(currentCol, initialCol) > threshold)
+                continue;
+
+            g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex][currentIndex] = fillCol;
+        }
+        else {
+            if (g_util.ColorDifference(currentCol, initialCol) > threshold || selectedIndexes.find(currentIndex) != selectedIndexes.end())
+                continue;
+
+            selectedIndexes.insert(currentIndex);
+        }
+
+        stack.push({ curX + 1, curY });
+        stack.push({ curX - 1, curY });
+        stack.push({ curX, curY + 1 });
+        stack.push({ curX, curY - 1 });
+    }
+
+    printf("FloodFill: Completed successfully!\n");
 }

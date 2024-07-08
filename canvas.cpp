@@ -12,71 +12,9 @@
 std::vector<cCanvas> g_canvas = std::vector<cCanvas>();
 uint16_t g_cidx = uint16_t();
 
-#include <stack>
 #include <utility> // for std::pair
 #include <set>
 #include "keystate.h"
-
-// Flood fill function
-void floodFill(int x, int y, bool paint) {
-    if (x < 0 || x >= g_canvas[g_cidx].width || y < 0 || y >= g_canvas[g_cidx].height)
-        return;
-
-    const ImU32 initialCol = g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex][x + y * g_canvas[g_cidx].width];
-    const ImU32 fillCol = paint ? g_canvas[g_cidx].myCols[g_canvas[g_cidx].selColIndex] : initialCol;
-
-    // Scale the threshold from 0-100 to 0-765
-    const int threshold = (paint ? g_canvas[g_cidx].bucket_fill_threshold : g_canvas[g_cidx].magic_wand_threshold) * 765 / 100;
-
-    std::stack<std::pair<int, int>> stack;
-    stack.push({ x, y });
-
-    if (!paint) selectedIndexes.clear();
-
-    std::set<uint16_t> visited; // To avoid processing the same pixel multiple times
-
-    while (!stack.empty()) {
-        std::pair<int, int> p = stack.top();
-        stack.pop();
-        const int curX = p.first;
-        const int curY = p.second;
-
-        if (curX < 0 || curX >= g_canvas[g_cidx].width || curY < 0 || curY >= g_canvas[g_cidx].height)
-            continue;
-
-        const uint16_t currentIndex = curX + curY * g_canvas[g_cidx].width;
-
-        if (visited.find(currentIndex) != visited.end())
-            continue; // Skip already processed pixels
-
-        visited.insert(currentIndex);
-        const ImU32 currentCol = g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex][currentIndex];
-
-        if (paint) {
-            // Check if the tile is in the selected tiles set (if there are any selected tiles)
-            if (!selectedIndexes.empty() && selectedIndexes.find(currentIndex) == selectedIndexes.end())
-                continue;
-
-            if (g_util.ColorDifference(currentCol, initialCol) > threshold)
-                continue;
-
-            g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex][currentIndex] = fillCol;
-        }
-        else {
-            if (g_util.ColorDifference(currentCol, initialCol) > threshold || selectedIndexes.find(currentIndex) != selectedIndexes.end())
-                continue;
-
-            selectedIndexes.insert(currentIndex);
-        }
-
-        stack.push({ curX + 1, curY });
-        stack.push({ curX - 1, curY });
-        stack.push({ curX, curY + 1 });
-        stack.push({ curX, curY - 1 });
-    }
-
-    printf("FloodFill: Completed successfully!\n");
-}
 
 void cCanvas::Initialize(const std::vector<ImU32>& initial_data, const uint16_t& new_width, const uint16_t& new_height) {
     tiles.clear();
@@ -202,7 +140,7 @@ void cCanvas::DestroyCanvas() {
 // Function to calculate the bounding box of the selected indexes
 ImVec2 GetTilePos(uint16_t index, float tileSize, float camX, float camY, int width) {
     const float x = float(index % width), y = float(index / width);
-    return ImVec2(camX + x * tileSize, camY + y * tileSize);
+    return { camX + x * tileSize, camY + y * tileSize };
 }
 
 void DrawSelectionRectangle(ImDrawList* drawList, const std::unordered_set<uint64_t>& indexes, float tileSize, float camX, float camY, int width, ImU32 col, uint8_t thickness) {
@@ -219,8 +157,8 @@ void DrawSelectionRectangle(ImDrawList* drawList, const std::unordered_set<uint6
         maxY = std::max(maxY, pos.y + tileSize);
     }
 
-    drawList->AddRect(ImVec2(minX, minY), ImVec2(maxX, maxY), IM_COL32_BLACK, 0.0f, 0, float(thickness * 2));
-    drawList->AddRect(ImVec2(minX, minY), ImVec2(maxX, maxY), col, 0.0f, 0, float(thickness));
+    drawList->AddRect({ minX, minY }, { maxX, maxY }, IM_COL32_BLACK, 0.0f, 0, float(thickness * 2));
+    drawList->AddRect({ minX, minY }, { maxX, maxY }, col, 0.0f, 0, float(thickness));
 }
 
 std::unordered_set<uint64_t> initialSelectedIndexes;
@@ -317,7 +255,7 @@ void DrawLineOnCanvas(int x0, int y0, int x1, int y1, ImU32 color, bool preview 
 }
 
 void DrawCircleOnCanvas(int startX, int startY, int endX, int endY, ImU32 color, bool preview = false) {
-    const int radius = static_cast<int>(sqrt(pow(endX - startX, 2) + pow(endY - startY, 2)));
+    const int radius = static_cast<int>(glm::sqrt(glm::pow(endX - startX, 2) + glm::pow(endY - startY, 2)));
 
     int x = radius;
     int y = 0;
@@ -397,10 +335,12 @@ void cCanvas::UpdateZoom() {
         const auto mousePos = ImGui::GetMousePos();
 
         // Adjust camera position to keep the zoom centered around the mouse position
-        ImVec2 offset = { mousePos.x - g_cam.x, mousePos.y - g_cam.y };
-        offset.x /= TILE_SIZE; offset.y /= TILE_SIZE;
-        offset.x *= newZoom; offset.y *= newZoom;
-        g_cam.x = mousePos.x - offset.x; g_cam.y = mousePos.y - offset.y;
+        const ImVec2 offset = { (mousePos.x - g_cam.x) / TILE_SIZE * newZoom, 
+            (mousePos.y - g_cam.y) / TILE_SIZE * newZoom };
+
+        g_cam.x = mousePos.x - offset.x; 
+        g_cam.y = mousePos.y - offset.y;
+
         TILE_SIZE = newZoom;
     }
 }
@@ -477,8 +417,8 @@ void cCanvas::Editor() {
     }
 
     // Convert the screen coordinates to tile coordinates
-    const uint16_t x = static_cast<int>((ImGui::GetMousePos().x - g_cam.x) / TILE_SIZE);
-    const uint16_t y = static_cast<int>((ImGui::GetMousePos().y - g_cam.y) / TILE_SIZE);
+    const uint16_t x = static_cast<int>((ImGui::GetMousePos().x - g_cam.x) / TILE_SIZE),
+                   y = static_cast<int>((ImGui::GetMousePos().y - g_cam.y) / TILE_SIZE);
 
     const bool bCanDraw = !g_util.IsClickingOutsideCanvas() && x >= 0 && x < g_canvas[g_cidx].width && y >= 0 && y < g_canvas[g_cidx].height;
     static ImVec2 mouseStart; static ImVec2 lastMousePos = ImVec2(-1, -1);
@@ -551,7 +491,7 @@ void cCanvas::Editor() {
         case TOOL_BUCKET:
             if (g_util.MousePressed(0))
                 if (selectedIndexes.empty() || selectedIndexes.find((uint64_t)x + (uint64_t)y * width) != selectedIndexes.end())
-                    floodFill((int)x, (int)y, true);
+                    g_util.FloodFill((int)x, (int)y, true);
 
             d.AddRectFilled({ g_cam.x + x * TILE_SIZE, g_cam.y + y * TILE_SIZE }, { g_cam.x + x * TILE_SIZE + TILE_SIZE, g_cam.y + y * TILE_SIZE + TILE_SIZE }, myCols[selColIndex]);
             break;
@@ -631,7 +571,7 @@ void cCanvas::Editor() {
                 const int tileY = static_cast<int>((mousePos.y - g_cam.y) / TILE_SIZE);
 
                 if (tileX >= 0 && tileX < width && tileY >= 0 && tileY < height)
-                    floodFill(tileX, tileY, false);
+                    g_util.FloodFill(tileX, tileY, false);
             }
 
             d.AddRectFilled({ g_cam.x + x * TILE_SIZE, g_cam.y + y * TILE_SIZE }, { g_cam.x + x * TILE_SIZE + TILE_SIZE, g_cam.y + y * TILE_SIZE + TILE_SIZE }, myCols[selColIndex]);
@@ -680,12 +620,8 @@ void cCanvas::Editor() {
             }
 
             if (g_util.MouseReleased(0)) {
-                ImVec2 offset = ImGui::GetMousePos();
-                offset.x -= mouseStart.x; offset.y -= mouseStart.y;
-
-                // Snap offset to grid
-                offset.x = static_cast<int>(offset.x / TILE_SIZE) * TILE_SIZE;
-                offset.y = static_cast<int>(offset.y / TILE_SIZE) * TILE_SIZE;
+                const int offsetX = static_cast<int>((ImGui::GetMousePos().x - mouseStart.x) / TILE_SIZE) * TILE_SIZE;
+                const int offsetY = static_cast<int>((ImGui::GetMousePos().y - mouseStart.y) / TILE_SIZE) * TILE_SIZE;
 
                 std::unordered_set<uint64_t> newSelectedIndexes;
                 std::unordered_map<uint64_t, ImU32> newTileColors;
@@ -693,11 +629,11 @@ void cCanvas::Editor() {
                 for (const auto& index : initialSelectedIndexes) {
                     const int selectX = index % width;
                     const int selectY = index / width;
-                    const int newX = static_cast<int>(selectX + offset.x / TILE_SIZE);
-                    const int newY = static_cast<int>(selectY + offset.y / TILE_SIZE);
+                    const int newX = static_cast<int>(selectX + offsetX / TILE_SIZE);
+                    const int newY = static_cast<int>(selectY + offsetY / TILE_SIZE);
 
                     if (newX >= 0 && newX < width && newY >= 0 && newY < height) {
-                        uint16_t newIndex = newX + newY * width;
+                        const uint16_t newIndex = newX + newY * width;
                         newSelectedIndexes.insert(newIndex);
                         newTileColors[newIndex] = tiles[g_canvas[g_cidx].selLayerIndex][index];
                     }

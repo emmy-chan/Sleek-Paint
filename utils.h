@@ -23,6 +23,7 @@ public:
 	ImU32 AdjustSaturation(ImU32 color, float saturationFactor);
 	ImU32 AdjustContrast(ImU32 color, float contrastFactor);
 	ImU32 ApplyFloydSteinbergDithering(ImU32 color, uint64_t x, uint64_t y);
+	void FloodFill(const int& x, const int& y, bool paint);
 	//bool InitializeInputState(void);
 	//void UpdateInputState();
 	//int m_mouse_x;
