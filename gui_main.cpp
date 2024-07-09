@@ -404,6 +404,32 @@ void cGUI::Display()
                 }
             }
 
+            if (ImGui::MenuItem(ICON_FA_REDO " Rotate 90 Degrees") && g_canvas.size() > 0) {
+                // Create a new canvas to store the rotated image
+                const uint64_t newWidth = g_canvas[g_cidx].height;
+                const uint64_t newHeight = g_canvas[g_cidx].width;
+                std::vector<std::vector<ImU32>> newTiles(g_canvas[g_cidx].tiles.size(), std::vector<ImU32>(newWidth * newHeight));
+
+                for (uint64_t y = 0; y < g_canvas[g_cidx].height; y++) {
+                    for (uint64_t x = 0; x < g_canvas[g_cidx].width; x++) {
+                        const uint64_t oldIndex = x + y * g_canvas[g_cidx].width;
+                        const uint64_t newX = newHeight - 1 - y;
+                        const uint64_t newY = x;
+                        const uint64_t newIndex = newX + newY * newWidth;
+
+                        for (size_t layer = 0; layer < g_canvas[g_cidx].tiles.size(); ++layer)
+                            newTiles[layer][newIndex] = g_canvas[g_cidx].tiles[layer][oldIndex];
+                    }
+                }
+
+                // Replace the old tiles with the new rotated tiles
+                g_canvas[g_cidx].width = newWidth;
+                g_canvas[g_cidx].height = newHeight;
+                g_canvas[g_cidx].tiles = std::move(newTiles);
+
+                g_canvas[g_cidx].UpdateCanvasHistory();
+            }
+
             if (ImGui::CollapsingHeader("Scrambler")) {
                 // Scramble Key / Seed
                 static ImU32 key = 0xA5A5A5A5;
