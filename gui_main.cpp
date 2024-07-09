@@ -141,7 +141,7 @@ void cGUI::Display()
             }
 
 
-            if (ImGui::MenuItem(ICON_FA_ASTERISK " Apply dithering") && g_canvas.size() > 0) {
+            if (ImGui::MenuItem(ICON_FA_ADJUST " Apply Dithering") && g_canvas.size() > 0) {
                 // Apply the changes to the canvas
                 for (uint64_t y = 0; y < g_canvas[g_cidx].height; y++) {
                     for (uint64_t x = 0; x < g_canvas[g_cidx].width; x++) {
@@ -156,7 +156,7 @@ void cGUI::Display()
                 g_canvas[g_cidx].UpdateCanvasHistory();
             }
 
-            if (ImGui::MenuItem(ICON_FA_ASTERISK " Apply pixelate") && g_canvas.size() > 0) {
+            if (ImGui::MenuItem(ICON_FA_TH " Apply Pixelate") && g_canvas.size() > 0) {
                 // Define the pixelation block size
                 const uint64_t blockSize = 8;
 
