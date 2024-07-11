@@ -156,22 +156,26 @@ void cGUI::Display()
                 g_canvas[g_cidx].UpdateCanvasHistory();
             }
 
-            if (ImGui::MenuItem(ICON_FA_TH " Apply Pixelate") && g_canvas.size() > 0) {
+            if (ImGui::MenuItem(ICON_FA_TH " Apply Selection Pixelate") && g_canvas.size() > 0) {
                 // Define the pixelation block size
-                const uint64_t blockSize = 8;
+                const uint8_t blockSize = 8;
 
-                // Apply pixelation to the canvas
-                for (uint64_t y = 0; y < g_canvas[g_cidx].height; y += blockSize) {
-                    for (uint64_t x = 0; x < g_canvas[g_cidx].width; x += blockSize) {
-                        // Compute the average color of the block
-                        uint64_t redSum = 0, greenSum = 0, blueSum = 0, alphaSum = 0;
-                        uint64_t pixelCount = 0;
+                // Apply pixelation to the selected blocks
+                for (const auto& index : selectedIndexes) {
+                    const uint64_t x = index % g_canvas[g_cidx].width;
+                    const uint64_t y = index / g_canvas[g_cidx].width;
+                    const uint64_t blockX = x / blockSize * blockSize;
+                    const uint64_t blockY = y / blockSize * blockSize;
 
-                        for (uint64_t by = 0; by < blockSize && (y + by) < g_canvas[g_cidx].height; ++by) {
-                            for (uint64_t bx = 0; bx < blockSize && (x + bx) < g_canvas[g_cidx].width; ++bx) {
-                                const uint64_t index = (x + bx) + (y + by) * g_canvas[g_cidx].width;
-                                const ImU32 color = g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex][index];
+                    // Compute the average color of the block
+                    uint64_t redSum = 0, greenSum = 0, blueSum = 0, alphaSum = 0;
+                    uint64_t pixelCount = 0;
 
+                    for (uint64_t by = 0; by < blockSize && (blockY + by) < g_canvas[g_cidx].height; ++by) {
+                        for (uint64_t bx = 0; bx < blockSize && (blockX + bx) < g_canvas[g_cidx].width; ++bx) {
+                            const uint64_t blockIndex = (blockX + bx) + (blockY + by) * g_canvas[g_cidx].width;
+                            if (selectedIndexes.find(blockIndex) != selectedIndexes.end()) {
+                                const ImU32 color = g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex][blockIndex];
                                 redSum += (color >> IM_COL32_R_SHIFT) & 0xFF;
                                 greenSum += (color >> IM_COL32_G_SHIFT) & 0xFF;
                                 blueSum += (color >> IM_COL32_B_SHIFT) & 0xFF;
@@ -179,7 +183,9 @@ void cGUI::Display()
                                 ++pixelCount;
                             }
                         }
+                    }
 
+                    if (pixelCount > 0) {
                         const ImU32 avgColor = IM_COL32(
                             redSum / pixelCount,
                             greenSum / pixelCount,
@@ -188,10 +194,11 @@ void cGUI::Display()
                         );
 
                         // Assign the average color to the entire block
-                        for (uint64_t by = 0; by < blockSize && (y + by) < g_canvas[g_cidx].height; ++by) {
-                            for (uint64_t bx = 0; bx < blockSize && (x + bx) < g_canvas[g_cidx].width; ++bx) {
-                                const uint64_t index = (x + bx) + (y + by) * g_canvas[g_cidx].width;
-                                g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex][index] = avgColor;
+                        for (uint64_t by = 0; by < blockSize && (blockY + by) < g_canvas[g_cidx].height; ++by) {
+                            for (uint64_t bx = 0; bx < blockSize && (blockX + bx) < g_canvas[g_cidx].width; ++bx) {
+                                const uint64_t blockIndex = (blockX + bx) + (blockY + by) * g_canvas[g_cidx].width;
+                                if (selectedIndexes.find(blockIndex) != selectedIndexes.end())
+                                    g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex][blockIndex] = avgColor;
                             }
                         }
                     }
