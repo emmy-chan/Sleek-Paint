@@ -29,6 +29,12 @@ void cCanvas::Initialize(const std::vector<ImU32>& initial_data, const uint16_t&
 }
 
 void cCanvas::NewLayer(const std::vector<ImU32>& initial_data) {
+    // Check if the number of layers is less than 100
+    if (tiles.size() >= 100) {
+        printf("Max number of layers exceeded!");
+        return;
+    }
+
     std::vector<ImU32> layer0;
 
     // If initial data is provided, use it to initialize the layer
