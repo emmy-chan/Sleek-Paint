@@ -30,7 +30,7 @@ void cCanvas::Initialize(const std::vector<ImU32>& initial_data, const uint16_t&
 
 void cCanvas::NewLayer(const std::vector<ImU32>& initial_data) {
     // Check if the number of layers is less than 100
-    if (tiles.size() >= 100) {
+    if (tiles.size() >= 99) {
         printf("Max number of layers exceeded!");
         return;
     }
