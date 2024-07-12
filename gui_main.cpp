@@ -713,6 +713,7 @@ void cGUI::Display()
             if (i > 0) {
                 std::swap(g_canvas[g_cidx].tiles[i], g_canvas[g_cidx].tiles[i - 1]);
                 std::swap(g_canvas[g_cidx].layerVisibility[i], g_canvas[g_cidx].layerVisibility[i - 1]);
+                std::swap(g_canvas[g_cidx].layerNames[i], g_canvas[g_cidx].layerNames[i - 1]);
                 if (g_canvas[g_cidx].selLayerIndex == i) {
                     g_canvas[g_cidx].selLayerIndex = i - 1;
                 }
@@ -729,6 +730,7 @@ void cGUI::Display()
             if (i < g_canvas[g_cidx].tiles.size() - 1) {
                 std::swap(g_canvas[g_cidx].tiles[i], g_canvas[g_cidx].tiles[i + 1]);
                 std::swap(g_canvas[g_cidx].layerVisibility[i], g_canvas[g_cidx].layerVisibility[i + 1]);
+                std::swap(g_canvas[g_cidx].layerNames[i], g_canvas[g_cidx].layerNames[i + 1]);
                 if (g_canvas[g_cidx].selLayerIndex == i) {
                     g_canvas[g_cidx].selLayerIndex = i + 1;
                 }
