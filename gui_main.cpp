@@ -699,16 +699,15 @@ void cGUI::Display()
     ImGui::PopStyleVar(2); ImGui::Spacing(); ImGui::Separator();
 
     for (size_t i = 0; i < g_canvas[g_cidx].tiles.size(); i++) {
-        std::string name = "Layer " + std::to_string(i + 1);
         const bool isSelected = (g_canvas[g_cidx].selLayerIndex == i);
 
-        if (ImGui::Selectable(name.c_str(), isSelected, 0, ImVec2(98, 0)))
+        if (ImGui::Selectable(g_canvas[g_cidx].layerNames[i].c_str(), isSelected, 0, ImVec2(76, 0)))
             g_canvas[g_cidx].selLayerIndex = i;
 
         ImGui::SameLine(ImGui::GetContentRegionMax().x - 76);
         ImGui::SetCursorPosY(ImGui::GetCursorPosY() - 2);
 
-        name = std::string(ICON_FA_ARROW_UP) + "##" + std::to_string(i);
+        std::string name = std::string(ICON_FA_ARROW_UP) + "##" + std::to_string(i);
 
         if (ImGui::Button(name.c_str(), ImVec2(22, 22))) {
             if (i > 0) {
@@ -717,9 +716,8 @@ void cGUI::Display()
                 if (g_canvas[g_cidx].selLayerIndex == i) {
                     g_canvas[g_cidx].selLayerIndex = i - 1;
                 }
-                else if (g_canvas[g_cidx].selLayerIndex == i - 1) {
+                else if (g_canvas[g_cidx].selLayerIndex == i - 1)
                     g_canvas[g_cidx].selLayerIndex = i;
-                }
             }
         }
 
@@ -734,9 +732,8 @@ void cGUI::Display()
                 if (g_canvas[g_cidx].selLayerIndex == i) {
                     g_canvas[g_cidx].selLayerIndex = i + 1;
                 }
-                else if (g_canvas[g_cidx].selLayerIndex == i + 1) {
+                else if (g_canvas[g_cidx].selLayerIndex == i + 1)
                     g_canvas[g_cidx].selLayerIndex = i;
-                }
             }
         }
 
@@ -744,9 +741,15 @@ void cGUI::Display()
         ImGui::SameLine(ImGui::GetContentRegionMax().x - 24);
         const char* eyeIcon = g_canvas[g_cidx].layerVisibility[i] ? ICON_FA_EYE : ICON_FA_EYE_SLASH;
         const std::string label = std::string(eyeIcon) + "##" + std::to_string(i); // Append unique identifier
-        
+
         if (ImGui::Button(label.c_str(), { 0, 22 }))
             g_canvas[g_cidx].layerVisibility[i] = !g_canvas[g_cidx].layerVisibility[i];
+
+        // Add Rename button
+        ImGui::SameLine(ImGui::GetContentRegionMax().x - 100);
+        name = std::string(ICON_FA_EDIT) + "##" + std::to_string(i);
+        if (ImGui::Button(name.c_str(), { 22, 22 }))
+            g_app.ui_state = std::make_unique<cUIStateRenameLayer>();
     }
 
     if (ImGui::Button("Add Layer", { ImGui::GetColumnWidth(), ImGui::GetFrameHeight() }))

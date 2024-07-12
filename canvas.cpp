@@ -41,6 +41,8 @@ void cCanvas::NewLayer(const std::vector<ImU32>& initial_data) {
 
     tiles.push_back(layer0);
     layerVisibility.push_back(true);
+    const std::string layerName = "Layer " + std::to_string(tiles.size());
+    layerNames.push_back(layerName);
 }
 
 void cCanvas::Clear() {

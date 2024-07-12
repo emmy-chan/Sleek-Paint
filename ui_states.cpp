@@ -422,3 +422,46 @@ void cUIStateSavePalette::Update()
         fileDialog.ClearSelected();
     }
 }
+
+void cUIStateRenameLayer::Update()
+{
+    auto& io = ImGui::GetIO();
+    ImGui::SetNextWindowSize({ 250, 115 }, ImGuiCond_Appearing);
+    ImGui::SetNextWindowPos({ io.DisplaySize.x / 2 - 125, io.DisplaySize.y / 2 - 57 }, ImGuiCond_Appearing);
+
+    if (ImGui::BeginPopupModal("Rename Layer", NULL, ImGuiWindowFlags_NoResize)) { //ImGuiWindowFlags_AlwaysAutoResize
+        static char newName[128] = "";
+        ImGui::PushItemWidth(ImGui::GetWindowWidth() - 16);
+        ImGui::InputText("##New Layer Name", newName, IM_ARRAYSIZE(newName));
+
+        bool nameExists = false;
+        for (const auto& name : g_canvas[g_cidx].layerNames) {
+            if (name == newName) {
+                nameExists = true;
+                break;
+            }
+        }
+
+        if (ImGui::Button(ICON_FA_CHECK, { ImGui::GetWindowWidth() * 0.5f - 12, 0 }) && !nameExists) {
+            g_canvas[g_cidx].layerNames[g_canvas[g_cidx].selLayerIndex] = newName;
+            ImGui::CloseCurrentPopup();
+
+            // Reset our UI State
+            g_app.ui_state.reset();
+        }
+        ImGui::SameLine();
+        if (ImGui::Button(ICON_FA_TIMES, { ImGui::GetWindowWidth() * 0.5f - 12, 0})) {
+            ImGui::CloseCurrentPopup();
+
+            // Reset our UI State
+            g_app.ui_state.reset();
+        }
+
+        if (nameExists)
+            ImGui::Text("Name already exists!");
+
+        ImGui::EndPopup();
+    }
+    else
+        ImGui::OpenPopup("Rename Layer");
+}

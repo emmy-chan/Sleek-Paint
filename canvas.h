@@ -41,6 +41,7 @@ public:
 	uint8_t selLayerIndex = 0;
 	std::vector<std::vector<ImU32>> tiles;
 	std::vector<uint8_t> layerVisibility;
+	std::vector<std::string> layerNames;
 	uint16_t width;
 	uint16_t height;
 	void Initialize(const std::vector<ImU32>& initial_data = {}, const uint16_t& new_width = 0, const uint16_t& new_height = 0);

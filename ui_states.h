@@ -37,3 +37,8 @@ class cUIStateSavePalette : public cState {
 public:
 	void Update() override;
 };
+
+class cUIStateRenameLayer : public cState {
+public:
+	void Update() override;
+};
