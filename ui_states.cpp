@@ -428,18 +428,21 @@ void cUIStateRenameLayer::Update()
     auto& io = ImGui::GetIO();
     ImGui::SetNextWindowSize({ 250, 115 }, ImGuiCond_Appearing);
     ImGui::SetNextWindowPos({ io.DisplaySize.x / 2 - 125, io.DisplaySize.y / 2 - 57 }, ImGuiCond_Appearing);
+    static char newName[10] = "";
 
     if (ImGui::BeginPopupModal("Rename Layer", NULL, ImGuiWindowFlags_NoResize)) { //ImGuiWindowFlags_AlwaysAutoResize
-        static char newName[128] = "";
         ImGui::PushItemWidth(ImGui::GetWindowWidth() - 16);
         ImGui::InputText("##New Layer Name", newName, IM_ARRAYSIZE(newName));
 
         bool nameExists = false;
+        int count = 0;
         for (const auto& name : g_canvas[g_cidx].layerNames) {
-            if (name == newName) {
+            if (count != g_canvas[g_cidx].selLayerIndex && name == newName) {
                 nameExists = true;
                 break;
             }
+
+            count++;
         }
 
         if (ImGui::Button(ICON_FA_CHECK, { ImGui::GetWindowWidth() * 0.5f - 12, 0 }) && !nameExists) {
@@ -457,11 +460,20 @@ void cUIStateRenameLayer::Update()
             g_app.ui_state.reset();
         }
 
-        if (nameExists)
-            ImGui::Text("Name already exists!");
+        if (nameExists) ImGui::Text("Name already exists!");
 
         ImGui::EndPopup();
     }
-    else
+    else {
+        // Ensure the string length does not exceed the size of newName
+        if (g_canvas[g_cidx].layerNames[g_canvas[g_cidx].selLayerIndex].length() >= sizeof(newName)) {
+            // Handle the error: truncate or notify
+            std::strncpy(newName, g_canvas[g_cidx].layerNames[g_canvas[g_cidx].selLayerIndex].c_str(), sizeof(newName) - 1);
+            newName[sizeof(newName) - 1] = '\0'; // Ensure null termination
+        }
+        else {
+            std::strcpy(newName, g_canvas[g_cidx].layerNames[g_canvas[g_cidx].selLayerIndex].c_str());
+        }
         ImGui::OpenPopup("Rename Layer");
+    }
 }
