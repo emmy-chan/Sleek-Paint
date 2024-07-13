@@ -336,7 +336,7 @@ void DrawRectangleOnCanvas(int x0, int y0, int x1, int y1, ImU32 color, bool pre
 void cCanvas::UpdateZoom() {
     // Zooming
     if (ImGui::GetIO().MouseWheel != 0.f) {
-        const float minZoom = 2.0f, maxZoom = 50.0f;
+        const float minZoom = 1.0f, maxZoom = 50.0f;
 
         // Calculate new zoom level
         const float newZoom = glm::clamp(TILE_SIZE + ImGui::GetIO().MouseWheel * 4, minZoom, maxZoom);
