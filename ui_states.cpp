@@ -111,6 +111,25 @@ void SaveCanvasToImage(const char* name, const char* format) {
     delete[] imageData;
 }
 
+std::string SerializeCanvas(const cCanvas& canvas) {
+    std::ostringstream oss;
+    oss << canvas.name << "\n";
+    oss << canvas.width << " " << canvas.height << "\n";
+    oss << canvas.tiles.size() << "\n";
+
+    for (size_t i = 0; i < canvas.tiles.size(); ++i) {
+        oss << canvas.tiles[i].size() << "\n";
+        for (uint32_t color : canvas.tiles[i]) {
+            oss << color << " ";
+        }
+        oss << "\n";
+        oss << canvas.layerNames[i] << "\n";
+        oss << canvas.layerVisibility[i] << "\n";
+    }
+
+    return oss.str();
+}
+
 void cUIStateSaveProject::Update()
 {
     static bool bDisplayed = false;
@@ -130,8 +149,6 @@ void cUIStateSaveProject::Update()
 
     if (fileDialog.HasSelected())
     {
-        // Get our canvas and push it to our data string!
-        if (fileDialog.GetTypeFilterIndex() == 1) data = GetColorData(g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex], true);
         file_name = fileDialog.GetSelected().string();
 
         // Get the file extension
@@ -152,8 +169,10 @@ void cUIStateSaveProject::Update()
 
         if (!std::filesystem::exists(file_name)) {
             if (fileDialog.GetTypeFilterIndex() == 1) {
+                // Save the entire project
                 DataManager dm;
-                dm.SaveDataToFile(file_name, data);
+                std::string serializedData = SerializeCanvas(g_canvas[g_cidx]);
+                dm.SaveDataToFile(file_name, serializedData);
             }
             else
                 SaveCanvasToImage(file_name.c_str(), extension.c_str() + 1);  // Skip the dot in the extension
@@ -373,6 +392,59 @@ void LoadImageFileToCanvas(const std::string& filepath, const std::string& filen
     stbi_image_free(image_data);
 }
 
+cCanvas DeserializeCanvas(const std::string& data) {
+    std::istringstream iss(data);
+    std::string canvasName;
+    int width, height;
+    size_t layerCount;
+
+    // Deserialize canvas name
+    std::getline(iss, canvasName);
+    std::cout << "Canvas name: " << canvasName << std::endl;
+
+    // Deserialize canvas dimensions
+    iss >> width >> height;
+    std::cout << "Canvas dimensions: " << width << "x" << height << std::endl;
+
+    // Create canvas object
+    cCanvas canvas(canvasName, width, height);
+
+    // Deserialize number of layers
+    iss >> layerCount;
+    std::cout << "Number of layers: " << layerCount << std::endl;
+    if (layerCount > 1000) { // Arbitrary large value to catch potential errors
+        throw std::runtime_error("Unreasonable number of layers detected");
+    }
+
+    canvas.tiles.resize(layerCount);
+    canvas.layerNames.resize(layerCount);
+    canvas.layerVisibility.resize(layerCount);
+
+    // Deserialize each layer's data
+    for (size_t i = 0; i < layerCount; ++i) {
+        size_t layerSize;
+        iss >> layerSize;
+        std::cout << "Layer " << i << " size: " << layerSize << std::endl;
+
+        // Check if layerSize is reasonable
+        if (layerSize > 1000000) { // Arbitrary large value to catch potential errors
+            throw std::runtime_error("Unreasonable layer size detected");
+        }
+
+        canvas.tiles[i].resize(layerSize);
+
+        for (size_t j = 0; j < layerSize; ++j) {
+            iss >> canvas.tiles[i][j];
+        }
+
+        iss >> std::ws; // Skip any whitespace
+        std::getline(iss, canvas.layerNames[i]);
+        iss >> canvas.layerVisibility[i];
+    }
+
+    return canvas;
+}
+
 void cUIStateOpenProject::Update()
 {
     static ImGui::FileBrowser fileDialog(ImGuiFileBrowserFlags_EnterNewFilename | ImGuiFileBrowserFlags_CloseOnEsc | ImGuiFileBrowserFlags_CreateNewDir | ImGuiFileBrowserFlags_NoStatusBar);
@@ -387,7 +459,34 @@ void cUIStateOpenProject::Update()
     {
         g_app.ui_state.reset();
 
-        LoadImageFileToCanvas(fileDialog.GetSelected().string(), fileDialog.GetSelected().filename().string());
+        std::string selectedFile = fileDialog.GetSelected().string();
+        std::string extension = selectedFile.substr(selectedFile.find_last_of('.'));
+
+        if (extension == ".spr") {
+            std::cout << "Loading project file: " << selectedFile << std::endl;
+
+            DataManager dm;
+            std::string serializedData = dm.LoadDataFromFile(selectedFile);
+            if (!serializedData.empty()) {
+                try {
+                    cCanvas canvas = DeserializeCanvas(serializedData);
+                    g_canvas.push_back(std::move(canvas));
+                    g_cidx = (uint16_t)g_canvas.size() - 1;
+                    std::cout << "Project loaded successfully with " << g_canvas[g_cidx].tiles.size() << " layers." << std::endl;
+                }
+                catch (const std::exception& e) {
+                    std::cerr << "Error deserializing canvas: " << e.what() << std::endl;
+                }
+            }
+            else {
+                std::cerr << "Failed to load project file: " << selectedFile << std::endl;
+            }
+        }
+        else {
+            // Load an image file
+            LoadImageFileToCanvas(selectedFile, fileDialog.GetSelected().filename().string());
+        }
+        
         g_canvas[g_cidx].UpdateCanvasHistory();
 
         //std::cout << "Selected filename " << fileDialog.GetSelected().string() << std::endl;

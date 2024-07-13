@@ -1,9 +1,25 @@
 #include "data_manager.h"
 #include <fstream>
 #include <filesystem>
+#include <iostream>
 
 void DataManager::SaveDataToFile(const std::string& input, const std::string& data) {
     std::ofstream file; file.open(input); file << data; file.close();
+}
+
+std::string DataManager::LoadDataFromFile(const std::string& input) {
+    std::ifstream file(input);
+    if (!file.is_open()) {
+        std::cerr << "Error opening file for reading: " << input << std::endl;
+        return "";
+    }
+
+    std::stringstream buffer;
+    buffer << file.rdbuf();
+    file.close();
+
+    std::cout << "File " << input << " loaded successfully." << std::endl;
+    return buffer.str();
 }
 
 bool DataManager::LoadColorData(const std::string& filepath, std::vector<ImU32>& data) {
