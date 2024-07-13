@@ -193,13 +193,15 @@ void cUIStateSaveProject::Update()
 
     if (bDisplayed) {
         if (ImGui::BeginPopupModal("Warning", NULL, ImGuiWindowFlags_AlwaysAutoResize)) {
-            const std::string warning_txt = "File already exists, overwrite anyways?\n'" + g_canvas[g_cidx].name + "'";
+            const std::string warning_txt = "File already exists, overwrite anyways?\n'" + file_name + "'";
             ImGui::Text(warning_txt.c_str());
 
             if (ImGui::Button("Yes")) {
                 if (fileDialog.GetTypeFilterIndex() == 1) {
+                    // Save the entire project
                     DataManager dm;
-                    dm.SaveDataToFile(file_name, data);
+                    std::string serializedData = SerializeCanvas(g_canvas[g_cidx]);
+                    dm.SaveDataToFile(file_name, serializedData);
                 }
                 else
                     SaveCanvasToImage(file_name.c_str(), extension.c_str() + 1);  // Skip the dot in the extension
