@@ -154,19 +154,43 @@ ImVec2 GetTilePos(uint16_t index, float tileSize, float camX, float camY, int wi
 void DrawSelectionRectangle(ImDrawList* drawList, const std::unordered_set<uint64_t>& indexes, float tileSize, float camX, float camY, int width, ImU32 col, uint8_t thickness) {
     if (indexes.empty()) return;
 
-    float minX = FLT_MAX, minY = FLT_MAX;
-    float maxX = -FLT_MAX, maxY = -FLT_MAX;
-
-    for (uint16_t index : indexes) {
-        const ImVec2 pos = GetTilePos(index, tileSize, camX, camY, width);
-        minX = std::min(minX, pos.x);
-        minY = std::min(minY, pos.y);
-        maxX = std::max(maxX, pos.x + tileSize);
-        maxY = std::max(maxY, pos.y + tileSize);
+    std::unordered_map<uint64_t, ImVec2> tilePositions;
+    for (uint64_t index : indexes) {
+        ImVec2 pos = GetTilePos(index, tileSize, camX, camY, width);
+        tilePositions[index] = pos;
     }
 
-    drawList->AddRect({ minX, minY }, { maxX, maxY }, IM_COL32_BLACK, 0.0f, 0, float(thickness * 2));
-    drawList->AddRect({ minX, minY }, { maxX, maxY }, col, 0.0f, 0, float(thickness));
+    auto isBorderTile = [&](uint64_t index, int dx, int dy) {
+        uint64_t neighborIndex = index + dx + dy * width;
+        return indexes.find(neighborIndex) == indexes.end();
+    };
+
+    std::vector<ImVec2> borderPoints;
+
+    for (const auto& [index, pos] : tilePositions) {
+        if (isBorderTile(index, -1, 0)) {
+            borderPoints.push_back(pos); // Left border
+            borderPoints.push_back(ImVec2(pos.x, pos.y + tileSize));
+        }
+        if (isBorderTile(index, 1, 0)) {
+            borderPoints.push_back(ImVec2(pos.x + tileSize, pos.y)); // Right border
+            borderPoints.push_back(ImVec2(pos.x + tileSize, pos.y + tileSize));
+        }
+        if (isBorderTile(index, 0, -1)) {
+            borderPoints.push_back(pos); // Top border
+            borderPoints.push_back(ImVec2(pos.x + tileSize, pos.y));
+        }
+        if (isBorderTile(index, 0, 1)) {
+            borderPoints.push_back(ImVec2(pos.x, pos.y + tileSize)); // Bottom border
+            borderPoints.push_back(ImVec2(pos.x + tileSize, pos.y + tileSize));
+        }
+    }
+
+    for (size_t i = 0; i < borderPoints.size(); i += 2)
+        drawList->AddLine(borderPoints[i], borderPoints[i + 1], IM_COL32_BLACK, float(thickness * 2));
+
+    for (size_t i = 0; i < borderPoints.size(); i += 2)
+        drawList->AddLine(borderPoints[i], borderPoints[i + 1], col, float(thickness));
 }
 
 std::unordered_set<uint64_t> initialSelectedIndexes;
