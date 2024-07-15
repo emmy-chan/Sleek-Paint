@@ -15,6 +15,7 @@ uint16_t g_cidx = uint16_t();
 #include <utility> // for std::pair
 #include <set>
 #include "keystate.h"
+#include "assets.h"
 
 void cCanvas::Initialize(const std::vector<ImU32>& initial_data, const uint16_t& new_width, const uint16_t& new_height) {
     tiles.clear();
@@ -357,6 +358,56 @@ void DrawRectangleOnCanvas(int x0, int y0, int x1, int y1, ImU32 color, bool pre
     }
 }
 
+void DrawTextOnCanvas(BitmapFont& font, const std::string& text, int startX, int startY, ImU32 color) {
+    printf("DrawTextOnCanvas called with text: %s\n", text.c_str());
+
+    // Convert start position from screen coordinates to canvas coordinates
+    startX = (startX - g_cam.x) / g_canvas[g_cidx].TILE_SIZE;
+    startY = (startY - g_cam.y) / g_canvas[g_cidx].TILE_SIZE;
+
+    // Check if the starting position is within the canvas bounds
+    if (startX < 0 || startY < 0 || startX >= g_canvas[g_cidx].width || startY >= g_canvas[g_cidx].height) {
+        printf("Starting position (%d, %d) out of bounds\n", startX, startY);
+        return;
+    }
+
+    for (size_t i = 0; i < text.length(); ++i) {
+        char c = text[i];
+        printf("Mapping character: '%c'\n", c);
+
+        if (font.charBitmaps.find(c) == font.charBitmaps.end()) {
+            printf("Character '%c' not found in charBitmaps\n", c);
+            continue; // Skip unsupported characters
+        }
+
+        const auto& bitmap = font.charBitmaps[c];
+
+        // Verify bitmap dimensions
+        if (bitmap.size() != font.charHeight || (bitmap.size() > 0 && bitmap[0].size() != font.charWidth)) {
+            printf("Bitmap dimensions for character '%c' are incorrect\n", c);
+            continue;
+        }
+
+        for (int y = 0; y < font.charHeight; ++y) {
+            for (int x = 0; x < font.charWidth; ++x) {
+                if (bitmap[y][x] == 1) {
+                    int posX = startX + i * (font.charWidth + 1) + x; // Adjust horizontal spacing
+                    int posY = startY + y;
+
+                    // Ensure position is within the canvas boundaries
+                    if (posX >= 0 && posX < g_canvas[g_cidx].width && posY >= 0 && posY < g_canvas[g_cidx].height) {
+                        printf("Drawing pixel at (%d, %d) with color %08X\n", posX, posY, color);
+                        g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex][posY * g_canvas[g_cidx].width + posX] = color;
+                    }
+                    else {
+                        printf("Position (%d, %d) out of bounds\n", posX, posY);
+                    }
+                }
+            }
+        }
+    }
+}
+
 void cCanvas::UpdateZoom() {
     // Zooming
     if (ImGui::GetIO().MouseWheel != 0.f) {
@@ -384,35 +435,35 @@ void cCanvas::Editor() {
     if (!g_app.ui_state) {
         key_state.update();
 
-        if (GetAsyncKeyState(VK_CONTROL) && key_state.key_pressed('Z') & 1) {
-            if (g_canvas[g_cidx].canvas_idx > 0) {
-                g_canvas[g_cidx].canvas_idx--;
-                g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex] = g_canvas[g_cidx].previousCanvases[g_canvas[g_cidx].canvas_idx];
-            }
-        }
-        else if (GetAsyncKeyState(VK_CONTROL) && key_state.key_pressed('Y') & 1) {
-            if (g_canvas[g_cidx].canvas_idx < g_canvas[g_cidx].previousCanvases.size() - 1) {
-                g_canvas[g_cidx].canvas_idx++;
-                g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex] = g_canvas[g_cidx].previousCanvases[g_canvas[g_cidx].canvas_idx];
-            }
-        }
-        else if (GetAsyncKeyState(VK_DELETE)) // Delete our selection area
-            DeleteSelection();
-        else if (GetAsyncKeyState(VK_CONTROL) && key_state.key_pressed('X')) { // Cut our selection area
-            g_canvas[g_cidx].CopySelection();
-            g_canvas[g_cidx].DeleteSelection();
-        }
-        else if (GetAsyncKeyState(VK_CONTROL) && key_state.key_pressed('C')) // Copy our selection area
-            CopySelection();
-        else if (GetAsyncKeyState(VK_CONTROL) && key_state.key_pressed('V') && !copiedTiles.empty()) // Paste our selection area
-            PasteSelection();
-        else if (key_state.key_pressed('B')) paintToolSelected = TOOL_BRUSH;
-        else if (key_state.key_pressed('G')) paintToolSelected = TOOL_BUCKET;
-        else if (key_state.key_pressed('E')) paintToolSelected = TOOL_ERASER;
-        else if (key_state.key_pressed('X')) paintToolSelected = TOOL_DROPPER;
-        else if (key_state.key_pressed('M')) paintToolSelected = TOOL_MOVE;
-        else if (key_state.key_pressed('W')) paintToolSelected = TOOL_WAND;
-        else if (key_state.key_pressed('S')) paintToolSelected = TOOL_SELECT;
+        //if (GetAsyncKeyState(VK_CONTROL) && key_state.key_pressed('Z') & 1) {
+        //    if (g_canvas[g_cidx].canvas_idx > 0) {
+        //        g_canvas[g_cidx].canvas_idx--;
+        //        g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex] = g_canvas[g_cidx].previousCanvases[g_canvas[g_cidx].canvas_idx];
+        //    }
+        //}
+        //else if (GetAsyncKeyState(VK_CONTROL) && key_state.key_pressed('Y') & 1) {
+        //    if (g_canvas[g_cidx].canvas_idx < g_canvas[g_cidx].previousCanvases.size() - 1) {
+        //        g_canvas[g_cidx].canvas_idx++;
+        //        g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex] = g_canvas[g_cidx].previousCanvases[g_canvas[g_cidx].canvas_idx];
+        //    }
+        //}
+        //else if (GetAsyncKeyState(VK_DELETE)) // Delete our selection area
+        //    DeleteSelection();
+        //else if (GetAsyncKeyState(VK_CONTROL) && key_state.key_pressed('X')) { // Cut our selection area
+        //    g_canvas[g_cidx].CopySelection();
+        //    g_canvas[g_cidx].DeleteSelection();
+        //}
+        //else if (GetAsyncKeyState(VK_CONTROL) && key_state.key_pressed('C')) // Copy our selection area
+        //    CopySelection();
+        //else if (GetAsyncKeyState(VK_CONTROL) && key_state.key_pressed('V') && !copiedTiles.empty()) // Paste our selection area
+        //    PasteSelection();
+        //else if (key_state.key_pressed('B')) paintToolSelected = TOOL_BRUSH;
+        //else if (key_state.key_pressed('G')) paintToolSelected = TOOL_BUCKET;
+        //else if (key_state.key_pressed('E')) paintToolSelected = TOOL_ERASER;
+        //else if (key_state.key_pressed('X')) paintToolSelected = TOOL_DROPPER;
+        //else if (key_state.key_pressed('M')) paintToolSelected = TOOL_MOVE;
+        //else if (key_state.key_pressed('W')) paintToolSelected = TOOL_WAND;
+        //else if (key_state.key_pressed('S')) paintToolSelected = TOOL_SELECT;
 
         UpdateZoom();
     }
@@ -751,6 +802,100 @@ void cCanvas::Editor() {
             break;
         }
     }
+
+    static bool isTypingText = false;
+    static ImVec2 textPosition;
+    static std::string textInput;
+    static std::string previousTextInput;
+    static ImVec2 previousTextPosition;
+    static std::vector<std::string> lines;
+    static std::vector<ImVec2> linePositions;
+
+    // Handle text input
+    if (paintToolSelected == TOOL_TEXT) {
+        if (io.MouseClicked[0] && !isTypingText) {
+            textPosition = ImGui::GetMousePos();
+            isTypingText = true;
+            textInput.clear();
+            previousTextInput.clear();
+            previousTextPosition = textPosition;
+            lines.clear();
+            linePositions.clear();
+            lines.push_back("");
+            linePositions.push_back(textPosition);
+        }
+
+        if (isTypingText) {
+            // Capture text input
+            for (int c = 0; c < io.InputQueueCharacters.Size; c++) {
+                const ImWchar ch = io.InputQueueCharacters[c];
+                if (ch == '\n' || ch == '\r') {
+                    // Handle Enter key: move to new line
+                    textPosition.y += bitmapFont->charHeight * TILE_SIZE;
+                    textPosition.x = linePositions[0].x; // Reset x position to start of the line
+                    lines.push_back(""); // Add a new line
+                    linePositions.push_back(textPosition); // Save the position for the new line
+                    textInput.clear(); // Clear input for the new line
+                    previousTextInput.clear();
+                    continue;
+                }
+
+                // Handle backspace
+                if (ch == 127 || ch == '\b') {
+                    if (!textInput.empty()) {
+                        textInput.pop_back();
+                    }
+                    else if (lines.size() > 1) {
+                        // Move back to the previous line if the current line is empty
+                        lines.pop_back();
+                        linePositions.pop_back();
+                        textPosition = linePositions.back();
+                        textInput = lines.back();
+                        lines.back().clear(); // Clear the last line after moving back
+                        previousTextInput = textInput;
+                    }
+                }
+                else {
+                    textInput += static_cast<char>(ch);  // Ensure correct type cast
+                }
+            }
+
+            // Clear the previously drawn text from the canvas
+            if (bitmapFont) {
+                for (size_t i = 0; i < lines.size(); ++i) {
+                    DrawTextOnCanvas(*bitmapFont, lines[i], static_cast<int>(linePositions[i].x - TILE_SIZE), static_cast<int>(linePositions[i].y), IM_COL32(0, 0, 0, 0));
+                    DrawTextOnCanvas(*bitmapFont, lines[i], static_cast<int>(linePositions[i].x), static_cast<int>(linePositions[i].y), IM_COL32(0, 0, 0, 0));
+                }
+            }
+
+            // Update the current line content
+            if (!lines.empty()) lines.back() = textInput;
+
+            // Draw the current text at the mouse position using the bitmap font
+            if (bitmapFont) {
+                for (size_t i = 0; i < lines.size(); ++i) {
+                    DrawTextOnCanvas(*bitmapFont, lines[i], static_cast<int>(linePositions[i].x - TILE_SIZE), static_cast<int>(linePositions[i].y), IM_COL32_BLACK);
+                    DrawTextOnCanvas(*bitmapFont, lines[i], static_cast<int>(linePositions[i].x), static_cast<int>(linePositions[i].y), IM_COL32_WHITE);
+                }
+            }
+
+            // Update the previous text input and position
+            previousTextInput = textInput;
+            previousTextPosition = textPosition;
+
+            // Draw the text cursor
+            ImVec2 cursorPos = textPosition;
+            cursorPos.x += textInput.size() * bitmapFont->charWidth * (TILE_SIZE * 1.25f);
+
+            // Draw blinking cursor
+            if (fmod(ImGui::GetTime(), 1.0f) > 0.5f) {
+                d.AddLine(ImVec2(cursorPos.x, cursorPos.y), ImVec2(cursorPos.x, cursorPos.y + bitmapFont->charHeight * TILE_SIZE), IM_COL32_BLACK, 2);
+                d.AddLine(ImVec2(cursorPos.x, cursorPos.y), ImVec2(cursorPos.x, cursorPos.y + bitmapFont->charHeight * TILE_SIZE), IM_COL32_WHITE, 1);
+            }
+        }
+    }
+    else
+        isTypingText = false;
 
     // Draw a rectangle around the selected indexes
     if (!selectedIndexes.empty())

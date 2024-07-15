@@ -20,7 +20,8 @@ enum eTools {
 	TOOL_MOVE,
 	TOOL_LINE,
 	TOOL_SQUARE,
-	TOOL_ELIPSE
+	TOOL_ELIPSE,
+	TOOL_TEXT
 };
 
 class cCanvas

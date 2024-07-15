@@ -8,7 +8,7 @@
 cAssets g_assets = cAssets();
 
 // Simple helper function to load an image into a DX11 texture with common settings
-bool LoadTextureFromFile(const char* filename, ID3D11ShaderResourceView** out_srv, int* out_width, int* out_height)
+bool cAssets::LoadTextureFromFile(const char* filename, ID3D11ShaderResourceView** out_srv, int* out_width, int* out_height)
 {
     // Load from disk into a raw RGBA buffer
     int image_width = 0;
@@ -55,6 +55,476 @@ bool LoadTextureFromFile(const char* filename, ID3D11ShaderResourceView** out_sr
     return true;
 }
 
+BitmapFont::BitmapFont(const char* filename, int charWidth, int charHeight, std::function<bool(const char*, ID3D11ShaderResourceView**, int*, int*)> loadTextureFunc)
+    : charWidth(charWidth), charHeight(charHeight) {
+    int textureWidth, textureHeight;
+    bool result = loadTextureFunc(filename, &texture, &textureWidth, &textureHeight);
+    if (!result) {
+        // Handle the error, texture loading failed
+    }
+    this->columns = 16; // 16 columns for your 16x16 character grid
+    this->rows = 3;     // 3 rows for upper and lowercase characters
+
+    // Calculate UV coordinates for each character
+    for (int i = 0; i < 52; ++i) { // 26 uppercase + 26 lowercase characters
+        int x = i % columns;
+        int y = i / columns;
+        char c = (i < 26) ? ('A' + i) : ('a' + (i - 26));
+        charUV[c] = ImVec2(x * charWidth / (float)textureWidth, y * charHeight / (float)textureHeight);
+    }
+
+    LoadCharacterBitmaps(); // Load character bitmaps
+    EnsureBitmapDimensions(); // Ensure bitmaps have correct dimensions
+}
+
+BitmapFont::~BitmapFont() {
+    if (texture) {
+        texture->Release();
+    }
+}
+
+void BitmapFont::LoadCharacterBitmaps() {
+    // Uppercase characters
+    charBitmaps['A'] = {
+        {0, 1, 1, 0},
+        {1, 0, 0, 1},
+        {1, 1, 1, 1},
+        {1, 0, 0, 1},
+        {1, 0, 0, 1}
+    };
+
+    charBitmaps['B'] = {
+        {1, 1, 1, 0},
+        {1, 0, 0, 1},
+        {1, 1, 1, 0},
+        {1, 0, 0, 1},
+        {1, 1, 1, 0}
+    };
+
+    charBitmaps['C'] = {
+        {0, 1, 1, 1},
+        {1, 0, 0, 0},
+        {1, 0, 0, 0},
+        {1, 0, 0, 0},
+        {0, 1, 1, 1}
+    };
+
+    charBitmaps['D'] = {
+        {1, 1, 1, 0},
+        {1, 0, 0, 1},
+        {1, 0, 0, 1},
+        {1, 0, 0, 1},
+        {1, 1, 1, 0}
+    };
+
+    charBitmaps['E'] = {
+        {1, 1, 1, 1},
+        {1, 0, 0, 0},
+        {1, 1, 1, 0},
+        {1, 0, 0, 0},
+        {1, 1, 1, 1}
+    };
+
+    charBitmaps['F'] = {
+        {1, 1, 1, 1},
+        {1, 0, 0, 0},
+        {1, 1, 1, 0},
+        {1, 0, 0, 0},
+        {1, 0, 0, 0}
+    };
+
+    charBitmaps['G'] = {
+        {0, 1, 1, 1},
+        {1, 0, 0, 0},
+        {1, 0, 1, 1},
+        {1, 0, 0, 1},
+        {0, 1, 1, 1}
+    };
+
+    charBitmaps['H'] = {
+        {1, 0, 0, 1},
+        {1, 0, 0, 1},
+        {1, 1, 1, 1},
+        {1, 0, 0, 1},
+        {1, 0, 0, 1}
+    };
+
+    charBitmaps['I'] = {
+        {1, 1, 1},
+        {0, 1, 0},
+        {0, 1, 0},
+        {0, 1, 0},
+        {1, 1, 1}
+    };
+
+    charBitmaps['J'] = {
+        {1, 1, 1, 1},
+        {0, 0, 1, 0},
+        {0, 0, 1, 0},
+        {1, 0, 1, 0},
+        {0, 1, 1, 0}
+    };
+
+    charBitmaps['K'] = {
+        {1, 0, 0, 1},
+        {1, 0, 1, 0},
+        {1, 1, 0, 0},
+        {1, 0, 1, 0},
+        {1, 0, 0, 1}
+    };
+
+    charBitmaps['L'] = {
+        {1, 0, 0, 0},
+        {1, 0, 0, 0},
+        {1, 0, 0, 0},
+        {1, 0, 0, 0},
+        {1, 1, 1, 1}
+    };
+
+    charBitmaps['M'] = {
+        {1, 0, 0, 1},
+        {1, 1, 1, 1},
+        {1, 0, 1, 1},
+        {1, 0, 0, 1},
+        {1, 0, 0, 1}
+    };
+
+    charBitmaps['N'] = {
+        {1, 0, 0, 1},
+        {1, 1, 0, 1},
+        {1, 0, 1, 1},
+        {1, 0, 0, 1},
+        {1, 0, 0, 1}
+    };
+
+    charBitmaps['O'] = {
+        {0, 1, 1, 0},
+        {1, 0, 0, 1},
+        {1, 0, 0, 1},
+        {1, 0, 0, 1},
+        {0, 1, 1, 0}
+    };
+
+    charBitmaps['P'] = {
+        {1, 1, 1, 0},
+        {1, 0, 0, 1},
+        {1, 1, 1, 0},
+        {1, 0, 0, 0},
+        {1, 0, 0, 0}
+    };
+
+    charBitmaps['Q'] = {
+        {0, 1, 1, 0},
+        {1, 0, 0, 1},
+        {1, 0, 0, 1},
+        {1, 0, 1, 1},
+        {0, 1, 1, 1}
+    };
+
+    charBitmaps['R'] = {
+        {1, 1, 1, 0},
+        {1, 0, 0, 1},
+        {1, 1, 1, 0},
+        {1, 0, 1, 0},
+        {1, 0, 0, 1}
+    };
+
+    charBitmaps['S'] = {
+        {0, 1, 1, 1},
+        {1, 0, 0, 0},
+        {0, 1, 1, 0},
+        {0, 0, 0, 1},
+        {1, 1, 1, 0}
+    };
+
+    charBitmaps['T'] = {
+        {1, 1, 1, 1},
+        {0, 0, 1, 0},
+        {0, 0, 1, 0},
+        {0, 0, 1, 0},
+        {0, 0, 1, 0}
+    };
+
+    charBitmaps['U'] = {
+        {1, 0, 0, 1},
+        {1, 0, 0, 1},
+        {1, 0, 0, 1},
+        {1, 0, 0, 1},
+        {0, 1, 1, 0}
+    };
+
+    charBitmaps['V'] = {
+        {1, 0, 0, 1},
+        {1, 0, 0, 1},
+        {1, 0, 0, 1},
+        {0, 1, 1, 0},
+        {0, 0, 1, 0}
+    };
+
+    charBitmaps['W'] = {
+        {1, 0, 0, 1},
+        {1, 0, 0, 1},
+        {1, 0, 1, 1},
+        {1, 1, 1, 1},
+        {1, 0, 0, 1}
+    };
+
+    charBitmaps['X'] = {
+        {1, 0, 0, 1},
+        {0, 1, 1, 0},
+        {0, 1, 1, 0},
+        {1, 0, 0, 1},
+        {1, 0, 0, 1}
+    };
+
+    charBitmaps['Y'] = {
+        {1, 0, 0, 1},
+        {0, 1, 1, 0},
+        {0, 1, 1, 0},
+        {0, 0, 1, 0},
+        {0, 0, 1, 0}
+    };
+
+    charBitmaps['Z'] = {
+        {1, 1, 1, 1},
+        {0, 0, 0, 1},
+        {0, 0, 1, 0},
+        {0, 1, 0, 0},
+        {1, 1, 1, 1}
+    };
+
+    // Lowercase characters
+    charBitmaps['a'] = {
+        {0, 0, 0, 0},
+        {0, 1, 1, 0},
+        {1, 0, 0, 1},
+        {1, 1, 1, 1},
+        {1, 0, 0, 1}
+    };
+
+    charBitmaps['b'] = {
+        {1, 0, 0, 0},
+        {1, 1, 1, 0},
+        {1, 0, 0, 1},
+        {1, 0, 0, 1},
+        {1, 1, 1, 0}
+    };
+
+    charBitmaps['c'] = {
+        {0, 0, 0, 0},
+        {0, 1, 1, 0},
+        {1, 0, 0, 1},
+        {1, 0, 0, 0},
+        {0, 1, 1, 0}
+    };
+
+    charBitmaps['d'] = {
+        {0, 0, 0, 1},
+        {0, 1, 1, 1},
+        {1, 0, 0, 1},
+        {1, 0, 0, 1},
+        {0, 1, 1, 1}
+    };
+
+    charBitmaps['e'] = {
+        {0, 0, 0, 0},
+        {0, 1, 1, 0},
+        {1, 1, 1, 1},
+        {1, 0, 0, 0},
+        {0, 1, 1, 0}
+    };
+
+    charBitmaps['f'] = {
+        {0, 1, 1, 1},
+        {1, 0, 0, 0},
+        {1, 1, 1, 0},
+        {1, 0, 0, 0},
+        {1, 0, 0, 0}
+    };
+
+    charBitmaps['g'] = {
+        {0, 0, 0, 0},
+        {0, 1, 1, 0},
+        {1, 0, 0, 1},
+        {1, 1, 1, 1},
+        {0, 0, 0, 1}
+    };
+
+    charBitmaps['h'] = {
+        {1, 0, 0, 0},
+        {1, 1, 1, 0},
+        {1, 0, 0, 1},
+        {1, 0, 0, 1},
+        {1, 0, 0, 1}
+    };
+
+    charBitmaps['i'] = {
+        {0, 1, 0},
+        {0, 0, 0},
+        {1, 1, 0},
+        {0, 1, 0},
+        {1, 1, 1}
+    };
+
+    charBitmaps['j'] = {
+        {0, 0, 1},
+        {0, 0, 0},
+        {0, 0, 1},
+        {1, 0, 1},
+        {0, 1, 0}
+    };
+
+    charBitmaps['k'] = {
+        {1, 0, 0},
+        {1, 0, 1},
+        {1, 1, 0},
+        {1, 0, 1},
+        {1, 0, 0}
+    };
+
+    charBitmaps['l'] = {
+        {1, 1, 0},
+        {0, 1, 0},
+        {0, 1, 0},
+        {0, 1, 0},
+        {1, 1, 1}
+    };
+
+    charBitmaps['m'] = {
+        {0, 0, 0, 0},
+        {1, 1, 0, 1},
+        {1, 0, 1, 1},
+        {1, 0, 1, 1},
+        {1, 0, 0, 1}
+    };
+
+    charBitmaps['n'] = {
+        {0, 0, 0, 0},
+        {1, 1, 1, 0},
+        {1, 0, 0, 1},
+        {1, 0, 0, 1},
+        {1, 0, 0, 1}
+    };
+
+    charBitmaps['o'] = {
+        {0, 0, 0, 0},
+        {0, 1, 1, 0},
+        {1, 0, 0, 1},
+        {1, 0, 0, 1},
+        {0, 1, 1, 0}
+    };
+
+    charBitmaps['p'] = {
+        {0, 0, 0, 0},
+        {1, 1, 1, 0},
+        {1, 0, 0, 1},
+        {1, 1, 1, 0},
+        {1, 0, 0, 0}
+    };
+
+    charBitmaps['q'] = {
+        {0, 0, 0, 0},
+        {0, 1, 1, 0},
+        {1, 0, 0, 1},
+        {0, 1, 1, 1},
+        {0, 0, 0, 1}
+    };
+
+    charBitmaps['r'] = {
+        {0, 0, 0, 0},
+        {1, 1, 1, 0},
+        {1, 0, 0, 1},
+        {1, 0, 0, 0},
+        {1, 0, 0, 0}
+    };
+
+    charBitmaps['s'] = {
+        {0, 0, 0, 0},
+        {0, 1, 1, 0},
+        {1, 0, 0, 0},
+        {0, 1, 1, 0},
+        {1, 1, 0, 0}
+    };
+
+    charBitmaps['t'] = {
+        {0, 1, 0},
+        {1, 1, 1},
+        {0, 1, 0},
+        {0, 1, 0},
+        {0, 1, 1}
+    };
+
+    charBitmaps['u'] = {
+        {0, 0, 0, 0},
+        {1, 0, 0, 1},
+        {1, 0, 0, 1},
+        {1, 0, 0, 1},
+        {0, 1, 1, 1}
+    };
+
+    charBitmaps['v'] = {
+        {0, 0, 0, 0},
+        {1, 0, 0, 1},
+        {1, 0, 0, 1},
+        {0, 1, 1, 0},
+        {0, 0, 1, 0}
+    };
+
+    charBitmaps['w'] = {
+        {0, 0, 0, 0},
+        {1, 0, 0, 1},
+        {1, 0, 0, 1},
+        {1, 1, 1, 1},
+        {1, 0, 0, 1}
+    };
+
+    charBitmaps['x'] = {
+        {0, 0, 0, 0},
+        {1, 0, 0, 1},
+        {0, 1, 1, 0},
+        {1, 0, 0, 1},
+        {1, 0, 0, 1}
+    };
+
+    charBitmaps['y'] = {
+        {0, 0, 0, 0},
+        {1, 0, 0, 1},
+        {1, 0, 0, 1},
+        {0, 1, 1, 1},
+        {0, 0, 0, 1}
+    };
+
+    charBitmaps['z'] = {
+        {0, 0, 0, 0},
+        {1, 1, 1, 1},
+        {0, 0, 1, 0},
+        {0, 1, 0, 0},
+        {1, 1, 1, 1}
+    };
+}
+
+void BitmapFont::EnsureBitmapDimensions() {
+    for (auto& pair : charBitmaps) {
+        auto& bitmap = pair.second;
+        // Adjust rows if necessary
+        while (bitmap.size() < charHeight) {
+            bitmap.push_back(std::vector<int>(charWidth, 0));
+        }
+        while (bitmap.size() > charHeight) {
+            bitmap.pop_back();
+        }
+        // Adjust columns if necessary
+        for (auto& row : bitmap) {
+            while (row.size() < charWidth) {
+                row.push_back(0);
+            }
+            while (row.size() > charWidth) {
+                row.pop_back();
+            }
+        }
+    }
+}
+
 void cAssets::LoadAssets()
 {
     bool ret = LoadTextureFromFile("gfx/selection.png", &g_assets.selection_texture, NULL, NULL);
@@ -65,4 +535,7 @@ void cAssets::LoadAssets()
 
     bool ret3 = LoadTextureFromFile("gfx/bucket2.png", &g_assets.bucket_texture, NULL, NULL);
     IM_ASSERT(ret3);
+
+    cAssets assets;
+    bitmapFont = new BitmapFont("gfx/fontsmall1.png", 4, 5, std::bind(&cAssets::LoadTextureFromFile, &assets, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4));
 }
