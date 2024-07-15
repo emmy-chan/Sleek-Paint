@@ -96,7 +96,7 @@ void cGUI::Display()
                 g_canvas[g_cidx].myCols.clear();
 
                 // Create our two main colors
-                std::vector<ImU32> main_cols = { IM_COL32(0, 0, 0, 255), IM_COL32(255, 255, 255, 255) };
+                const std::vector<ImU32> main_cols = { IM_COL32(0, 0, 0, 255), IM_COL32(255, 255, 255, 255) };
 
                 // Push our two main colors to the array
                 for (auto& c : main_cols)
@@ -145,7 +145,7 @@ void cGUI::Display()
                 // Apply the changes to the canvas
                 for (uint64_t y = 0; y < g_canvas[g_cidx].height; y++) {
                     for (uint64_t x = 0; x < g_canvas[g_cidx].width; x++) {
-                        uint64_t index = x + y * g_canvas[g_cidx].width;
+                        const uint64_t index = x + y * g_canvas[g_cidx].width;
                         ImU32& currentColor = g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex][index];
                         
                         if (((currentColor >> IM_COL32_A_SHIFT) & 0xFF) != 0)
@@ -816,8 +816,7 @@ void cGUI::Display()
 
     // Main 2 colors
     for (size_t i = 0; i < 2; i++) {
-        std::string id = "Color " + std::to_string(i + 1);
-
+        const std::string id = "Color " + std::to_string(i + 1);
         ImGui::PushStyleColor(ImGuiCol_FrameBg, g_canvas[g_cidx].selColIndex == i ? ImVec4(1.0f, 1.0f, 1.0f, 1.f) : ImVec4(0.05f, 0.05f, 0.05f, 1));
 
         if (ImGui::ColorButton(id.c_str(), ImGui::ColorConvertU32ToFloat4(g_canvas[g_cidx].myCols[i]), NULL, { 87, 21 }))
