@@ -9,11 +9,11 @@
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb_image_write.h"
 
-//cout
+// cout
 #include <iostream>
 #include "stb_image.h"
 
-//Nice little function for loading color data with alpha or no alpha
+// Nice little function for loading color data with alpha or no alpha
 std::string GetColorData(const std::vector<ImU32>& colors, bool includeAlpha) {
     std::string data;
     for (uint16_t i = 0; i < colors.size(); i++) {
@@ -73,7 +73,7 @@ void SaveCanvasToImage(const char* name, const char* format) {
             }
 
             // Convert final blended color back to integer format and store in imageData
-            int idx = (i + j * width) * 4;
+            const int idx = (i + j * width) * 4;
             imageData[idx] = static_cast<char>(finalR * 255);  // Red
             imageData[idx + 1] = static_cast<char>(finalG * 255);  // Green
             imageData[idx + 2] = static_cast<char>(finalB * 255);  // Blue
@@ -304,7 +304,6 @@ void cUIStateCanvasSize::Update()
         ImGui::SameLine();
         ImGui::SetCursorPosX(100);
         ImGui::InputInt("##Height", &hInput);
-        //ImGui::SetCursorPosX(ImGui::GetWindowSize().x / 2 - 20);
 
         if (ImGui::Button("Ok")) {
             // Adapt canvas size
@@ -359,8 +358,6 @@ void cUIStateLoadPalette::Update()
     {
         g_canvas[g_cidx].LoadColorPalette(fileDialog.GetSelected().string());
         g_app.ui_state.reset();
-
-        //std::cout << "Selected filename " << fileDialog.GetSelected().string() << std::endl;
         fileDialog.ClearSelected();
     }
 }
@@ -414,9 +411,8 @@ cCanvas DeserializeCanvas(const std::string& data) {
     // Deserialize number of layers
     iss >> layerCount;
     std::cout << "Number of layers: " << layerCount << std::endl;
-    if (layerCount > 1000) { // Arbitrary large value to catch potential errors
+    if (layerCount > 1000) // Arbitrary large value to catch potential errors
         throw std::runtime_error("Unreasonable number of layers detected");
-    }
 
     canvas.tiles.resize(layerCount);
     canvas.layerNames.resize(layerCount);
@@ -435,9 +431,8 @@ cCanvas DeserializeCanvas(const std::string& data) {
 
         canvas.tiles[i].resize(layerSize);
 
-        for (size_t j = 0; j < layerSize; ++j) {
+        for (size_t j = 0; j < layerSize; ++j)
             iss >> canvas.tiles[i][j];
-        }
 
         iss >> std::ws; // Skip any whitespace
         std::getline(iss, canvas.layerNames[i]);
@@ -490,8 +485,6 @@ void cUIStateOpenProject::Update()
         }
         
         g_canvas[g_cidx].UpdateCanvasHistory();
-
-        //std::cout << "Selected filename " << fileDialog.GetSelected().string() << std::endl;
         fileDialog.ClearSelected();
     }
 }
@@ -518,8 +511,6 @@ void cUIStateSavePalette::Update()
 
         DataManager dm;
         dm.SaveDataToFile(file_name, data);
-
-        //std::cout << "Selected filename " << file_name << std::endl;
         fileDialog.ClearSelected();
     }
 }
