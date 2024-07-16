@@ -828,6 +828,10 @@ void cCanvas::Editor() {
         }
 
         if (isTypingText) {
+            // Hotkey to quit typing
+            if (GetAsyncKeyState(VK_ESCAPE))
+                isTypingText = false;
+
             // Capture text input
             for (int c = 0; c < io.InputQueueCharacters.Size; c++) {
                 const ImWchar ch = io.InputQueueCharacters[c];
