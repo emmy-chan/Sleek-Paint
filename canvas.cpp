@@ -863,6 +863,7 @@ void cCanvas::Editor() {
                 }
                 else {
                     textInput += static_cast<char>(ch);  // Ensure correct type cast
+                    UpdateCanvasHistory();
                 }
             }
 
