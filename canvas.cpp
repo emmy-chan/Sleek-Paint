@@ -431,39 +431,42 @@ void cCanvas::UpdateZoom() {
 void cCanvas::Editor() {
     if (g_canvas.empty() || g_canvas[g_cidx].tiles.empty() || g_canvas[g_cidx].layerVisibility.empty()) return;
     auto& d = *ImGui::GetBackgroundDrawList(); auto& io = ImGui::GetIO();
+    static bool isTypingText = false;
 
     if (!g_app.ui_state) {
         key_state.update();
 
-        //if (GetAsyncKeyState(VK_CONTROL) && key_state.key_pressed('Z') & 1) {
-        //    if (g_canvas[g_cidx].canvas_idx > 0) {
-        //        g_canvas[g_cidx].canvas_idx--;
-        //        g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex] = g_canvas[g_cidx].previousCanvases[g_canvas[g_cidx].canvas_idx];
-        //    }
-        //}
-        //else if (GetAsyncKeyState(VK_CONTROL) && key_state.key_pressed('Y') & 1) {
-        //    if (g_canvas[g_cidx].canvas_idx < g_canvas[g_cidx].previousCanvases.size() - 1) {
-        //        g_canvas[g_cidx].canvas_idx++;
-        //        g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex] = g_canvas[g_cidx].previousCanvases[g_canvas[g_cidx].canvas_idx];
-        //    }
-        //}
-        //else if (GetAsyncKeyState(VK_DELETE)) // Delete our selection area
-        //    DeleteSelection();
-        //else if (GetAsyncKeyState(VK_CONTROL) && key_state.key_pressed('X')) { // Cut our selection area
-        //    g_canvas[g_cidx].CopySelection();
-        //    g_canvas[g_cidx].DeleteSelection();
-        //}
-        //else if (GetAsyncKeyState(VK_CONTROL) && key_state.key_pressed('C')) // Copy our selection area
-        //    CopySelection();
-        //else if (GetAsyncKeyState(VK_CONTROL) && key_state.key_pressed('V') && !copiedTiles.empty()) // Paste our selection area
-        //    PasteSelection();
-        //else if (key_state.key_pressed('B')) paintToolSelected = TOOL_BRUSH;
-        //else if (key_state.key_pressed('G')) paintToolSelected = TOOL_BUCKET;
-        //else if (key_state.key_pressed('E')) paintToolSelected = TOOL_ERASER;
-        //else if (key_state.key_pressed('X')) paintToolSelected = TOOL_DROPPER;
-        //else if (key_state.key_pressed('M')) paintToolSelected = TOOL_MOVE;
-        //else if (key_state.key_pressed('W')) paintToolSelected = TOOL_WAND;
-        //else if (key_state.key_pressed('S')) paintToolSelected = TOOL_SELECT;
+        if (!isTypingText) {
+            if (GetAsyncKeyState(VK_CONTROL) && key_state.key_pressed('Z') & 1) {
+                if (g_canvas[g_cidx].canvas_idx > 0) {
+                    g_canvas[g_cidx].canvas_idx--;
+                    g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex] = g_canvas[g_cidx].previousCanvases[g_canvas[g_cidx].canvas_idx];
+                }
+            }
+            else if (GetAsyncKeyState(VK_CONTROL) && key_state.key_pressed('Y') & 1) {
+                if (g_canvas[g_cidx].canvas_idx < g_canvas[g_cidx].previousCanvases.size() - 1) {
+                    g_canvas[g_cidx].canvas_idx++;
+                    g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex] = g_canvas[g_cidx].previousCanvases[g_canvas[g_cidx].canvas_idx];
+                }
+            }
+            else if (GetAsyncKeyState(VK_DELETE)) // Delete our selection area
+                DeleteSelection();
+            else if (GetAsyncKeyState(VK_CONTROL) && key_state.key_pressed('X')) { // Cut our selection area
+                g_canvas[g_cidx].CopySelection();
+                g_canvas[g_cidx].DeleteSelection();
+            }
+            else if (GetAsyncKeyState(VK_CONTROL) && key_state.key_pressed('C')) // Copy our selection area
+                CopySelection();
+            else if (GetAsyncKeyState(VK_CONTROL) && key_state.key_pressed('V') && !copiedTiles.empty()) // Paste our selection area
+                PasteSelection();
+            else if (key_state.key_pressed('B')) paintToolSelected = TOOL_BRUSH;
+            else if (key_state.key_pressed('G')) paintToolSelected = TOOL_BUCKET;
+            else if (key_state.key_pressed('E')) paintToolSelected = TOOL_ERASER;
+            else if (key_state.key_pressed('X')) paintToolSelected = TOOL_DROPPER;
+            else if (key_state.key_pressed('M')) paintToolSelected = TOOL_MOVE;
+            else if (key_state.key_pressed('W')) paintToolSelected = TOOL_WAND;
+            else if (key_state.key_pressed('S')) paintToolSelected = TOOL_SELECT;
+        }
 
         UpdateZoom();
     }
@@ -803,7 +806,6 @@ void cCanvas::Editor() {
         }
     }
 
-    static bool isTypingText = false;
     static ImVec2 textPosition;
     static std::string textInput;
     static std::string previousTextInput;
