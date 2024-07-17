@@ -71,8 +71,8 @@ glm::u32vec2 cUtils::MapCoordsToRect(glm::u32vec2 coord, const int& w, const int
 
     coord.x -= vViewPos.x + (int)g_cam.x;
     coord.y -= vViewPos.y + (int)g_cam.y;
-    coord.x = (int32_t)(((float)coord.x / (float)(vWindowSize.x - (vViewPos.x * 2)) * (float)(g_canvas[g_cidx].width * g_canvas[g_cidx].TILE_SIZE)));
-    coord.y = (int32_t)(((float)coord.y / (float)(vWindowSize.y - (vViewPos.y * 2)) * (float)(g_canvas[g_cidx].height * g_canvas[g_cidx].TILE_SIZE)));
+    coord.x = (int32_t)(((float)coord.x / (float)(vWindowSize.x - (vViewPos.x * 2)) * (float)(g_canvas[g_cidx].width * TILE_SIZE)));
+    coord.y = (int32_t)(((float)coord.y / (float)(vWindowSize.y - (vViewPos.y * 2)) * (float)(g_canvas[g_cidx].height * TILE_SIZE)));
 
     //coord.x = glm::clamp<int>(mouse.x, 0, w);
     //coord.y = glm::clamp<int>(mouse.y, 0, h);
@@ -252,7 +252,7 @@ void cUtils::FloodFill(const int& x, const int& y, bool paint) {
     const ImU32 fillCol = paint ? g_canvas[g_cidx].myCols[g_canvas[g_cidx].selColIndex] : initialCol;
 
     // Scale the threshold from 0-100 to 0-765
-    const int threshold = (paint ? g_canvas[g_cidx].bucket_fill_threshold : g_canvas[g_cidx].magic_wand_threshold) * 765 / 100;
+    const int threshold = (paint ? bucket_fill_threshold : magic_wand_threshold) * 765 / 100;
 
     std::stack<std::pair<int, int>> stack;
     stack.push({ x, y });

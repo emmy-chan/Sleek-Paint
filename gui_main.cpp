@@ -601,13 +601,13 @@ void cGUI::Display()
         ImGui::Begin("##ScrollH", NULL, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove);
         ImGui::SetWindowSize({ ImGui::GetWindowWidth() - 20, 20});
         ImGui::PushItemWidth(ImGui::GetWindowWidth());
-        ImGui::SliderFloat("##ScrollHorizontal", &g_cam.x, glm::abs(io.DisplaySize.x - (g_canvas[g_cidx].width * g_canvas[g_cidx].TILE_SIZE) / 2), 150 + -glm::abs(io.DisplaySize.x / 2 - (g_canvas[g_cidx].width * g_canvas[g_cidx].TILE_SIZE / 2)), "");
+        ImGui::SliderFloat("##ScrollHorizontal", &g_cam.x, glm::abs(io.DisplaySize.x - (g_canvas[g_cidx].width * TILE_SIZE) / 2), 150 + -glm::abs(io.DisplaySize.x / 2 - (g_canvas[g_cidx].width * TILE_SIZE / 2)), "");
         ImGui::End();
 
         ImGui::SetNextWindowPos({ io.DisplaySize.x - 60, 24 });
         ImGui::SetNextWindowSize({ 20, io.DisplaySize.y - 43 });
         ImGui::Begin("##ScrollV", NULL, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoBringToFrontOnFocus);
-        ImGui::VSliderFloat("##ScrollVertical", { 20, ImGui::GetWindowHeight() }, &g_cam.y, -glm::abs((g_canvas[g_cidx].height * g_canvas[g_cidx].TILE_SIZE) / 2), glm::abs((io.DisplaySize.y - (g_canvas[g_cidx].height * g_canvas[g_cidx].TILE_SIZE) / 2) - 19), "");
+        ImGui::VSliderFloat("##ScrollVertical", { 20, ImGui::GetWindowHeight() }, &g_cam.y, -glm::abs((g_canvas[g_cidx].height * TILE_SIZE) / 2), glm::abs((io.DisplaySize.y - (g_canvas[g_cidx].height * TILE_SIZE) / 2) - 19), "");
         ImGui::End();
 
         ImGui::PopStyleVar(2);
@@ -625,31 +625,31 @@ void cGUI::Display()
 
         ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, { 4.5f, 4.5f });
         ImGui::PushStyleVar(ImGuiStyleVar_ButtonTextAlign, { 0.7f, 1.f });
-        ImGui::PushStyleColor(ImGuiCol_Button, g_canvas[g_cidx].paintToolSelected == 5 ? panelActiveColor : panelColor);
-        if (ImGui::ImageButton((void*)g_assets.wand_texture, ImVec2(16, 16))) g_canvas[g_cidx].paintToolSelected = 5;
+        ImGui::PushStyleColor(ImGuiCol_Button, paintToolSelected == 5 ? panelActiveColor : panelColor);
+        if (ImGui::ImageButton((void*)g_assets.wand_texture, ImVec2(16, 16))) paintToolSelected = 5;
         ImGui::PopStyleColor();
-        ImGui::PushStyleColor(ImGuiCol_Button, g_canvas[g_cidx].paintToolSelected == 4 ? panelActiveColor : panelColor);
-        if (ImGui::ImageButton((void*)g_assets.selection_texture, ImVec2(16, 16))) g_canvas[g_cidx].paintToolSelected = 4;
+        ImGui::PushStyleColor(ImGuiCol_Button, paintToolSelected == 4 ? panelActiveColor : panelColor);
+        if (ImGui::ImageButton((void*)g_assets.selection_texture, ImVec2(16, 16))) paintToolSelected = 4;
         ImGui::PopStyleVar();
         ImGui::PopStyleColor();
-        ImGui::PushStyleColor(ImGuiCol_Button, g_canvas[g_cidx].paintToolSelected == 6 ? panelActiveColor : panelColor);
-        if (ImGui::Button(ICON_FA_MOUSE_POINTER, ImVec2(25, 25))) g_canvas[g_cidx].paintToolSelected = 6;
-        ImGui::PushStyleColor(ImGuiCol_Button, g_canvas[g_cidx].paintToolSelected == 0 ? panelActiveColor : panelColor);
-        if (ImGui::Button(ICON_FA_PENCIL, ImVec2(25, 25))) g_canvas[g_cidx].paintToolSelected = 0;
-        ImGui::PushStyleColor(ImGuiCol_Button, g_canvas[g_cidx].paintToolSelected == 1 ? panelActiveColor : panelColor);
-        if (ImGui::ImageButton((void*)g_assets.bucket_texture, ImVec2(16, 16))) g_canvas[g_cidx].paintToolSelected = 1; //u8"\uf573"
-        ImGui::PushStyleColor(ImGuiCol_Button, g_canvas[g_cidx].paintToolSelected == 7 ? panelActiveColor : panelColor);
-        if (ImGui::Button("/", ImVec2(25, 25))) g_canvas[g_cidx].paintToolSelected = 7;
-        ImGui::PushStyleColor(ImGuiCol_Button, g_canvas[g_cidx].paintToolSelected == TOOL_TEXT ? panelActiveColor : panelColor);
-        if (ImGui::Button(ICON_FA_FONT, ImVec2(25, 25))) g_canvas[g_cidx].paintToolSelected = TOOL_TEXT;
-        ImGui::PushStyleColor(ImGuiCol_Button, g_canvas[g_cidx].paintToolSelected == TOOL_SQUARE ? panelActiveColor : panelColor);
-        if (ImGui::Button(ICON_FA_SQUARE, ImVec2(25, 25))) g_canvas[g_cidx].paintToolSelected = TOOL_SQUARE;
-        ImGui::PushStyleColor(ImGuiCol_Button, g_canvas[g_cidx].paintToolSelected == TOOL_ELIPSE ? panelActiveColor : panelColor);
-        if (ImGui::Button(ICON_FA_CIRCLE, ImVec2(25, 25))) g_canvas[g_cidx].paintToolSelected = TOOL_ELIPSE;
-        ImGui::PushStyleColor(ImGuiCol_Button, g_canvas[g_cidx].paintToolSelected == 2 ? panelActiveColor : panelColor);
-        if (ImGui::Button(ICON_FA_ERASER, ImVec2(25, 25))) g_canvas[g_cidx].paintToolSelected = 2;
-        ImGui::PushStyleColor(ImGuiCol_Button, g_canvas[g_cidx].paintToolSelected == 3 ? panelActiveColor : panelColor);
-        if (ImGui::Button(ICON_FA_EYE_DROPPER, ImVec2(25, 25))) g_canvas[g_cidx].paintToolSelected = 3;
+        ImGui::PushStyleColor(ImGuiCol_Button, paintToolSelected == 6 ? panelActiveColor : panelColor);
+        if (ImGui::Button(ICON_FA_MOUSE_POINTER, ImVec2(25, 25))) paintToolSelected = 6;
+        ImGui::PushStyleColor(ImGuiCol_Button, paintToolSelected == 0 ? panelActiveColor : panelColor);
+        if (ImGui::Button(ICON_FA_PENCIL, ImVec2(25, 25))) paintToolSelected = 0;
+        ImGui::PushStyleColor(ImGuiCol_Button, paintToolSelected == 1 ? panelActiveColor : panelColor);
+        if (ImGui::ImageButton((void*)g_assets.bucket_texture, ImVec2(16, 16))) paintToolSelected = 1; //u8"\uf573"
+        ImGui::PushStyleColor(ImGuiCol_Button, paintToolSelected == 7 ? panelActiveColor : panelColor);
+        if (ImGui::Button("/", ImVec2(25, 25))) paintToolSelected = 7;
+        ImGui::PushStyleColor(ImGuiCol_Button, paintToolSelected == TOOL_TEXT ? panelActiveColor : panelColor);
+        if (ImGui::Button(ICON_FA_FONT, ImVec2(25, 25))) paintToolSelected = TOOL_TEXT;
+        ImGui::PushStyleColor(ImGuiCol_Button, paintToolSelected == TOOL_SQUARE ? panelActiveColor : panelColor);
+        if (ImGui::Button(ICON_FA_SQUARE, ImVec2(25, 25))) paintToolSelected = TOOL_SQUARE;
+        ImGui::PushStyleColor(ImGuiCol_Button, paintToolSelected == TOOL_ELIPSE ? panelActiveColor : panelColor);
+        if (ImGui::Button(ICON_FA_CIRCLE, ImVec2(25, 25))) paintToolSelected = TOOL_ELIPSE;
+        ImGui::PushStyleColor(ImGuiCol_Button, paintToolSelected == 2 ? panelActiveColor : panelColor);
+        if (ImGui::Button(ICON_FA_ERASER, ImVec2(25, 25))) paintToolSelected = 2;
+        ImGui::PushStyleColor(ImGuiCol_Button, paintToolSelected == 3 ? panelActiveColor : panelColor);
+        if (ImGui::Button(ICON_FA_EYE_DROPPER, ImVec2(25, 25))) paintToolSelected = 3;
 
         ImGui::PopStyleVar();
         ImGui::PopStyleColor(9);
@@ -769,33 +769,33 @@ void cGUI::Display()
     }
 
     ImGui::Spacing(); ImGui::Separator();
-    if (g_canvas[g_cidx].paintToolSelected == TOOL_BRUSH) {
+    if (paintToolSelected == TOOL_BRUSH) {
         ImGui::Text("Brush Size:");
-        int temp_brush_size = static_cast<int>(g_canvas[g_cidx].brush_size);
+        int temp_brush_size = static_cast<int>(brush_size);
 
         if (ImGui::SliderInt("##Brush Size", &temp_brush_size, 1, 10))
-            g_canvas[g_cidx].brush_size = static_cast<uint8_t>(temp_brush_size);
+            brush_size = static_cast<uint8_t>(temp_brush_size);
     }
-    else if (g_canvas[g_cidx].paintToolSelected == TOOL_BUCKET) {
+    else if (paintToolSelected == TOOL_BUCKET) {
         ImGui::Text("Bucket Threshold:");
-        int temp = static_cast<int>(g_canvas[g_cidx].bucket_fill_threshold);
+        int temp = static_cast<int>(bucket_fill_threshold);
 
         if (ImGui::SliderInt("##Bucket Threshold", &temp, 1, 100))
-            g_canvas[g_cidx].bucket_fill_threshold = static_cast<uint8_t>(temp);
+            bucket_fill_threshold = static_cast<uint8_t>(temp);
     }
-    else if (g_canvas[g_cidx].paintToolSelected == TOOL_WAND) {
+    else if (paintToolSelected == TOOL_WAND) {
         ImGui::Text("Wand Threshold:");
-        int temp = static_cast<int>(g_canvas[g_cidx].magic_wand_threshold);
+        int temp = static_cast<int>(magic_wand_threshold);
 
         if (ImGui::SliderInt("##Wand Threshold", &temp, 1, 100))
-            g_canvas[g_cidx].magic_wand_threshold = static_cast<uint8_t>(temp);
+            magic_wand_threshold = static_cast<uint8_t>(temp);
     }
-    else if (g_canvas[g_cidx].paintToolSelected == TOOL_LINE) {
+    else if (paintToolSelected == TOOL_LINE) {
         ImGui::Text("Line Size:");
-        int temp = static_cast<int>(g_canvas[g_cidx].line_size);
+        int temp = static_cast<int>(line_size);
 
         if (ImGui::SliderInt("##Line Size", &temp, 1, 10))
-            g_canvas[g_cidx].line_size = static_cast<uint8_t>(temp);
+            line_size = static_cast<uint8_t>(temp);
     }
 
     ImGui::End();

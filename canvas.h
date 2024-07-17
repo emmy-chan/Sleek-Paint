@@ -9,6 +9,12 @@
 extern uint16_t g_cidx;
 inline std::unordered_set<uint64_t> selectedIndexes;
 inline std::unordered_map<uint64_t, ImU32> copiedTiles; // Store copied tiles and their colors
+inline uint16_t TILE_SIZE = 16;
+inline uint8_t paintToolSelected = 0;
+inline uint8_t brush_size = 1;
+inline uint8_t line_size = 1;
+inline uint8_t magic_wand_threshold = 1;
+inline uint8_t bucket_fill_threshold = 1;
 
 enum eTools {
 	TOOL_BRUSH,
@@ -29,13 +35,8 @@ class cCanvas
 public:
 	cCanvas(const std::string& new_name, uint16_t new_width = 0, uint16_t new_height = 0, const std::vector<ImU32>&initial_data = {}) { name = new_name; LoadColorPalette("palettes/default.pal"); Initialize(initial_data, new_width, new_height); }; //Set our idx to new scene idx!
 	std::string name;
-	uint16_t TILE_SIZE = 16;
-	uint8_t paintToolSelected = 0;
 	uint16_t canvas_idx = 1;
-	uint8_t brush_size = 1;
-	uint8_t line_size = 1;
-	uint8_t magic_wand_threshold = 1;
-	uint8_t bucket_fill_threshold = 1;
+	
 	std::vector<std::vector<ImU32>> previousCanvases;
 	std::vector<ImU32> myCols;
 	uint16_t selColIndex = 0;

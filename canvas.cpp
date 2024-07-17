@@ -253,7 +253,7 @@ void DrawLineOnCanvas(int x0, int y0, int x1, int y1, ImU32 color, bool preview 
     int err = dx - dy;
 
     // Calculate the half-thickness for offset calculations
-    const int halfThickness = static_cast<int>(g_canvas[g_cidx].line_size / 2.0f);
+    const int halfThickness = static_cast<int>(line_size / 2.0f);
 
     while (true) {
         for (int offsetX = -halfThickness; offsetX <= halfThickness; ++offsetX) {
@@ -264,8 +264,8 @@ void DrawLineOnCanvas(int x0, int y0, int x1, int y1, ImU32 color, bool preview 
                 if (drawX >= 0 && drawX < g_canvas[g_cidx].width && drawY >= 0 && drawY < g_canvas[g_cidx].height) {
                     if (preview) {
                         // Draw the tile preview
-                        const ImVec2 topLeft = { g_cam.x + drawX * g_canvas[g_cidx].TILE_SIZE, g_cam.y + drawY * g_canvas[g_cidx].TILE_SIZE };
-                        const ImVec2 bottomRight = { topLeft.x + g_canvas[g_cidx].TILE_SIZE, topLeft.y + g_canvas[g_cidx].TILE_SIZE };
+                        const ImVec2 topLeft = { g_cam.x + drawX * TILE_SIZE, g_cam.y + drawY * TILE_SIZE };
+                        const ImVec2 bottomRight = { topLeft.x + TILE_SIZE, topLeft.y + TILE_SIZE };
                         ImGui::GetBackgroundDrawList()->AddRectFilled(topLeft, bottomRight, color);
                     }
                     else
@@ -312,8 +312,8 @@ void DrawCircleOnCanvas(int startX, int startY, int endX, int endY, ImU32 color,
                 const int py = point[1];
                 if (px >= 0 && px < g_canvas[g_cidx].width && py >= 0 && py < g_canvas[g_cidx].height) {
                     if (preview) {
-                        const ImVec2 topLeft = { g_cam.x + px * g_canvas[g_cidx].TILE_SIZE, g_cam.y + py * g_canvas[g_cidx].TILE_SIZE };
-                        const ImVec2 bottomRight = { topLeft.x + g_canvas[g_cidx].TILE_SIZE, topLeft.y + g_canvas[g_cidx].TILE_SIZE };
+                        const ImVec2 topLeft = { g_cam.x + px * TILE_SIZE, g_cam.y + py * TILE_SIZE };
+                        const ImVec2 bottomRight = { topLeft.x + TILE_SIZE, topLeft.y + TILE_SIZE };
                         ImGui::GetBackgroundDrawList()->AddRectFilled(topLeft, bottomRight, color);
                     }
                     else
@@ -346,8 +346,8 @@ void DrawRectangleOnCanvas(int x0, int y0, int x1, int y1, ImU32 color, bool pre
             if (x == startX || x == endX || y == startY || y == endY) {
                 if (x >= 0 && x < g_canvas[g_cidx].width && y >= 0 && y < g_canvas[g_cidx].height) {
                     if (preview) {
-                        const ImVec2 topLeft = { g_cam.x + x * g_canvas[g_cidx].TILE_SIZE, g_cam.y + y * g_canvas[g_cidx].TILE_SIZE };
-                        const ImVec2 bottomRight = { topLeft.x + g_canvas[g_cidx].TILE_SIZE, topLeft.y + g_canvas[g_cidx].TILE_SIZE };
+                        const ImVec2 topLeft = { g_cam.x + x * TILE_SIZE, g_cam.y + y * TILE_SIZE };
+                        const ImVec2 bottomRight = { topLeft.x + TILE_SIZE, topLeft.y + TILE_SIZE };
                         ImGui::GetBackgroundDrawList()->AddRectFilled(topLeft, bottomRight, color);
                     }
                     else
@@ -362,8 +362,8 @@ void DrawTextOnCanvas(BitmapFont& font, const std::string& text, int startX, int
     printf("DrawTextOnCanvas called with text: %s\n", text.c_str());
 
     // Convert start position from screen coordinates to canvas coordinates
-    startX = (startX - g_cam.x) / g_canvas[g_cidx].TILE_SIZE;
-    startY = (startY - g_cam.y) / g_canvas[g_cidx].TILE_SIZE;
+    startX = (startX - g_cam.x) / TILE_SIZE;
+    startY = (startY - g_cam.y) / TILE_SIZE;
 
     // Check if the starting position is within the canvas bounds
     if (startX < 0 || startY < 0 || startX >= g_canvas[g_cidx].width || startY >= g_canvas[g_cidx].height) {
