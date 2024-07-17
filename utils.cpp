@@ -303,3 +303,11 @@ void cUtils::FloodFill(const int& x, const int& y, bool paint) {
 
     printf("FloodFill: Completed successfully!\n");
 }
+
+std::string cUtils::RemoveFileExtension(const std::string& file_name) {
+    size_t last_dot = file_name.find_last_of('.');
+    if (last_dot != std::string::npos) {
+        return file_name.substr(0, last_dot);
+    }
+    return file_name;
+}

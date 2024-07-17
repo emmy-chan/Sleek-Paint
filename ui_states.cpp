@@ -13,6 +13,8 @@
 #include <iostream>
 #include "stb_image.h"
 
+#include "utils.h"
+
 // Nice little function for loading color data with alpha or no alpha
 std::string GetColorData(const std::vector<ImU32>& colors, bool includeAlpha) {
     std::string data;
@@ -151,7 +153,10 @@ void cUIStateSaveProject::Update()
     {
         file_name = fileDialog.GetSelected().string();
 
-        // Get the file extension
+        // Remove the file extension
+        file_name = g_util.RemoveFileExtension(file_name);
+
+        // Set the file extension based on selection
         if (fileDialog.GetTypeFilterIndex() == 1 && file_name.find(".spr") == std::string::npos)
             extension = ".spr";
         else if (fileDialog.GetTypeFilterIndex() == 2 && file_name.find(".jpg") == std::string::npos)
@@ -163,6 +168,7 @@ void cUIStateSaveProject::Update()
         else if (fileDialog.GetTypeFilterIndex() == 5 && file_name.find(".tga") == std::string::npos)
             extension = ".tga";
 
+        // Apply our extension
         file_name.append(extension);
 
         std::cout << "Saving file to: " << file_name << " with format: " << extension << std::endl;

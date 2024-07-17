@@ -2,6 +2,7 @@
 #include "imgui.h"
 #include <cstdint>
 #include <vector>
+#include <string>
 
 #include "glm.hpp"
 
@@ -24,6 +25,7 @@ public:
 	ImU32 AdjustContrast(ImU32 color, float contrastFactor);
 	ImU32 ApplyFloydSteinbergDithering(ImU32 color, uint64_t x, uint64_t y);
 	void FloodFill(const int& x, const int& y, bool paint);
+	std::string RemoveFileExtension(const std::string& file_name);
 	//bool InitializeInputState(void);
 	//void UpdateInputState();
 	//int m_mouse_x;
