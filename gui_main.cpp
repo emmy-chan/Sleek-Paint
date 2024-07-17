@@ -703,10 +703,10 @@ void cGUI::Display()
     for (size_t i = 0; i < g_canvas[g_cidx].tiles.size(); i++) {
         const bool isSelected = (g_canvas[g_cidx].selLayerIndex == i);
 
-        if (ImGui::Selectable(g_canvas[g_cidx].layerNames[i].c_str(), isSelected, 0, ImVec2(76, 0)))
+        if (ImGui::Selectable(g_canvas[g_cidx].layerNames[i].c_str(), isSelected, 0, ImVec2(79, 0)))
             g_canvas[g_cidx].selLayerIndex = i;
 
-        ImGui::SameLine(ImGui::GetContentRegionMax().x - 76);
+        ImGui::SameLine(ImGui::GetContentRegionMax().x - 72);
         ImGui::SetCursorPosY(ImGui::GetCursorPosY() - 2);
 
         std::string name = std::string(ICON_FA_ARROW_UP) + "##" + std::to_string(i);
@@ -725,7 +725,7 @@ void cGUI::Display()
         }
 
         // Arrow down button to move layer down
-        ImGui::SameLine(ImGui::GetContentRegionMax().x - 50);
+        ImGui::SameLine(ImGui::GetContentRegionMax().x - 48);
         name = std::string(ICON_FA_ARROW_DOWN) + "##" + std::to_string(i);
 
         if (ImGui::Button(name.c_str(), ImVec2(22, 22))) {
@@ -746,11 +746,11 @@ void cGUI::Display()
         const char* eyeIcon = g_canvas[g_cidx].layerVisibility[i] ? ICON_FA_EYE : ICON_FA_EYE_SLASH;
         const std::string label = std::string(eyeIcon) + "##" + std::to_string(i); // Append unique identifier
 
-        if (ImGui::Button(label.c_str(), { 0, 22 }))
+        if (ImGui::Button(label.c_str(), { 24, 22 }))
             g_canvas[g_cidx].layerVisibility[i] = !g_canvas[g_cidx].layerVisibility[i];
 
         // Add Rename button
-        ImGui::SameLine(ImGui::GetContentRegionMax().x - 100);
+        ImGui::SameLine(ImGui::GetContentRegionMax().x - 96);
         name = std::string(ICON_FA_EDIT) + "##" + std::to_string(i);
         if (ImGui::Button(name.c_str(), { 22, 22 }))
             g_app.ui_state = std::make_unique<cUIStateRenameLayer>();
