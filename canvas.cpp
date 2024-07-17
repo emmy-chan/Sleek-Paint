@@ -598,7 +598,7 @@ void cCanvas::Editor() {
             d.AddRectFilled({ g_cam.x + x * TILE_SIZE + 1, g_cam.y + y * TILE_SIZE + 1 }, { g_cam.x + x * TILE_SIZE + TILE_SIZE - 2, g_cam.y + y * TILE_SIZE + TILE_SIZE - 2 }, IM_COL32(255, 255, 255, 255));
             break;
         case TOOL_SELECT:
-            if (g_util.MousePressed(0))
+            if (g_util.MousePressed(0) || g_util.MousePressed(1))
                 selectedIndexes.clear();
 
             if (ImGui::IsMouseDown(0)) {
@@ -651,6 +651,9 @@ void cCanvas::Editor() {
             break;
 
         case TOOL_WAND:
+            if (g_util.MousePressed(1))
+                selectedIndexes.clear();
+
             if (g_util.MousePressed(0)) {
                 const ImVec2 mousePos = ImGui::GetMousePos();
                 const int tileX = static_cast<int>((mousePos.x - g_cam.x) / TILE_SIZE);
