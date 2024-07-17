@@ -40,7 +40,7 @@ void SaveCanvasToImage(const char* name, const char* format) {
     int height = g_canvas[g_cidx].height;
 
     // Allocate memory for RGBA data: width * height * 4 bytes (for R, G, B, and A)
-    char* imageData = new char[width * height * 4];
+    unsigned char* imageData = new unsigned char[width * height * 4];
     int imagePos = 0;
 
     // Place all white in the imageData to start
@@ -49,14 +49,14 @@ void SaveCanvasToImage(const char* name, const char* format) {
             imageData[imagePos++] = 255; // Red
             imageData[imagePos++] = 255; // Green
             imageData[imagePos++] = 255; // Blue
-            imageData[imagePos++] = 255; // Alpha
+            imageData[imagePos++] = 0;   // Alpha (transparent)
         }
     }
 
     // Blend all layers
     for (int j = 0; j < height; j++) {
         for (int i = 0; i < width; i++) {
-            float finalR = 1.0f, finalG = 1.0f, finalB = 1.0f, finalA = 1.0f; // Start with white background
+            float finalR = 0.0f, finalG = 0.0f, finalB = 0.0f, finalA = 0.0f; // Start with transparent background
 
             for (size_t layer = 0; layer < g_canvas[g_cidx].tiles.size(); layer++) {
                 const ImU32 color = g_canvas[g_cidx].tiles[layer][i + j * width];
@@ -76,10 +76,10 @@ void SaveCanvasToImage(const char* name, const char* format) {
 
             // Convert final blended color back to integer format and store in imageData
             const int idx = (i + j * width) * 4;
-            imageData[idx] = static_cast<char>(finalR * 255);  // Red
-            imageData[idx + 1] = static_cast<char>(finalG * 255);  // Green
-            imageData[idx + 2] = static_cast<char>(finalB * 255);  // Blue
-            imageData[idx + 3] = static_cast<char>(finalA * 255);  // Alpha
+            imageData[idx] = static_cast<unsigned char>(finalR * 255);  // Red
+            imageData[idx + 1] = static_cast<unsigned char>(finalG * 255);  // Green
+            imageData[idx + 2] = static_cast<unsigned char>(finalB * 255);  // Blue
+            imageData[idx + 3] = static_cast<unsigned char>(finalA * 255);  // Alpha
         }
     }
 
@@ -89,7 +89,7 @@ void SaveCanvasToImage(const char* name, const char* format) {
         success = stbi_write_png(name, width, height, 4, imageData, width * 4);
     else if (strcmp(format, "jpg") == 0) {
         // Convert RGBA to RGB by ignoring the alpha channel
-        char* rgbData = new char[width * height * 3];
+        unsigned char* rgbData = new unsigned char[width * height * 3];
         for (int k = 0; k < width * height; k++) {
             rgbData[k * 3] = imageData[k * 4];
             rgbData[k * 3 + 1] = imageData[k * 4 + 1];
