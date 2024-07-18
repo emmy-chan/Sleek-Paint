@@ -288,48 +288,67 @@ void DrawLineOnCanvas(int x0, int y0, int x1, int y1, ImU32 color, bool preview 
 }
 
 void DrawCircleOnCanvas(int startX, int startY, int endX, int endY, ImU32 color, bool preview = false) {
-    const int radius = static_cast<int>(glm::sqrt(glm::pow(endX - startX, 2) + glm::pow(endY - startY, 2)));
+    const int radiusX = std::abs(endX - startX);
+    const int radiusY = std::abs(endY - startY);
 
-    int x = radius;
-    int y = 0;
-    int radiusError = 1 - x;
-
-    while (x >= y) {
-        auto plot8points = [&](int x, int y) {
-            const int points[8][2] = {
-                {startX + x, startY + y},
-                {startX - x, startY + y},
-                {startX + x, startY - y},
-                {startX - x, startY - y},
-                {startX + y, startY + x},
-                {startX - y, startY + x},
-                {startX + y, startY - x},
-                {startX - y, startY - x},
-            };
-
-            for (auto& point : points) {
-                const int px = point[0];
-                const int py = point[1];
-                if (px >= 0 && px < g_canvas[g_cidx].width && py >= 0 && py < g_canvas[g_cidx].height) {
-                    if (preview) {
-                        const ImVec2 topLeft = { g_cam.x + px * TILE_SIZE, g_cam.y + py * TILE_SIZE };
-                        const ImVec2 bottomRight = { topLeft.x + TILE_SIZE, topLeft.y + TILE_SIZE };
-                        ImGui::GetBackgroundDrawList()->AddRectFilled(topLeft, bottomRight, color);
-                    }
-                    else
-                        g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex][py * g_canvas[g_cidx].width + px] = color;
-                }
-            }
+    auto plotEllipsePoints = [&](int x, int y) {
+        const int points[4][2] = {
+            {startX + x, startY + y},
+            {startX - x, startY + y},
+            {startX + x, startY - y},
+            {startX - x, startY - y}
         };
 
-        plot8points(x, y);
+        for (auto& point : points) {
+            const int px = point[0];
+            const int py = point[1];
+            if (px >= 0 && px < g_canvas[g_cidx].width && py >= 0 && py < g_canvas[g_cidx].height) {
+                if (preview) {
+                    const ImVec2 topLeft = { g_cam.x + px * TILE_SIZE, g_cam.y + py * TILE_SIZE };
+                    const ImVec2 bottomRight = { topLeft.x + TILE_SIZE, topLeft.y + TILE_SIZE };
+                    ImGui::GetBackgroundDrawList()->AddRectFilled(topLeft, bottomRight, color);
+                }
+                else {
+                    g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex][py * g_canvas[g_cidx].width + px] = color;
+                }
+            }
+        }
+        };
 
-        y++;
-        if (radiusError < 0)
-            radiusError += 2 * y + 1;
+    int x = 0;
+    int y = radiusY;
+    int p1 = static_cast<int>(radiusY * radiusY - radiusX * radiusX * radiusY + 0.25 * radiusX * radiusX);
+    int dx = 2 * radiusY * radiusY * x;
+    int dy = 2 * radiusX * radiusX * y;
+
+    // Region 1
+    while (dx < dy) {
+        plotEllipsePoints(x, y);
+        x++;
+        dx += 2 * radiusY * radiusY;
+        if (p1 < 0) {
+            p1 += dx + radiusY * radiusY;
+        }
         else {
-            x--;
-            radiusError += 2 * (y - x + 1);
+            y--;
+            dy -= 2 * radiusX * radiusX;
+            p1 += dx - dy + radiusY * radiusY;
+        }
+    }
+
+    // Region 2
+    int p2 = static_cast<int>(radiusY * radiusY * (x + 0.5) * (x + 0.5) + radiusX * radiusX * (y - 1) * (y - 1) - radiusX * radiusX * radiusY * radiusY);
+    while (y >= 0) {
+        plotEllipsePoints(x, y);
+        y--;
+        dy -= 2 * radiusX * radiusX;
+        if (p2 > 0) {
+            p2 += radiusX * radiusX - dy;
+        }
+        else {
+            x++;
+            dx += 2 * radiusY * radiusY;
+            p2 += dx - dy + radiusX * radiusX;
         }
     }
 }
@@ -851,9 +870,8 @@ void cCanvas::Editor() {
 
                 // Handle backspace
                 if (ch == 127 || ch == '\b') {
-                    if (!textInput.empty()) {
+                    if (!textInput.empty())
                         textInput.pop_back();
-                    }
                     else if (lines.size() > 1) {
                         // Move back to the previous line if the current line is empty
                         lines.pop_back();
