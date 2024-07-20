@@ -273,9 +273,15 @@ void cUtils::FloodFill(const int& x, const int& y, bool paint) {
 }
 
 std::string cUtils::RemoveFileExtension(const std::string& file_name) {
-    size_t last_dot = file_name.find_last_of('.');
+    // Initialize the set of supported extensions
+    const std::unordered_set<std::string> supported_extensions = { ".png", ".bmp", ".jpg", ".tga" };
+    
+    const size_t last_dot = file_name.find_last_of('.');
     if (last_dot != std::string::npos) {
-        return file_name.substr(0, last_dot);
+        std::string extension = file_name.substr(last_dot);
+        if (supported_extensions.find(extension) != supported_extensions.end()) {
+            return file_name.substr(0, last_dot);
+        }
     }
     return file_name;
 }
