@@ -43,20 +43,26 @@ void SaveCanvasToImage(const char* name, const char* format) {
     unsigned char* imageData = new unsigned char[width * height * 4];
     int imagePos = 0;
 
-    // Place all white in the imageData to start
+    // Determine if the format supports transparency
+    const bool supportsTransparency = (strcmp(format, "png") == 0 || strcmp(format, "bmp") == 0 || strcmp(format, "tga") == 0);
+
+    // Initialize the canvas with white or black background depending on transparency support
     for (int j = 0; j < height; j++) {
         for (int i = 0; i < width; i++) {
             imageData[imagePos++] = 255; // Red
             imageData[imagePos++] = 255; // Green
             imageData[imagePos++] = 255; // Blue
-            imageData[imagePos++] = 0;   // Alpha (transparent)
+            imageData[imagePos++] = supportsTransparency ? 0 : 255; // Alpha (transparent or opaque)
         }
     }
 
     // Blend all layers
     for (int j = 0; j < height; j++) {
         for (int i = 0; i < width; i++) {
-            float finalR = 0.0f, finalG = 0.0f, finalB = 0.0f, finalA = 0.0f; // Start with transparent background
+            float finalR = supportsTransparency ? 0.0f : 1.0f;
+            float finalG = supportsTransparency ? 0.0f : 1.0f;
+            float finalB = supportsTransparency ? 0.0f : 1.0f;
+            float finalA = supportsTransparency ? 0.0f : 1.0f; // Start with transparent or opaque background
 
             for (size_t layer = 0; layer < g_canvas[g_cidx].tiles.size(); layer++) {
                 const ImU32 color = g_canvas[g_cidx].tiles[layer][i + j * width];
