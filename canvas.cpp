@@ -402,15 +402,18 @@ void DrawTextOnCanvas(BitmapFont& font, const std::string& text, int startX, int
         const auto& bitmap = font.charBitmaps[c];
 
         // Verify bitmap dimensions
-        if (bitmap.size() != font.charHeight || (bitmap.size() > 0 && bitmap[0].size() != font.charWidth)) {
-            printf("Bitmap dimensions for character '%c' are incorrect\n", c);
+        int currentCharHeight = bitmap.size();
+        int currentCharWidth = bitmap.empty() ? 0 : bitmap[0].size();
+
+        if (currentCharHeight != font.charHeight) {
+            printf("Bitmap height for character '%c' is incorrect\n", c);
             continue;
         }
 
-        for (int y = 0; y < font.charHeight; ++y) {
-            for (int x = 0; x < font.charWidth; ++x) {
+        for (int y = 0; y < currentCharHeight; ++y) {
+            for (int x = 0; x < currentCharWidth; ++x) {
                 if (bitmap[y][x] == 1) {
-                    int posX = startX + i * (font.charWidth + 1) + x; // Adjust horizontal spacing
+                    int posX = startX + x; // Adjust horizontal position dynamically
                     int posY = startY + y;
 
                     // Ensure position is within the canvas boundaries
@@ -424,6 +427,8 @@ void DrawTextOnCanvas(BitmapFont& font, const std::string& text, int startX, int
                 }
             }
         }
+
+        startX += currentCharWidth + 1; // Move start position for next character
     }
 }
 
