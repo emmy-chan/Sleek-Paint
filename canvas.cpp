@@ -378,7 +378,7 @@ void DrawRectangleOnCanvas(int x0, int y0, int x1, int y1, ImU32 color, bool pre
 }
 
 void DrawTextOnCanvas(BitmapFont& font, const std::string& text, int startX, int startY, ImU32 color) {
-    printf("DrawTextOnCanvas called with text: %s\n", text.c_str());
+    //printf("DrawTextOnCanvas called with text: %s\n", text.c_str());
 
     // Convert start position from screen coordinates to canvas coordinates
     startX = (startX - g_cam.x) / TILE_SIZE;
@@ -392,7 +392,7 @@ void DrawTextOnCanvas(BitmapFont& font, const std::string& text, int startX, int
 
     for (size_t i = 0; i < text.length(); ++i) {
         char c = text[i];
-        printf("Mapping character: '%c'\n", c);
+        //printf("Mapping character: '%c'\n", c);
 
         if (font.charBitmaps.find(c) == font.charBitmaps.end()) {
             printf("Character '%c' not found in charBitmaps\n", c);
@@ -402,8 +402,8 @@ void DrawTextOnCanvas(BitmapFont& font, const std::string& text, int startX, int
         const auto& bitmap = font.charBitmaps[c];
 
         // Verify bitmap dimensions
-        int currentCharHeight = bitmap.size();
-        int currentCharWidth = bitmap.empty() ? 0 : bitmap[0].size();
+        const int currentCharHeight = bitmap.size();
+        const int currentCharWidth = bitmap.empty() ? 0 : bitmap[0].size();
 
         if (currentCharHeight != font.charHeight) {
             printf("Bitmap height for character '%c' is incorrect\n", c);
@@ -413,17 +413,16 @@ void DrawTextOnCanvas(BitmapFont& font, const std::string& text, int startX, int
         for (int y = 0; y < currentCharHeight; ++y) {
             for (int x = 0; x < currentCharWidth; ++x) {
                 if (bitmap[y][x] == 1) {
-                    int posX = startX + x; // Adjust horizontal position dynamically
-                    int posY = startY + y;
+                    const int posX = startX + x; // Adjust horizontal position dynamically
+                    const int posY = startY + y;
 
                     // Ensure position is within the canvas boundaries
                     if (posX >= 0 && posX < g_canvas[g_cidx].width && posY >= 0 && posY < g_canvas[g_cidx].height) {
-                        printf("Drawing pixel at (%d, %d) with color %08X\n", posX, posY, color);
+                        //printf("Drawing pixel at (%d, %d) with color %08X\n", posX, posY, color);
                         g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex][posY * g_canvas[g_cidx].width + posX] = color;
                     }
-                    else {
-                        printf("Position (%d, %d) out of bounds\n", posX, posY);
-                    }
+                    else
+                        //printf("Position (%d, %d) out of bounds\n", posX, posY);
                 }
             }
         }
