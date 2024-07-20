@@ -421,7 +421,7 @@ void DrawTextOnCanvas(BitmapFont& font, const std::string& text, int startX, int
                         //printf("Drawing pixel at (%d, %d) with color %08X\n", posX, posY, color);
                         g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex][posY * g_canvas[g_cidx].width + posX] = color;
                     }
-                    else
+                    //else
                         //printf("Position (%d, %d) out of bounds\n", posX, posY);
                 }
             }
