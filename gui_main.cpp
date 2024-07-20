@@ -29,7 +29,7 @@ void cGUI::Display()
             if (ImGui::MenuItem(ICON_FA_SAVE" Save Project") && g_canvas.size() > 0)
                 g_app.ui_state = std::make_unique<cUIStateSaveProject>();
 
-            if (ImGui::MenuItem("Exit")) {
+            if (ImGui::MenuItem(ICON_FA_SIGN_OUT" Exit")) {
                 if (g_canvas.size() > 0) {
                     // warn user about quitting with shit open
                 }
