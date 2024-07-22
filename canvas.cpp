@@ -288,15 +288,17 @@ void DrawLineOnCanvas(int x0, int y0, int x1, int y1, ImU32 color, bool preview 
 }
 
 void DrawCircleOnCanvas(int startX, int startY, int endX, int endY, ImU32 color, bool preview = false) {
-    const int radiusX = std::abs(endX - startX);
-    const int radiusY = std::abs(endY - startY);
+    const int radiusX = (std::abs(endX - startX) + 1) / 2;
+    const int radiusY = (std::abs(endY - startY) + 1) / 2;
+    const int centerX = (startX + endX + 1) / 2;
+    const int centerY = (startY + endY + 1) / 2;
 
     auto plotEllipsePoints = [&](int x, int y) {
         const int points[4][2] = {
-            {startX + x, startY + y},
-            {startX - x, startY + y},
-            {startX + x, startY - y},
-            {startX - x, startY - y}
+            {centerX + x, centerY + y},
+            {centerX - x, centerY + y},
+            {centerX + x, centerY - y},
+            {centerX - x, centerY - y}
         };
 
         for (auto& point : points) {
