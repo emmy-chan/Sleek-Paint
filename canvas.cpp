@@ -909,7 +909,7 @@ void cCanvas::Editor() {
             if (bitmapFont) {
                 for (size_t i = 0; i < lines.size(); ++i) {
                     DrawTextOnCanvas(*bitmapFont, lines[i], static_cast<int>(linePositions[i].x - TILE_SIZE), static_cast<int>(linePositions[i].y), IM_COL32_BLACK);
-                    DrawTextOnCanvas(*bitmapFont, lines[i], static_cast<int>(linePositions[i].x), static_cast<int>(linePositions[i].y), IM_COL32_WHITE);
+                    DrawTextOnCanvas(*bitmapFont, lines[i], static_cast<int>(linePositions[i].x), static_cast<int>(linePositions[i].y), myCols[selColIndex]);
                 }
             }
 
