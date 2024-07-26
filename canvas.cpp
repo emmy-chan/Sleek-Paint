@@ -907,8 +907,12 @@ void cCanvas::Editor() {
 
             // Draw the current text at the mouse position using the bitmap font
             if (bitmapFont) {
+                const uint8_t red = (myCols[selColIndex] >> 0) & 0xFF;
+                const uint8_t green = (myCols[selColIndex] >> 8) & 0xFF;
+                const uint8_t blue = (myCols[selColIndex] >> 16) & 0xFF;
+
                 for (size_t i = 0; i < lines.size(); ++i) {
-                    DrawTextOnCanvas(*bitmapFont, lines[i], static_cast<int>(linePositions[i].x - TILE_SIZE), static_cast<int>(linePositions[i].y), IM_COL32_BLACK);
+                    DrawTextOnCanvas(*bitmapFont, lines[i], static_cast<int>(linePositions[i].x - TILE_SIZE), static_cast<int>(linePositions[i].y), red + green + blue > 50 ? IM_COL32_BLACK : IM_COL32_WHITE);
                     DrawTextOnCanvas(*bitmapFont, lines[i], static_cast<int>(linePositions[i].x), static_cast<int>(linePositions[i].y), myCols[selColIndex]);
                 }
             }
