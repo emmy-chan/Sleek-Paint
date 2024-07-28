@@ -20,24 +20,20 @@ std::string GetColorData(const std::vector<ImU32>& colors, bool includeAlpha) {
     std::string data;
     for (uint16_t i = 0; i < colors.size(); i++) {
         const ImU32 color = colors[i];
-        const int red = (color >> 0) & 0xFF;
-        const int green = (color >> 8) & 0xFF;
-        const int blue = (color >> 16) & 0xFF;
-        const int alpha = (color >> 24) & 0xFF;
+        const int red = (color >> 0) & 0xFF, green = (color >> 8) & 0xFF,
+        blue = (color >> 16) & 0xFF, alpha = (color >> 24) & 0xFF;
 
         data.append(std::to_string(red) + " ");
         data.append(std::to_string(green) + " ");
         data.append(std::to_string(blue) + " ");
 
-        if (includeAlpha)
-            data.append(std::to_string(alpha) + " ");
+        if (includeAlpha) data.append(std::to_string(alpha) + " ");
     }
     return data;
 }
 
 void SaveCanvasToImage(const char* name, const char* format) {
-    int width = g_canvas[g_cidx].width;
-    int height = g_canvas[g_cidx].height;
+    int width = g_canvas[g_cidx].width, height = g_canvas[g_cidx].height;
 
     // Allocate memory for RGBA data: width * height * 4 bytes (for R, G, B, and A)
     unsigned char* imageData = new unsigned char[width * height * 4];
@@ -59,10 +55,9 @@ void SaveCanvasToImage(const char* name, const char* format) {
     // Blend all layers
     for (int j = 0; j < height; j++) {
         for (int i = 0; i < width; i++) {
-            float finalR = supportsTransparency ? 0.0f : 1.0f;
-            float finalG = supportsTransparency ? 0.0f : 1.0f;
-            float finalB = supportsTransparency ? 0.0f : 1.0f;
-            float finalA = supportsTransparency ? 0.0f : 1.0f; // Start with transparent or opaque background
+            // Start with transparent or opaque background
+            float finalR = supportsTransparency ? 0.0f : 1.0f, finalG = supportsTransparency ? 0.0f : 1.0f,
+            finalB = supportsTransparency ? 0.0f : 1.0f, finalA = supportsTransparency ? 0.0f : 1.0f;
 
             for (size_t layer = 0; layer < g_canvas[g_cidx].tiles.size(); layer++) {
                 const ImU32 color = g_canvas[g_cidx].tiles[layer][i + j * width];
@@ -468,8 +463,8 @@ void cUIStateOpenProject::Update()
     {
         g_app.ui_state.reset();
 
-        std::string selectedFile = fileDialog.GetSelected().string();
-        std::string extension = selectedFile.substr(selectedFile.find_last_of('.'));
+        const std::string selectedFile = fileDialog.GetSelected().string();
+        const std::string extension = selectedFile.substr(selectedFile.find_last_of('.'));
 
         if (extension == ".spr") {
             std::cout << "Loading project file: " << selectedFile << std::endl;
@@ -491,10 +486,8 @@ void cUIStateOpenProject::Update()
                 std::cerr << "Failed to load project file: " << selectedFile << std::endl;
             }
         }
-        else {
-            // Load an image file
-            LoadImageFileToCanvas(selectedFile, fileDialog.GetSelected().filename().string());
-        }
+        else
+            LoadImageFileToCanvas(selectedFile, fileDialog.GetSelected().filename().string()); // Load an image file
         
         g_canvas[g_cidx].UpdateCanvasHistory();
         fileDialog.ClearSelected();
@@ -575,9 +568,9 @@ void cUIStateRenameLayer::Update()
             std::strncpy(newName, g_canvas[g_cidx].layerNames[g_canvas[g_cidx].selLayerIndex].c_str(), sizeof(newName) - 1);
             newName[sizeof(newName) - 1] = '\0'; // Ensure null termination
         }
-        else {
+        else
             std::strcpy(newName, g_canvas[g_cidx].layerNames[g_canvas[g_cidx].selLayerIndex].c_str());
-        }
+
         ImGui::OpenPopup("Rename Layer");
     }
 }
