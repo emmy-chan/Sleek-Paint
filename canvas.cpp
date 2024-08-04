@@ -433,6 +433,72 @@ void DrawTextOnCanvas(BitmapFont& font, const std::string& text, int startX, int
     }
 }
 
+void applyBrushEffect(const ImVec2& lastMousePos, int x, int y, const ImU32& col) {
+    const float brushRadius = brush_size / 2.0f;
+
+    // Check if there is a valid previous position
+    if (lastMousePos.x >= 0 && lastMousePos.y >= 0) {
+        const int lastX = static_cast<int>((lastMousePos.x - g_cam.x) / TILE_SIZE);
+        const int lastY = static_cast<int>((lastMousePos.y - g_cam.y) / TILE_SIZE);
+
+        // Calculate the distance between the previous and current mouse positions
+        const float distX = x - lastX;
+        const float distY = y - lastY;
+        const float distance = glm::sqrt(distX * distX + distY * distY);
+
+        // Number of steps to interpolate
+        const int steps = static_cast<int>(distance) + 1;
+
+        for (int i = 0; i <= steps; ++i) {
+            const float t = static_cast<float>(i) / steps;
+            const int brushX = static_cast<int>(lastX + t * distX);
+            const int brushY = static_cast<int>(lastY + t * distY);
+
+            // Apply brush effect at the interpolated position
+            if (selectedIndexes.empty() || selectedIndexes.find((uint64_t)brushX + (uint64_t)brushY * g_canvas[g_cidx].width) != selectedIndexes.end()) {
+                for (int offsetY = -brushRadius; offsetY <= brushRadius; ++offsetY) {
+                    for (int offsetX = -brushRadius; offsetX <= brushRadius; ++offsetX) {
+                        const float distance = glm::sqrt(offsetX * offsetX + offsetY * offsetY);
+                        if (distance <= brushRadius) {
+                            const int finalX = brushX + offsetX;
+                            const int finalY = brushY + offsetY;
+                            if (finalX >= 0 && finalX < g_canvas[g_cidx].width && finalY >= 0 && finalY < g_canvas[g_cidx].height) {
+                                if (ImGui::GetIO().MouseDown[0])
+                                    g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex][finalX + finalY * g_canvas[g_cidx].width] = col;
+                                else if (ImGui::GetIO().MouseDown[1])
+                                    g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex][finalX + finalY * g_canvas[g_cidx].width] = IM_COL32(0, 0, 0, 0);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // Adjust the visualization of the brush size
+    for (int offsetY = -brushRadius; offsetY <= brushRadius; ++offsetY) {
+        for (int offsetX = -brushRadius; offsetX <= brushRadius; ++offsetX) {
+            const float distance = glm::sqrt(offsetX * offsetX + offsetY * offsetY);
+            if (distance <= brushRadius) {
+                const int brushX = x + offsetX;
+                const int brushY = y + offsetY;
+                if (brushX >= 0 && brushX < g_canvas[g_cidx].width && brushY >= 0 && brushY < g_canvas[g_cidx].height) {
+                    const int red = (col >> 0) & 0xFF, green = (col >> 8) & 0xFF,
+                        blue = (col >> 16) & 0xFF, alpha = (col >> 24) & 0xFF;
+                    
+                    ImGui::GetBackgroundDrawList()->AddRect({ g_cam.x + brushX * TILE_SIZE, g_cam.y + brushY * TILE_SIZE },
+                        { g_cam.x + brushX * TILE_SIZE + TILE_SIZE, g_cam.y + brushY * TILE_SIZE + TILE_SIZE },
+                        red + green + blue > 25 ? IM_COL32_BLACK : IM_COL32_WHITE);
+
+                    ImGui::GetBackgroundDrawList()->AddRectFilled({ g_cam.x + brushX * TILE_SIZE + 1, g_cam.y + brushY * TILE_SIZE + 1 },
+                        { g_cam.x + brushX * TILE_SIZE + TILE_SIZE - 1, g_cam.y + brushY * TILE_SIZE + TILE_SIZE - 1 },
+                        IM_COL32(red, green, blue, glm::min(alpha + 25, 255)));
+                }
+            }
+        }
+    }
+}
+
 void cCanvas::UpdateZoom() {
     // Zooming
     if (ImGui::GetIO().MouseWheel != 0.f) {
@@ -536,67 +602,11 @@ void cCanvas::Editor() {
 
     if (bCanDraw && g_util.Hovering(g_cam.x + x * TILE_SIZE, g_cam.y + y * TILE_SIZE, g_cam.x + x * TILE_SIZE + TILE_SIZE, g_cam.y + y * TILE_SIZE + TILE_SIZE)) {
         if (g_util.MousePressed(0)) mouseStart = ImGui::GetMousePos();
-        const int brushRadius = brush_size / 2.0f;
         
         switch (paintToolSelected) {
         case TOOL_BRUSH:
             //brush
-            if (io.MouseDown[0] || io.MouseDown[1]) {
-                // Check if there is a valid previous position
-                if (lastMousePos.x >= 0 && lastMousePos.y >= 0) {
-                    const int lastX = static_cast<int>((lastMousePos.x - g_cam.x) / TILE_SIZE);
-                    const int lastY = static_cast<int>((lastMousePos.y - g_cam.y) / TILE_SIZE);
-
-                    // Calculate the distance between the previous and current mouse positions
-                    const float distX = x - lastX;
-                    const float distY = y - lastY;
-                    const float distance = glm::sqrt(distX * distX + distY * distY);
-
-                    // Number of steps to interpolate
-                    const int steps = static_cast<int>(distance) + 1;
-
-                    for (int i = 0; i <= steps; ++i) {
-                        const float t = static_cast<float>(i) / steps;
-                        const int brushX = static_cast<int>(lastX + t * distX);
-                        const int brushY = static_cast<int>(lastY + t * distY);
-
-                        // Apply brush effect at the interpolated position
-                        if (selectedIndexes.empty() || selectedIndexes.find((uint64_t)brushX + (uint64_t)brushY * width) != selectedIndexes.end()) {
-                            for (int offsetY = -brushRadius; offsetY <= brushRadius; ++offsetY) {
-                                for (int offsetX = -brushRadius; offsetX <= brushRadius; ++offsetX) {
-                                    const float distance = glm::sqrt(offsetX * offsetX + offsetY * offsetY);
-                                    if (distance <= brushRadius) {
-                                        const int finalX = brushX + offsetX;
-                                        const int finalY = brushY + offsetY;
-                                        if (finalX >= 0 && finalX < width && finalY >= 0 && finalY < height) {
-                                            if (io.MouseDown[0])
-                                                tiles[g_canvas[g_cidx].selLayerIndex][finalX + finalY * width] = myCols[selColIndex];
-                                            else if (io.MouseDown[1])
-                                                tiles[g_canvas[g_cidx].selLayerIndex][finalX + finalY * width] = IM_COL32(0, 0, 0, 0);
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-
-            // Adjust the visualization of the brush size
-            for (int offsetY = -brushRadius; offsetY <= brushRadius; ++offsetY) {
-                for (int offsetX = -brushRadius; offsetX <= brushRadius; ++offsetX) {
-                    const float distance = glm::sqrt(offsetX * offsetX + offsetY * offsetY);
-                    if (distance <= brushRadius) {
-                        const int brushX = x + offsetX;
-                        const int brushY = y + offsetY;
-                        if (brushX >= 0 && brushX < width && brushY >= 0 && brushY < height) {
-                            d.AddRectFilled({ g_cam.x + brushX * TILE_SIZE, g_cam.y + brushY * TILE_SIZE },
-                                { g_cam.x + brushX * TILE_SIZE + TILE_SIZE, g_cam.y + brushY * TILE_SIZE + TILE_SIZE },
-                                myCols[selColIndex]);
-                        }
-                    }
-                }
-            }
+            applyBrushEffect(lastMousePos, x, y, myCols[selColIndex]);
 
             break;
         case TOOL_BUCKET:
@@ -607,13 +617,7 @@ void cCanvas::Editor() {
             d.AddRectFilled({ g_cam.x + x * TILE_SIZE, g_cam.y + y * TILE_SIZE }, { g_cam.x + x * TILE_SIZE + TILE_SIZE, g_cam.y + y * TILE_SIZE + TILE_SIZE }, myCols[selColIndex]);
             break;
         case TOOL_ERASER:
-            if (io.MouseDown[0])
-                if (selectedIndexes.empty() || selectedIndexes.find((uint64_t)x + (uint64_t)y * width) != selectedIndexes.end())
-                    if (ImGui::GetMousePos().y > 0 && ImGui::GetMousePos().x < io.DisplaySize.x - 1 && ImGui::GetMousePos().y > 0 && ImGui::GetMousePos().y < io.DisplaySize.y - 1)
-                        tiles[g_canvas[g_cidx].selLayerIndex][(uint64_t)x + (uint64_t)y * width] = IM_COL32(0, 0, 0, 0);
-
-            d.AddRect({ g_cam.x + x * TILE_SIZE, g_cam.y + y * TILE_SIZE }, { g_cam.x + x * TILE_SIZE + TILE_SIZE - 1, g_cam.y + y * TILE_SIZE + TILE_SIZE - 1 }, IM_COL32(0, 0, 0, 255));
-            d.AddRectFilled({ g_cam.x + x * TILE_SIZE + 1, g_cam.y + y * TILE_SIZE + 1 }, { g_cam.x + x * TILE_SIZE + TILE_SIZE - 2, g_cam.y + y * TILE_SIZE + TILE_SIZE - 2 }, IM_COL32(255, 255, 255, 255));
+            applyBrushEffect(lastMousePos, x, y, IM_COL32(0, 0, 0, 0));
             break;
         case TOOL_DROPPER:
             if (io.MouseDown[0])
