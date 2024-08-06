@@ -435,6 +435,7 @@ void DrawTextOnCanvas(BitmapFont& font, const std::string& text, int startX, int
 
 void applyBrushEffect(const ImVec2& lastMousePos, int x, int y, const ImU32& col) {
     const float brushRadius = brush_size / 2.0f;
+    const int brushRadiusInt = static_cast<int>(brushRadius);
 
     // Check if there is a valid previous position
     if (lastMousePos.x >= 0 && lastMousePos.y >= 0) {
@@ -456,8 +457,8 @@ void applyBrushEffect(const ImVec2& lastMousePos, int x, int y, const ImU32& col
 
             // Apply brush effect at the interpolated position
             if (selectedIndexes.empty() || selectedIndexes.find((uint64_t)brushX + (uint64_t)brushY * g_canvas[g_cidx].width) != selectedIndexes.end()) {
-                for (int offsetY = -brushRadius; offsetY <= brushRadius; ++offsetY) {
-                    for (int offsetX = -brushRadius; offsetX <= brushRadius; ++offsetX) {
+                for (int offsetY = -brushRadiusInt; offsetY <= brushRadiusInt; ++offsetY) {
+                    for (int offsetX = -brushRadiusInt; offsetX <= brushRadiusInt; ++offsetX) {
                         const float distance = glm::sqrt(offsetX * offsetX + offsetY * offsetY);
                         if (distance <= brushRadius) {
                             const int finalX = brushX + offsetX;
@@ -475,28 +476,59 @@ void applyBrushEffect(const ImVec2& lastMousePos, int x, int y, const ImU32& col
         }
     }
 
-    // Adjust the visualization of the brush size
-    for (int offsetY = -brushRadius; offsetY <= brushRadius; ++offsetY) {
-        for (int offsetX = -brushRadius; offsetX <= brushRadius; ++offsetX) {
+    // Collect border points for brush visualization
+    std::unordered_set<uint64_t> brushIndexes;
+    for (int offsetY = -brushRadiusInt; offsetY <= brushRadiusInt; ++offsetY) {
+        for (int offsetX = -brushRadiusInt; offsetX <= brushRadiusInt; ++offsetX) {
             const float distance = glm::sqrt(offsetX * offsetX + offsetY * offsetY);
             if (distance <= brushRadius) {
                 const int brushX = x + offsetX;
                 const int brushY = y + offsetY;
                 if (brushX >= 0 && brushX < g_canvas[g_cidx].width && brushY >= 0 && brushY < g_canvas[g_cidx].height) {
-                    const int red = (col >> 0) & 0xFF, green = (col >> 8) & 0xFF,
-                        blue = (col >> 16) & 0xFF, alpha = (col >> 24) & 0xFF;
-                    
-                    ImGui::GetBackgroundDrawList()->AddRect({ g_cam.x + brushX * TILE_SIZE, g_cam.y + brushY * TILE_SIZE },
-                        { g_cam.x + brushX * TILE_SIZE + TILE_SIZE, g_cam.y + brushY * TILE_SIZE + TILE_SIZE },
-                        red + green + blue > 25 ? IM_COL32_BLACK : IM_COL32_WHITE);
-
-                    ImGui::GetBackgroundDrawList()->AddRectFilled({ g_cam.x + brushX * TILE_SIZE + 1, g_cam.y + brushY * TILE_SIZE + 1 },
-                        { g_cam.x + brushX * TILE_SIZE + TILE_SIZE - 1, g_cam.y + brushY * TILE_SIZE + TILE_SIZE - 1 },
-                        IM_COL32(red, green, blue, glm::min(alpha + 25, 255)));
+                    brushIndexes.insert(brushX + brushY * g_canvas[g_cidx].width);
                 }
             }
         }
     }
+
+    auto isBorderTile = [&](uint64_t index, int dx, int dy) {
+        uint64_t neighborIndex = index + dx + dy * g_canvas[g_cidx].width;
+        return brushIndexes.find(neighborIndex) == brushIndexes.end();
+        };
+
+    std::vector<ImVec2> borderPoints;
+    for (uint64_t index : brushIndexes) {
+        int tileX = index % g_canvas[g_cidx].width;
+        int tileY = index / g_canvas[g_cidx].width;
+        ImVec2 pos(g_cam.x + tileX * TILE_SIZE, g_cam.y + tileY * TILE_SIZE);
+
+        if (isBorderTile(index, -1, 0)) {
+            borderPoints.push_back(pos); // Left border
+            borderPoints.push_back(ImVec2(pos.x, pos.y + TILE_SIZE));
+        }
+        if (isBorderTile(index, 1, 0)) {
+            borderPoints.push_back(ImVec2(pos.x + TILE_SIZE, pos.y)); // Right border
+            borderPoints.push_back(ImVec2(pos.x + TILE_SIZE, pos.y + TILE_SIZE));
+        }
+        if (isBorderTile(index, 0, -1)) {
+            borderPoints.push_back(pos); // Top border
+            borderPoints.push_back(ImVec2(pos.x + TILE_SIZE, pos.y));
+        }
+        if (isBorderTile(index, 0, 1)) {
+            borderPoints.push_back(ImVec2(pos.x, pos.y + TILE_SIZE)); // Bottom border
+            borderPoints.push_back(ImVec2(pos.x + TILE_SIZE, pos.y + TILE_SIZE));
+        }
+    }
+
+    const int red = (col >> 0) & 0xFF, green = (col >> 8) & 0xFF,
+        blue = (col >> 16) & 0xFF, alpha = (col >> 24) & 0xFF;
+
+    ImDrawList* drawList = ImGui::GetBackgroundDrawList();
+    for (size_t i = 0; i < borderPoints.size(); i += 2)
+        drawList->AddLine(borderPoints[i], borderPoints[i + 1], IM_COL32(red, green, blue, glm::min(alpha + 25, 255)), 2.0f);
+
+    for (size_t i = 0; i < borderPoints.size(); i += 2)
+        drawList->AddLine(borderPoints[i], borderPoints[i + 1], red + green + blue > 30 ? IM_COL32_BLACK : IM_COL32_WHITE, 1.0f);
 }
 
 void cCanvas::UpdateZoom() {
