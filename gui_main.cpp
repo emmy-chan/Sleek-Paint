@@ -769,7 +769,7 @@ void cGUI::Display()
     }
 
     ImGui::Spacing(); ImGui::Separator();
-    if (paintToolSelected == TOOL_BRUSH) {
+    if (paintToolSelected == TOOL_BRUSH || paintToolSelected == TOOL_ERASER) {
         ImGui::Text("Brush Size:");
         int temp_brush_size = static_cast<int>(brush_size);
 
