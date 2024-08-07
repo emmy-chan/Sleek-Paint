@@ -496,15 +496,15 @@ void applyBrushEffect(const ImVec2& lastMousePos, int x, int y, const ImU32& col
     }
 
     auto isBorderTile = [&](uint64_t index, int dx, int dy) {
-        uint64_t neighborIndex = index + dx + dy * g_canvas[g_cidx].width;
+        const uint64_t neighborIndex = index + dx + dy * g_canvas[g_cidx].width;
         return brushIndexes.find(neighborIndex) == brushIndexes.end();
-        };
+    };
 
     std::vector<ImVec2> borderPoints;
     for (uint64_t index : brushIndexes) {
-        int tileX = index % g_canvas[g_cidx].width;
-        int tileY = index / g_canvas[g_cidx].width;
-        ImVec2 pos(g_cam.x + tileX * TILE_SIZE, g_cam.y + tileY * TILE_SIZE);
+        const int tileX = index % g_canvas[g_cidx].width;
+        const int tileY = index / g_canvas[g_cidx].width;
+        const ImVec2 pos(g_cam.x + tileX * TILE_SIZE, g_cam.y + tileY * TILE_SIZE);
 
         if (isBorderTile(index, -1, 0)) {
             borderPoints.push_back(pos); // Left border
@@ -523,9 +523,6 @@ void applyBrushEffect(const ImVec2& lastMousePos, int x, int y, const ImU32& col
             borderPoints.push_back(ImVec2(pos.x + TILE_SIZE, pos.y + TILE_SIZE));
         }
     }
-
-    const int red = (col >> 0) & 0xFF, green = (col >> 8) & 0xFF,
-        blue = (col >> 16) & 0xFF, alpha = (col >> 24) & 0xFF;
 
     ImDrawList* drawList = ImGui::GetBackgroundDrawList();
     for (size_t i = 0; i < borderPoints.size(); i += 2)
