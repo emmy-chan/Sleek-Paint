@@ -485,6 +485,10 @@ void applyBrushEffect(const ImVec2& lastMousePos, int x, int y, const ImU32& col
                 const int brushX = x + offsetX;
                 const int brushY = y + offsetY;
                 if (brushX >= 0 && brushX < g_canvas[g_cidx].width && brushY >= 0 && brushY < g_canvas[g_cidx].height) {
+                    ImGui::GetBackgroundDrawList()->AddRectFilled({ g_cam.x + brushX * TILE_SIZE, g_cam.y + brushY * TILE_SIZE },
+                        { g_cam.x + brushX * TILE_SIZE + TILE_SIZE, g_cam.y + brushY * TILE_SIZE + TILE_SIZE },
+                        col);
+
                     brushIndexes.insert(brushX + brushY * g_canvas[g_cidx].width);
                 }
             }
@@ -525,10 +529,10 @@ void applyBrushEffect(const ImVec2& lastMousePos, int x, int y, const ImU32& col
 
     ImDrawList* drawList = ImGui::GetBackgroundDrawList();
     for (size_t i = 0; i < borderPoints.size(); i += 2)
-        drawList->AddLine(borderPoints[i], borderPoints[i + 1], IM_COL32(red, green, blue, glm::min(alpha + 25, 255)), 2.0f);
+        drawList->AddLine(borderPoints[i], borderPoints[i + 1], IM_COL32_BLACK, 2.0f);
 
     for (size_t i = 0; i < borderPoints.size(); i += 2)
-        drawList->AddLine(borderPoints[i], borderPoints[i + 1], red + green + blue > 30 ? IM_COL32_BLACK : IM_COL32_WHITE, 1.0f);
+        drawList->AddLine(borderPoints[i], borderPoints[i + 1], IM_COL32_WHITE, 1.0f);
 }
 
 void cCanvas::UpdateZoom() {
