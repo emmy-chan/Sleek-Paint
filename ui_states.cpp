@@ -236,24 +236,44 @@ void cUIStateSaveProject::Update()
     }
 }
 
+// Function to constrain proportions based on a fixed aspect ratio
+void ConstrainProportions(int& width, int& height, float aspectRatio, bool widthChanged) {
+    if (widthChanged) 
+        height = static_cast<int>(width / aspectRatio);
+    else
+        width = static_cast<int>(height * aspectRatio);
+}
+
 void cUIStateNewProject::Update()
 {
     auto& io = ImGui::GetIO();
-    ImGui::SetNextWindowSize({ 145, 120 }, ImGuiCond_Appearing);
+    ImGui::SetNextWindowSize({ 145, 150 }, ImGuiCond_Appearing);
     ImGui::SetNextWindowPos({ io.DisplaySize.x / 2 - 88, io.DisplaySize.y / 2 - 50 }, ImGuiCond_Appearing);
 
     if (ImGui::BeginPopupModal("New Project", NULL, ImGuiWindowFlags_NoResize)) { //ImGuiWindowFlags_AlwaysAutoResize
         static int wInput = 32, hInput = 32;
+        const float aspectRatio = 1.0f;
+        bool widthChanged = false;
 
         ImGui::Text("Width:");
         ImGui::SameLine();
         ImGui::SetCursorPosX(100);
-        ImGui::InputInt("##Width", &wInput);
+        if (ImGui::InputInt("##Width", &wInput)) {
+            widthChanged = true;
+            if (constrain_proportions) ConstrainProportions(wInput, hInput, aspectRatio, widthChanged);
+        }
 
         ImGui::Text("Height:");
         ImGui::SameLine();
         ImGui::SetCursorPosX(100);
-        ImGui::InputInt("##Height", &hInput);
+        if (ImGui::InputInt("##Height", &hInput)) {
+            widthChanged = false;
+            if (constrain_proportions) ConstrainProportions(wInput, hInput, aspectRatio, widthChanged);
+        }
+
+        ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, { 1, 1 });
+        ImGui::Checkbox("Match Size", &constrain_proportions);
+        ImGui::PopStyleVar();
 
         if (ImGui::Button("Ok")) {
             //Todo: just call our canvas initialize function and pass the width / height
@@ -295,22 +315,33 @@ void cUIStateNewProject::Update()
 void cUIStateCanvasSize::Update()
 {
     auto& io = ImGui::GetIO();
-    ImGui::SetNextWindowSize({ 145, 120 }, ImGuiCond_Appearing);
+    ImGui::SetNextWindowSize({ 145, 150 }, ImGuiCond_Appearing);
     ImGui::SetNextWindowPos({ io.DisplaySize.x / 2 - 88, io.DisplaySize.y / 2 - 50 }, ImGuiCond_Appearing);
 
     if (ImGui::Begin("Resize Canvas", NULL, ImGuiWindowFlags_NoCollapse)) {
-        static int wInput = 32;
-        static int hInput = 32;
+        static int wInput = 32, hInput = 32;
+        const float aspectRatio = 1.0f;
+        bool widthChanged = false;
 
         ImGui::Text("Width:");
         ImGui::SameLine();
         ImGui::SetCursorPosX(100);
-        ImGui::InputInt("##Width", &wInput);
+        if (ImGui::InputInt("##Width", &wInput)) {
+            widthChanged = true;
+            if (constrain_proportions) ConstrainProportions(wInput, hInput, aspectRatio, widthChanged);
+        }
 
         ImGui::Text("Height:");
         ImGui::SameLine();
         ImGui::SetCursorPosX(100);
-        ImGui::InputInt("##Height", &hInput);
+        if (ImGui::InputInt("##Height", &hInput)) {
+            widthChanged = false;
+            if (constrain_proportions) ConstrainProportions(wInput, hInput, aspectRatio, widthChanged);
+        }
+
+        ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, { 1, 1 });
+        ImGui::Checkbox("Match Size", &constrain_proportions);
+        ImGui::PopStyleVar();
 
         if (ImGui::Button("Ok")) {
             // Adapt canvas size
