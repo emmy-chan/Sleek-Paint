@@ -394,6 +394,12 @@ void DrawTextOnCanvas(BitmapFont& font, const std::string& text, int startX, int
 
     for (size_t i = 0; i < text.length(); ++i) {
         char c = text[i];
+        // Handle spaces by moving the cursor forward
+        if (c == ' ') {
+            startX += font.charWidth + 1; // Adjust this to the desired space width
+            continue;
+        }
+
         //printf("Mapping character: '%c'\n", c);
 
         if (font.charBitmaps.find(c) == font.charBitmaps.end()) {
