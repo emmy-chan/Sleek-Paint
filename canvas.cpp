@@ -738,6 +738,15 @@ void cCanvas::Editor() {
             if (g_util.MousePressed(0)) {
                 initialSelectedIndexes = selectedIndexes;
 
+                if (initialSelectedIndexes.empty()) {
+                    // Select all tiles if none are selected
+                    for (int i = 0; i < width * height; ++i) {
+                        if (tiles[g_canvas[g_cidx].selLayerIndex][i] != IM_COL32(0, 0, 0, 0)) {
+                            initialSelectedIndexes.insert(i);
+                        }
+                    }
+                }
+
                 // Calculate selection bounds
                 float minX = FLT_MAX, minY = FLT_MAX;
                 float maxX = -FLT_MAX, maxY = -FLT_MAX;
@@ -762,7 +771,8 @@ void cCanvas::Editor() {
 
             if (ImGui::IsMouseDown(0)) {
                 ImVec2 offset = ImGui::GetMousePos();
-                offset.x -= mouseStart.x; offset.y -= mouseStart.y;
+                offset.x -= mouseStart.x;
+                offset.y -= mouseStart.y;
 
                 // Snap offset to grid
                 offset.x = static_cast<int>(offset.x / TILE_SIZE) * TILE_SIZE;
