@@ -226,19 +226,15 @@ void cCanvas::PasteSelection() {
 
 void cCanvas::CopySelection() {
     copiedTiles.clear();
-    if (selectedIndexes.empty()) {
-        printf("CopySelection: No selected tiles to copy.\n");
-        return;
-    }
+    if (selectedIndexes.empty()) return;
+
     for (const auto& index : selectedIndexes)
         copiedTiles[index] = g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex][index];
 }
 
 void cCanvas::DeleteSelection() {
-    if (selectedIndexes.empty()) {
-        printf("DeleteSelection: No selected tiles to delete.\n");
-        return;
-    }
+    if (selectedIndexes.empty()) return;
+
     for (auto& index : selectedIndexes)
         g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex][index] = IM_COL32(0, 0, 0, 0);
 
@@ -315,7 +311,7 @@ void DrawCircleOnCanvas(int startX, int startY, int endX, int endY, ImU32 color,
                 }
             }
         }
-        };
+    };
 
     int x = 0;
     int y = radiusY;
@@ -910,8 +906,7 @@ void cCanvas::Editor() {
 
         if (isTypingText) {
             // Hotkey to quit typing
-            if (GetAsyncKeyState(VK_ESCAPE))
-                isTypingText = false;
+            if (GetAsyncKeyState(VK_ESCAPE)) isTypingText = false;
 
             // Capture text input
             for (int c = 0; c < io.InputQueueCharacters.Size; c++) {
