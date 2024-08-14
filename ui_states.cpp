@@ -247,7 +247,7 @@ void ConstrainProportions(int& width, int& height, float aspectRatio, bool width
 void cUIStateNewProject::Update()
 {
     auto& io = ImGui::GetIO();
-    ImGui::SetNextWindowSize({ 145, 150 }, ImGuiCond_Appearing);
+    ImGui::SetNextWindowSize({ 145, 195 }, ImGuiCond_Appearing);
     ImGui::SetNextWindowPos({ io.DisplaySize.x / 2 - 88, io.DisplaySize.y / 2 - 50 }, ImGuiCond_Appearing);
 
     if (ImGui::BeginPopupModal("New Project", NULL, ImGuiWindowFlags_NoResize)) { //ImGuiWindowFlags_AlwaysAutoResize
@@ -271,6 +271,10 @@ void cUIStateNewProject::Update()
             if (constrain_proportions) ConstrainProportions(wInput, hInput, aspectRatio, widthChanged);
         }
 
+        ImGui::Text("Background:");
+        static int bg_option = 0;
+        ImGui::Combo("##Background", &bg_option, " Transparent\0 Black\0 White");
+
         ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, { 1, 1 });
         ImGui::Checkbox("Match Size", &constrain_proportions);
         ImGui::PopStyleVar();
@@ -290,12 +294,32 @@ void cUIStateNewProject::Update()
 
                 scene_idx++;
             }
+
+            // Set the first layer color based on the selected background option
+            ImU32 color = IM_COL32(255, 255, 255, 255); // Default to white
+
+            switch (bg_option) {
+                case 0: // Transparent
+                    color = IM_COL32(0, 0, 0, 0);
+                    break;
+                case 1: // Black
+                    color = IM_COL32(0, 0, 0, 255);
+                    break;
+                case 2: // White
+                    color = IM_COL32(255, 255, 255, 255);
+                    break;
+            }
             
             // Add our new canvas to our canvases and set our idx
             // To the newly created canvas!
-            cCanvas canvas = cCanvas(scene_name, (int)wInput, (int)hInput);
+            cCanvas canvas = cCanvas(scene_name, (int)wInput, (int)hInput, color);
             g_canvas.push_back(canvas);
             g_cidx = (uint16_t)g_canvas.size() - 1;
+
+            // Set the layer name if we choose a starting bg color
+            if (bg_option) g_canvas[g_cidx].layerNames[0] = "Background";
+
+            g_canvas[g_cidx].NewLayer();
 
             // Create state for (undo) previous canvas of blank canvas
             g_canvas[g_cidx].UpdateCanvasHistory();
@@ -422,7 +446,7 @@ void LoadImageFileToCanvas(const std::string& filepath, const std::string& filen
     }
 
     // Set our canvas dimensions based on the image
-    cCanvas canvas = cCanvas(filename.c_str(), image_width, image_height, image_layer);
+    cCanvas canvas = cCanvas(filename.c_str(), image_width, image_height, IM_COL32(0, 0, 0, 0), image_layer);
     g_canvas.push_back(canvas);
     g_cidx = (uint16_t)g_canvas.size() - 1;
 

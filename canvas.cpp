@@ -17,7 +17,7 @@ uint16_t g_cidx = uint16_t();
 #include "keystate.h"
 #include "assets.h"
 
-void cCanvas::Initialize(const std::vector<ImU32>& initial_data, const uint16_t& new_width, const uint16_t& new_height) {
+void cCanvas::Initialize(const std::vector<ImU32>& initial_data, const uint16_t& new_width, const uint16_t& new_height, const ImU32& color) {
     tiles.clear();
     previousCanvases.clear();
 
@@ -26,10 +26,10 @@ void cCanvas::Initialize(const std::vector<ImU32>& initial_data, const uint16_t&
     height = new_height;
 
     // Create new layer
-    NewLayer(initial_data);
+    NewLayer(initial_data, color);
 }
 
-void cCanvas::NewLayer(const std::vector<ImU32>& initial_data) {
+void cCanvas::NewLayer(const std::vector<ImU32>& initial_data, ImU32 color) {
     // Check if the number of layers is less than 100
     if (tiles.size() >= 99) {
         printf("Max number of layers exceeded!");
@@ -43,7 +43,7 @@ void cCanvas::NewLayer(const std::vector<ImU32>& initial_data) {
         layer0 = initial_data;
     else {
         // Create a blank canvas
-        for (int i = 0; i < width * height; i++) layer0.push_back(IM_COL32(0, 0, 0, 0));
+        for (int i = 0; i < width * height; i++) layer0.push_back(color);
     }
 
     tiles.push_back(layer0);

@@ -34,7 +34,7 @@ enum eTools {
 class cCanvas
 {
 public:
-	cCanvas(const std::string& new_name, uint16_t new_width = 0, uint16_t new_height = 0, const std::vector<ImU32>&initial_data = {}) { name = new_name; LoadColorPalette("palettes/default.pal"); Initialize(initial_data, new_width, new_height); }; //Set our idx to new scene idx!
+	cCanvas(const std::string& new_name, uint16_t new_width = 0, uint16_t new_height = 0, const ImU32& color = IM_COL32(0, 0, 0, 0), const std::vector<ImU32>&initial_data = {}) { name = new_name; LoadColorPalette("palettes/default.pal"); Initialize(initial_data, new_width, new_height, color); }; //Set our idx to new scene idx!
 	std::string name;
 	uint16_t canvas_idx = 1;
 	
@@ -47,8 +47,8 @@ public:
 	std::vector<std::string> layerNames;
 	uint16_t width;
 	uint16_t height;
-	void Initialize(const std::vector<ImU32>& initial_data = {}, const uint16_t& new_width = 0, const uint16_t& new_height = 0);
-	void NewLayer(const std::vector<ImU32>& initial_data = {});
+	void Initialize(const std::vector<ImU32>& initial_data = {}, const uint16_t& new_width = 0, const uint16_t& new_height = 0, const ImU32& color = IM_COL32(0, 0, 0, 0));
+	void NewLayer(const std::vector<ImU32>& initial_data = {}, ImU32 color = IM_COL32(0, 0, 0, 0));
 	void AdaptNewSize(int width, int height);
 	void Clear();
 	void UpdateCanvasHistory();
