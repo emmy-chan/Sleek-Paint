@@ -152,7 +152,7 @@ ImVec2 GetTilePos(uint16_t index, float tileSize, float camX, float camY, int wi
     return { camX + x * tileSize, camY + y * tileSize };
 }
 
-void DrawSelectionRectangle(ImDrawList* drawList, const std::unordered_set<uint64_t>& indexes, float tileSize, float camX, float camY, int width, ImU32 col, uint8_t thickness) {
+void DrawSelectionRectangle(const std::unordered_set<uint64_t>& indexes, float tileSize, float camX, float camY, int width, ImU32 col, uint8_t thickness) {
     if (indexes.empty()) return;
 
     std::unordered_map<uint64_t, ImVec2> tilePositions;
@@ -188,10 +188,10 @@ void DrawSelectionRectangle(ImDrawList* drawList, const std::unordered_set<uint6
     }
 
     for (size_t i = 0; i < borderPoints.size(); i += 2)
-        drawList->AddLine(borderPoints[i], borderPoints[i + 1], IM_COL32_BLACK, float(thickness * 2));
+        ImGui::GetBackgroundDrawList()->AddLine(borderPoints[i], borderPoints[i + 1], IM_COL32_BLACK, float(thickness * 2));
 
     for (size_t i = 0; i < borderPoints.size(); i += 2)
-        drawList->AddLine(borderPoints[i], borderPoints[i + 1], col, float(thickness));
+        ImGui::GetBackgroundDrawList()->AddLine(borderPoints[i], borderPoints[i + 1], col, float(thickness));
 }
 
 std::unordered_set<uint64_t> initialSelectedIndexes;
@@ -271,6 +271,7 @@ void DrawLineOnCanvas(int x0, int y0, int x1, int y1, ImU32 color, bool preview 
         }
 
         if (x0 == x1 && y0 == y1) break;
+
         const int e2 = err * 2;
         if (e2 > -dy) {
             err -= dy;
@@ -284,10 +285,8 @@ void DrawLineOnCanvas(int x0, int y0, int x1, int y1, ImU32 color, bool preview 
 }
 
 void DrawCircleOnCanvas(int startX, int startY, int endX, int endY, ImU32 color, bool preview = false) {
-    const int radiusX = (std::abs(endX - startX) + 1) / 2;
-    const int radiusY = (std::abs(endY - startY) + 1) / 2;
-    const int centerX = (startX + endX + 1) / 2;
-    const int centerY = (startY + endY + 1) / 2;
+    const int radiusX = (std::abs(endX - startX) + 1) / 2, radiusY = (std::abs(endY - startY) + 1) / 2;
+    const int centerX = (startX + endX + 1) / 2, centerY = (startY + endY + 1) / 2;
 
     auto plotEllipsePoints = [&](int x, int y) {
         const int points[4][2] = {
@@ -298,8 +297,8 @@ void DrawCircleOnCanvas(int startX, int startY, int endX, int endY, ImU32 color,
         };
 
         for (auto& point : points) {
-            const int px = point[0];
-            const int py = point[1];
+            const int px = point[0], py = point[1];
+
             if (px >= 0 && px < g_canvas[g_cidx].width && py >= 0 && py < g_canvas[g_cidx].height) {
                 if (preview) {
                     const ImVec2 topLeft = { g_cam.x + px * TILE_SIZE, g_cam.y + py * TILE_SIZE };
@@ -316,17 +315,16 @@ void DrawCircleOnCanvas(int startX, int startY, int endX, int endY, ImU32 color,
     int x = 0;
     int y = radiusY;
     int p1 = static_cast<int>(radiusY * radiusY - radiusX * radiusX * radiusY + 0.25 * radiusX * radiusX);
-    int dx = 2 * radiusY * radiusY * x;
-    int dy = 2 * radiusX * radiusX * y;
+    int dx = 2 * radiusY * radiusY * x, dy = 2 * radiusX * radiusX * y;
 
     // Region 1
     while (dx < dy) {
         plotEllipsePoints(x, y);
         x++;
         dx += 2 * radiusY * radiusY;
-        if (p1 < 0) {
+
+        if (p1 < 0)
             p1 += dx + radiusY * radiusY;
-        }
         else {
             y--;
             dy -= 2 * radiusX * radiusX;
@@ -340,9 +338,9 @@ void DrawCircleOnCanvas(int startX, int startY, int endX, int endY, ImU32 color,
         plotEllipsePoints(x, y);
         y--;
         dy -= 2 * radiusX * radiusX;
-        if (p2 > 0) {
+
+        if (p2 > 0)
             p2 += radiusX * radiusX - dy;
-        }
         else {
             x++;
             dx += 2 * radiusY * radiusY;
@@ -445,8 +443,7 @@ void applyBrushEffect(const ImVec2& lastMousePos, int x, int y, const ImU32& col
         const int lastY = static_cast<int>((lastMousePos.y - g_cam.y) / TILE_SIZE);
 
         // Calculate the distance between the previous and current mouse positions
-        const float distX = x - lastX;
-        const float distY = y - lastY;
+        const float distX = x - lastX, distY = y - lastY;
         const float distance = glm::sqrt(distX * distX + distY * distY);
 
         // Number of steps to interpolate
@@ -526,12 +523,11 @@ void applyBrushEffect(const ImVec2& lastMousePos, int x, int y, const ImU32& col
         }
     }
 
-    ImDrawList* drawList = ImGui::GetBackgroundDrawList();
     for (size_t i = 0; i < borderPoints.size(); i += 2)
-        drawList->AddLine(borderPoints[i], borderPoints[i + 1], IM_COL32_BLACK, 2.0f);
+        ImGui::GetBackgroundDrawList()->AddLine(borderPoints[i], borderPoints[i + 1], IM_COL32_BLACK, 2.0f);
 
     for (size_t i = 0; i < borderPoints.size(); i += 2)
-        drawList->AddLine(borderPoints[i], borderPoints[i + 1], IM_COL32_WHITE, 1.0f);
+        ImGui::GetBackgroundDrawList()->AddLine(borderPoints[i], borderPoints[i + 1], IM_COL32_WHITE, 1.0f);
 }
 
 void cCanvas::UpdateZoom() {
@@ -767,16 +763,14 @@ void cCanvas::Editor() {
 
             if (ImGui::IsMouseDown(0)) {
                 ImVec2 offset = ImGui::GetMousePos();
-                offset.x -= mouseStart.x;
-                offset.y -= mouseStart.y;
+                offset.x -= mouseStart.x; offset.y -= mouseStart.y;
 
                 // Snap offset to grid
                 offset.x = static_cast<int>(offset.x / TILE_SIZE) * TILE_SIZE;
                 offset.y = static_cast<int>(offset.y / TILE_SIZE) * TILE_SIZE;
 
                 for (const auto& index : initialSelectedIndexes) {
-                    const int selectX = index % width;
-                    const int selectY = index / width;
+                    const int selectX = index % width, selectY = index / width;
                     const ImVec2 tilePos = { g_cam.x + selectX * TILE_SIZE + offset.x, g_cam.y + selectY * TILE_SIZE + offset.y };
                     d.AddRectFilled(tilePos, { tilePos.x + TILE_SIZE, tilePos.y + TILE_SIZE }, tiles[g_canvas[g_cidx].selLayerIndex][index]);
                 }
@@ -975,8 +969,8 @@ void cCanvas::Editor() {
 
             // Draw blinking cursor
             if (fmod(ImGui::GetTime(), 1.0f) > 0.5f) {
-                d.AddLine(ImVec2(cursorPos.x, cursorPos.y), ImVec2(cursorPos.x, cursorPos.y + bitmapFont->charHeight * TILE_SIZE), IM_COL32_BLACK, 2);
-                d.AddLine(ImVec2(cursorPos.x, cursorPos.y), ImVec2(cursorPos.x, cursorPos.y + bitmapFont->charHeight * TILE_SIZE), IM_COL32_WHITE, 1);
+                d.AddLine({ cursorPos.x, cursorPos.y }, { cursorPos.x, cursorPos.y + bitmapFont->charHeight * TILE_SIZE }, IM_COL32_BLACK, 2);
+                d.AddLine({ cursorPos.x, cursorPos.y }, { cursorPos.x, cursorPos.y + bitmapFont->charHeight * TILE_SIZE }, IM_COL32_WHITE, 1);
             }
         }
     }
@@ -985,7 +979,7 @@ void cCanvas::Editor() {
 
     // Draw a rectangle around the selected indexes
     if (!selectedIndexes.empty())
-        DrawSelectionRectangle(&d, selectedIndexes, TILE_SIZE, g_cam.x, g_cam.y, width, IM_COL32_WHITE, 2);
+        DrawSelectionRectangle(selectedIndexes, TILE_SIZE, g_cam.x, g_cam.y, width, IM_COL32_WHITE, 2);
 
     // Add canvas to history for undo-redo feature
     if (!g_canvas.empty())
