@@ -995,12 +995,16 @@ void cCanvas::Editor() {
                     UpdateCanvasHistory();
 
     // Middle mouse navigate
-    if (io.MouseDelta.x || io.MouseDelta.y) {
-        if (io.MouseDown[2]) {
+    if (io.MouseDown[2]) {
+        if (io.MouseDelta.x || io.MouseDelta.y) {
             g_cam.x += io.MouseDelta.x;
             g_cam.y += io.MouseDelta.y;
         }
+
+        ImGui::SetMouseCursor(ImGuiMouseCursor_Hand);
     }
+    else
+        ImGui::SetMouseCursor(ImGuiMouseCursor_Arrow);
 
     // Update the previous mouse position for the next frame
     lastMousePos = ImGui::GetMousePos();
