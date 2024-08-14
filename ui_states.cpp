@@ -273,7 +273,9 @@ void cUIStateNewProject::Update()
 
         ImGui::Text("Background:");
         static int bg_option = 0;
+        ImGui::PushItemWidth(ImGui::GetContentRegionMax().x - 8);
         ImGui::Combo("##Background", &bg_option, " Transparent\0 Black\0 White");
+        ImGui::PopItemWidth();
 
         ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, { 1, 1 });
         ImGui::Checkbox("Match Size", &constrain_proportions);
@@ -317,9 +319,12 @@ void cUIStateNewProject::Update()
             g_cidx = (uint16_t)g_canvas.size() - 1;
 
             // Set the layer name if we choose a starting bg color
-            if (bg_option) g_canvas[g_cidx].layerNames[0] = "Background";
+            if (bg_option) g_canvas[g_cidx].layerNames[0] = "BG";
 
             g_canvas[g_cidx].NewLayer();
+
+            // Set our current layer to the blank one above our background layer
+            if (bg_option) g_canvas[g_cidx].selLayerIndex++;
 
             // Create state for (undo) previous canvas of blank canvas
             g_canvas[g_cidx].UpdateCanvasHistory();
