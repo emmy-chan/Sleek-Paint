@@ -71,7 +71,7 @@ void cCanvas::AdaptNewSize(int width, int height) {
             for (int x = 0; x < width; ++x) {
                 const int oldX = static_cast<int>(x / scaleX), oldY = static_cast<int>(y / scaleY);
                 if (oldX < g_canvas[g_cidx].width && oldY < g_canvas[g_cidx].height) {
-                    const int oldIndex = oldX + oldY * g_canvas[g_cidx].width, int newIndex = x + y * width;
+                    const int oldIndex = oldX + oldY * g_canvas[g_cidx].width, newIndex = x + y * width;
 
                     if (oldIndex < oldLayer.size() && newIndex < newLayer.size())
                         newLayer[newIndex] = oldLayer[oldIndex];
