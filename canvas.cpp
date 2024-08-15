@@ -41,10 +41,8 @@ void cCanvas::NewLayer(const std::vector<ImU32>& initial_data, ImU32 color) {
     // If initial data is provided, use it to initialize the layer
     if (!initial_data.empty())
         layer0 = initial_data;
-    else {
-        // Create a blank canvas
-        for (int i = 0; i < width * height; i++) layer0.push_back(color);
-    }
+    else
+        for (int i = 0; i < width * height; i++) layer0.push_back(color); // Create a blank canvas
 
     tiles.push_back(layer0);
     layerVisibility.push_back(true);
@@ -53,8 +51,7 @@ void cCanvas::NewLayer(const std::vector<ImU32>& initial_data, ImU32 color) {
 }
 
 void cCanvas::Clear() {
-    for (auto& tile : g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex])
-        tile = IM_COL32(255, 255, 255, 0);
+    for (auto& tile : g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex]) tile = IM_COL32(255, 255, 255, 0);
 }
 
 void cCanvas::AdaptNewSize(int width, int height) {
@@ -62,8 +59,7 @@ void cCanvas::AdaptNewSize(int width, int height) {
     std::vector<std::vector<ImU32>> newLayers(g_canvas[g_cidx].tiles.size(), std::vector<ImU32>(width * height, IM_COL32(0, 0, 0, 0)));
 
     // Calculate scaling factors
-    const float scaleX = static_cast<float>(width) / g_canvas[g_cidx].width;
-    const float scaleY = static_cast<float>(height) / g_canvas[g_cidx].height;
+    const float scaleX = static_cast<float>(width) / g_canvas[g_cidx].width, scaleY = static_cast<float>(height) / g_canvas[g_cidx].height;
 
     // Iterate over all layers and adapt the content
     for (size_t layerIndex = 0; layerIndex < g_canvas[g_cidx].tiles.size(); ++layerIndex) {
@@ -73,11 +69,9 @@ void cCanvas::AdaptNewSize(int width, int height) {
         // Map old pixels to new positions with scaling
         for (int y = 0; y < height; ++y) {
             for (int x = 0; x < width; ++x) {
-                const int oldX = static_cast<int>(x / scaleX);
-                const int oldY = static_cast<int>(y / scaleY);
+                const int oldX = static_cast<int>(x / scaleX), oldY = static_cast<int>(y / scaleY);
                 if (oldX < g_canvas[g_cidx].width && oldY < g_canvas[g_cidx].height) {
-                    const int oldIndex = oldX + oldY * g_canvas[g_cidx].width;
-                    const int newIndex = x + y * width;
+                    const int oldIndex = oldX + oldY * g_canvas[g_cidx].width, int newIndex = x + y * width;
 
                     if (oldIndex < oldLayer.size() && newIndex < newLayer.size())
                         newLayer[newIndex] = oldLayer[oldIndex];
@@ -148,8 +142,7 @@ void cCanvas::DestroyCanvas() {
 
 // Function to calculate the bounding box of the selected indexes
 ImVec2 GetTilePos(uint16_t index, float tileSize, float camX, float camY, int width) {
-    const float x = float(index % width), y = float(index / width);
-    return { camX + x * tileSize, camY + y * tileSize };
+    return { camX + float(index % width) * tileSize, camY + float(index / width) * tileSize };
 }
 
 void DrawSelectionRectangle(const std::unordered_set<uint64_t>& indexes, float tileSize, float camX, float camY, int width, ImU32 col, uint8_t thickness) {
@@ -209,8 +202,7 @@ void cCanvas::PasteSelection() {
 
     std::unordered_set<uint64_t> newSelectedIndexes;
     for (const auto& tile : copiedTiles) {
-        const int selectX = tile.first % g_canvas[g_cidx].width;
-        const int selectY = tile.first / g_canvas[g_cidx].width;
+        const int selectX = tile.first % g_canvas[g_cidx].width, selectY = tile.first / g_canvas[g_cidx].width;
 
         // Ensure the coordinates are within the canvas boundaries
         if (selectX >= 0 && selectX < g_canvas[g_cidx].width && selectY >= 0 && selectY < g_canvas[g_cidx].height) {
@@ -242,10 +234,8 @@ void cCanvas::DeleteSelection() {
 }
 
 void DrawLineOnCanvas(int x0, int y0, int x1, int y1, ImU32 color, bool preview = false) {
-    const int dx = abs(x1 - x0);
-    const int dy = abs(y1 - y0);
-    const int sx = (x0 < x1) ? 1 : -1;
-    const int sy = (y0 < y1) ? 1 : -1;
+    const int dx = abs(x1 - x0), dy = abs(y1 - y0);
+    const int sx = (x0 < x1) ? 1 : -1, sy = (y0 < y1) ? 1 : -1;
     int err = dx - dy;
 
     // Calculate the half-thickness for offset calculations
@@ -290,10 +280,8 @@ void DrawCircleOnCanvas(int startX, int startY, int endX, int endY, ImU32 color,
 
     auto plotEllipsePoints = [&](int x, int y) {
         const int points[4][2] = {
-            {centerX + x, centerY + y},
-            {centerX - x, centerY + y},
-            {centerX + x, centerY - y},
-            {centerX - x, centerY - y}
+            {centerX + x, centerY + y}, {centerX - x, centerY + y},
+            {centerX + x, centerY - y}, {centerX - x, centerY - y}
         };
 
         for (auto& point : points) {
@@ -377,8 +365,7 @@ void DrawTextOnCanvas(BitmapFont& font, const std::string& text, int startX, int
     //printf("DrawTextOnCanvas called with text: %s\n", text.c_str());
 
     // Convert start position from screen coordinates to canvas coordinates
-    startX = (startX - g_cam.x) / TILE_SIZE;
-    startY = (startY - g_cam.y) / TILE_SIZE;
+    startX = (startX - g_cam.x) / TILE_SIZE; startY = (startY - g_cam.y) / TILE_SIZE;
 
     // Check if the starting position is within the canvas bounds
     if (startX < 0 || startY < 0 || startX >= g_canvas[g_cidx].width || startY >= g_canvas[g_cidx].height) {
@@ -404,8 +391,7 @@ void DrawTextOnCanvas(BitmapFont& font, const std::string& text, int startX, int
         const auto& bitmap = font.charBitmaps[c];
 
         // Verify bitmap dimensions
-        const int currentCharHeight = bitmap.size();
-        const int currentCharWidth = bitmap.empty() ? 0 : bitmap[0].size();
+        const int currentCharHeight = bitmap.size(), currentCharWidth = bitmap.empty() ? 0 : bitmap[0].size();
 
         if (currentCharHeight != font.charHeight) {
             printf("Bitmap height for character '%c' is incorrect\n", c);
@@ -415,8 +401,7 @@ void DrawTextOnCanvas(BitmapFont& font, const std::string& text, int startX, int
         for (int y = 0; y < currentCharHeight; ++y) {
             for (int x = 0; x < currentCharWidth; ++x) {
                 if (bitmap[y][x] == 1) {
-                    const int posX = startX + x; // Adjust horizontal position dynamically
-                    const int posY = startY + y;
+                    const int posX = startX + x, posY = startY + y; // Adjust horizontal position dynamically
 
                     // Ensure position is within the canvas boundaries
                     if (posX >= 0 && posX < g_canvas[g_cidx].width && posY >= 0 && posY < g_canvas[g_cidx].height) {
@@ -451,8 +436,7 @@ void applyBrushEffect(const ImVec2& lastMousePos, int x, int y, const ImU32& col
 
         for (int i = 0; i <= steps; ++i) {
             const float t = static_cast<float>(i) / steps;
-            const int brushX = static_cast<int>(lastX + t * distX);
-            const int brushY = static_cast<int>(lastY + t * distY);
+            const int brushX = static_cast<int>(lastX + t * distX), brushY = static_cast<int>(lastY + t * distY);
 
             // Apply brush effect at the interpolated position
             if (selectedIndexes.empty() || selectedIndexes.find((uint64_t)brushX + (uint64_t)brushY * g_canvas[g_cidx].width) != selectedIndexes.end()) {
@@ -460,8 +444,7 @@ void applyBrushEffect(const ImVec2& lastMousePos, int x, int y, const ImU32& col
                     for (int offsetX = -brushRadiusInt; offsetX <= brushRadiusInt; ++offsetX) {
                         const float distance = glm::sqrt(offsetX * offsetX + offsetY * offsetY);
                         if (distance <= brushRadius) {
-                            const int finalX = brushX + offsetX;
-                            const int finalY = brushY + offsetY;
+                            const int finalX = brushX + offsetX, finalY = brushY + offsetY;
                             if (finalX >= 0 && finalX < g_canvas[g_cidx].width && finalY >= 0 && finalY < g_canvas[g_cidx].height) {
                                 if (ImGui::GetIO().MouseDown[0])
                                     g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex][finalX + finalY * g_canvas[g_cidx].width] = col;
@@ -481,8 +464,7 @@ void applyBrushEffect(const ImVec2& lastMousePos, int x, int y, const ImU32& col
         for (int offsetX = -brushRadiusInt; offsetX <= brushRadiusInt; ++offsetX) {
             const float distance = glm::sqrt(offsetX * offsetX + offsetY * offsetY);
             if (distance <= brushRadius) {
-                const int brushX = x + offsetX;
-                const int brushY = y + offsetY;
+                const int brushX = x + offsetX, brushY = y + offsetY;
                 if (brushX >= 0 && brushX < g_canvas[g_cidx].width && brushY >= 0 && brushY < g_canvas[g_cidx].height) {
                     ImGui::GetBackgroundDrawList()->AddRectFilled({ g_cam.x + brushX * TILE_SIZE, g_cam.y + brushY * TILE_SIZE },
                         { g_cam.x + brushX * TILE_SIZE + TILE_SIZE, g_cam.y + brushY * TILE_SIZE + TILE_SIZE },
@@ -501,8 +483,7 @@ void applyBrushEffect(const ImVec2& lastMousePos, int x, int y, const ImU32& col
 
     std::vector<ImVec2> borderPoints;
     for (uint64_t index : brushIndexes) {
-        const int tileX = index % g_canvas[g_cidx].width;
-        const int tileY = index / g_canvas[g_cidx].width;
+        const int tileX = index % g_canvas[g_cidx].width, tileY = index / g_canvas[g_cidx].width;
         const ImVec2 pos(g_cam.x + tileX * TILE_SIZE, g_cam.y + tileY * TILE_SIZE);
 
         if (isBorderTile(index, -1, 0)) {
@@ -552,8 +533,7 @@ void cCanvas::UpdateZoom() {
 
 void cCanvas::Editor() {
     if (g_canvas.empty() || g_canvas[g_cidx].tiles.empty() || g_canvas[g_cidx].layerVisibility.empty()) return;
-    auto& d = *ImGui::GetBackgroundDrawList(); auto& io = ImGui::GetIO();
-    static bool isTypingText = false;
+    auto& d = *ImGui::GetBackgroundDrawList(); auto& io = ImGui::GetIO(); static bool isTypingText = false;
 
     if (!g_app.ui_state) {
         key_state.update();
@@ -665,10 +645,8 @@ void cCanvas::Editor() {
                 const ImVec2 end = ImGui::GetMousePos();
 
                 // Calculate the mouse positions relative to the camera
-                const float mouseStartX = mouseStart.x - g_cam.x;
-                const float mouseStartY = mouseStart.y - g_cam.y;
-                const float mouseEndX = end.x - g_cam.x;
-                const float mouseEndY = end.y - g_cam.y;
+                const float mouseStartX = mouseStart.x - g_cam.x, mouseStartY = mouseStart.y - g_cam.y;
+                const float mouseEndX = end.x - g_cam.x, mouseEndY = end.y - g_cam.y;
 
                 // Snap the coordinates to the tile grid
                 const float startX = g_cam.x + std::floor(std::min(mouseStartX, mouseEndX) / TILE_SIZE) * TILE_SIZE;
@@ -685,10 +663,8 @@ void cCanvas::Editor() {
                 const ImVec2 end = ImGui::GetMousePos();
 
                 // Calculate the mouse positions relative to the camera
-                const float mouseStartX = mouseStart.x - g_cam.x;
-                const float mouseStartY = mouseStart.y - g_cam.y;
-                const float mouseEndX = end.x - g_cam.x;
-                const float mouseEndY = end.y - g_cam.y;
+                const float mouseStartX = mouseStart.x - g_cam.x, mouseStartY = mouseStart.y - g_cam.y;
+                const float mouseEndX = end.x - g_cam.x, mouseEndY = end.y - g_cam.y;
 
                 // Snap the coordinates to the tile grid
                 const float startX = std::floor(std::min(mouseStartX, mouseEndX) / TILE_SIZE) * TILE_SIZE;
@@ -697,10 +673,8 @@ void cCanvas::Editor() {
                 const float endY = std::ceil(std::max(mouseStartY, mouseEndY) / TILE_SIZE) * TILE_SIZE;
 
                 // Calculate the selection dimensions
-                const int startTileX = startX / TILE_SIZE;
-                const int startTileY = startY / TILE_SIZE;
-                const int endTileX = endX / TILE_SIZE;
-                const int endTileY = endY / TILE_SIZE;
+                const int startTileX = startX / TILE_SIZE, startTileY = startY / TILE_SIZE;
+                const int endTileX = endX / TILE_SIZE, endTileY = endY / TILE_SIZE;
 
                 for (int tileY = startTileY; tileY < endTileY; tileY++) {
                     for (int tileX = startTileX; tileX < endTileX; tileX++)
@@ -715,12 +689,8 @@ void cCanvas::Editor() {
                 selectedIndexes.clear();
 
             if (g_util.MousePressed(0)) {
-                const ImVec2 mousePos = ImGui::GetMousePos();
-                const int tileX = static_cast<int>((mousePos.x - g_cam.x) / TILE_SIZE);
-                const int tileY = static_cast<int>((mousePos.y - g_cam.y) / TILE_SIZE);
-
-                if (tileX >= 0 && tileX < width && tileY >= 0 && tileY < height)
-                    g_util.FloodFill(tileX, tileY, false);
+                if (x >= 0 && y < width && x >= 0 && y < height)
+                    g_util.FloodFill(x, y, false);
             }
 
             d.AddRectFilled({ g_cam.x + x * TILE_SIZE, g_cam.y + y * TILE_SIZE }, { g_cam.x + x * TILE_SIZE + TILE_SIZE, g_cam.y + y * TILE_SIZE + TILE_SIZE }, myCols[selColIndex]);
@@ -744,14 +714,10 @@ void cCanvas::Editor() {
                 float maxX = -FLT_MAX, maxY = -FLT_MAX;
 
                 for (const auto& index : initialSelectedIndexes) {
-                    const int selectX = index % width;
-                    const int selectY = index / width;
-                    const float tilePosX = g_cam.x + selectX * TILE_SIZE;
-                    const float tilePosY = g_cam.y + selectY * TILE_SIZE;
-                    minX = std::min(minX, tilePosX);
-                    minY = std::min(minY, tilePosY);
-                    maxX = std::max(maxX, tilePosX + TILE_SIZE);
-                    maxY = std::max(maxY, tilePosY + TILE_SIZE);
+                    const int selectX = index % width, selectY = index / width;
+                    const float tilePosX = g_cam.x + selectX * TILE_SIZE, tilePosY = g_cam.y + selectY * TILE_SIZE;
+                    minX = std::min(minX, tilePosX); minY = std::min(minY, tilePosY);
+                    maxX = std::max(maxX, tilePosX + TILE_SIZE); maxY = std::max(maxY, tilePosY + TILE_SIZE);
                 }
 
                 // Check if the click is outside the bounds
@@ -877,12 +843,10 @@ void cCanvas::Editor() {
         }
     }
 
-    static ImVec2 textPosition;
-    static std::string textInput;
-    static std::string previousTextInput;
-    static ImVec2 previousTextPosition;
-    static std::vector<std::string> lines;
+    static ImVec2 textPosition, previousTextPosition;
+    static std::string textInput, previousTextInput;
     static std::vector<ImVec2> linePositions;
+    static std::vector<std::string> lines;
 
     // Handle text input
     if (paintToolSelected == TOOL_TEXT) {
@@ -949,9 +913,7 @@ void cCanvas::Editor() {
 
             // Draw the current text at the mouse position using the bitmap font
             if (bitmapFont) {
-                const uint8_t red = (myCols[selColIndex] >> 0) & 0xFF;
-                const uint8_t green = (myCols[selColIndex] >> 8) & 0xFF;
-                const uint8_t blue = (myCols[selColIndex] >> 16) & 0xFF;
+                const uint8_t red = (myCols[selColIndex] >> 0) & 0xFF, green = (myCols[selColIndex] >> 8) & 0xFF, blue = (myCols[selColIndex] >> 16) & 0xFF;
 
                 for (size_t i = 0; i < lines.size(); ++i) {
                     DrawTextOnCanvas(*bitmapFont, lines[i], static_cast<int>(linePositions[i].x - TILE_SIZE), static_cast<int>(linePositions[i].y), red + green + blue > 50 ? IM_COL32_BLACK : IM_COL32_WHITE);
@@ -964,8 +926,7 @@ void cCanvas::Editor() {
             previousTextPosition = textPosition;
 
             // Draw the text cursor
-            ImVec2 cursorPos = textPosition;
-            cursorPos.x += textInput.size() * bitmapFont->charWidth * (TILE_SIZE * 1.25f);
+            const ImVec2 cursorPos = { textPosition.x + textInput.size() * bitmapFont->charWidth * (TILE_SIZE * 1.25f), textPosition.y };
 
             // Draw blinking cursor
             if (fmod(ImGui::GetTime(), 1.0f) > 0.5f) {
@@ -978,8 +939,7 @@ void cCanvas::Editor() {
         isTypingText = false;
 
     // Draw a rectangle around the selected indexes
-    if (!selectedIndexes.empty())
-        DrawSelectionRectangle(selectedIndexes, TILE_SIZE, g_cam.x, g_cam.y, width, IM_COL32_WHITE, 2);
+    if (!selectedIndexes.empty()) DrawSelectionRectangle(selectedIndexes, TILE_SIZE, g_cam.x, g_cam.y, width, IM_COL32_WHITE, 2);
 
     // Add canvas to history for undo-redo feature
     if (!g_canvas.empty())
@@ -991,8 +951,7 @@ void cCanvas::Editor() {
     // Middle mouse navigate
     if (io.MouseDown[2]) {
         if (io.MouseDelta.x || io.MouseDelta.y) {
-            g_cam.x += io.MouseDelta.x;
-            g_cam.y += io.MouseDelta.y;
+            g_cam.x += io.MouseDelta.x; g_cam.y += io.MouseDelta.y;
         }
 
         ImGui::SetMouseCursor(ImGuiMouseCursor_Hand);
