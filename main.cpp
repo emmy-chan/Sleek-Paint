@@ -2,6 +2,7 @@
 #include "imgui.h"
 #include "imgui_impl_win32.h"
 #include "imgui_impl_dx11.h"
+#include "imgui_freetype.h"
 #include <d3d11.h>
 #include <tchar.h>
 
@@ -155,6 +156,7 @@ int main(int, char**)
         static const ImWchar icon_ranges[] = { 0xf000, 0xf3ff, 0 };
         //io.Fonts->AddFontFromMemoryCompressedTTF(font_awesome_data, font_awesome_size, 19.0f, &config, icon_ranges);
         io.Fonts->AddFontFromMemoryCompressedTTF(font_awesome_data, font_awesome_size, 16.0f, &config, icon_ranges);
+        ImGuiFreeType::BuildFontAtlas(io.Fonts, ImGuiFreeTypeBuilderFlags_ForceAutoHint);
     }
 
     //Setup our IMGUI theme!
