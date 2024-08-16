@@ -142,24 +142,27 @@ int main(int, char**)
     ImGui::CreateContext();
     ImGuiIO& io = ImGui::GetIO(); (void)io;
 
-    //Store default font
-    io.Fonts->AddFontFromMemoryTTF(const_cast<std::uint8_t*>(Custom), sizeof(Custom), 18.f); //, &CustomFont
-    //io.Fonts->AddFontFromFileTTF("c:/windows/fonts/arial.ttf", 18.f, NULL, io.Fonts->GetGlyphRangesCyrillic());
-    //io.Fonts->AddFontFromFileTTF("Exo-Regular.ttf", 18.f, NULL, io.Fonts->GetGlyphRangesJapanese());
-    //io.Fonts->AddFontDefault();
+    ImFontConfig config;
+    config.OversampleH = 1;
 
-    //Load icons!
+    // Chinese / Japanese fonts
+    io.Fonts->AddFontFromFileTTF("c:\\Windows\\Fonts\\msyh.ttc", 18.f, &config, io.Fonts->GetGlyphRangesChineseSimplifiedCommon());
+    config.MergeMode = true;
+
+    // Store default font
+    io.Fonts->AddFontFromMemoryTTF(const_cast<std::uint8_t*>(Custom), sizeof(Custom), 18.f, &config);
+
+    // Load icons!
     {
-        ImFontConfig config;
-        config.MergeMode = true;
         //config.GlyphMinAdvanceX = 35.0f; // Use if you want to make the icon monospaced
         static const ImWchar icon_ranges[] = { 0xf000, 0xf3ff, 0 };
-        //io.Fonts->AddFontFromMemoryCompressedTTF(font_awesome_data, font_awesome_size, 19.0f, &config, icon_ranges);
         io.Fonts->AddFontFromMemoryCompressedTTF(font_awesome_data, font_awesome_size, 16.0f, &config, icon_ranges);
-        ImGuiFreeType::BuildFontAtlas(io.Fonts, ImGuiFreeTypeBuilderFlags_ForceAutoHint);
     }
 
-    //Setup our IMGUI theme!
+    // Build font atlas
+    ImGuiFreeType::BuildFontAtlas(io.Fonts, ImGuiFreeTypeBuilderFlags_ForceAutoHint);
+
+    // Setup our IMGUI theme!
     SetupTheme();
 
     // Setup Platform/Renderer backends
