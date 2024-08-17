@@ -321,7 +321,7 @@ void cUIStateNewProject::Update()
             // Set the layer name if we choose a starting bg color
             if (bg_option) g_canvas[g_cidx].layerNames[0] = "BG";
 
-            g_canvas[g_cidx].NewLayer();
+            if (bg_option) g_canvas[g_cidx].NewLayer();
 
             // Set our current layer to the blank one above our background layer
             if (bg_option) g_canvas[g_cidx].selLayerIndex++;
