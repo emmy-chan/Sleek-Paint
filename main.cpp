@@ -143,7 +143,7 @@ int main(int, char**)
     ImGuiIO& io = ImGui::GetIO(); (void)io;
 
     ImFontConfig config;
-    config.OversampleH = 1;
+    config.OversampleH = 1; config.OversampleV = 1;
 
     // Chinese / Japanese fonts
     io.Fonts->AddFontFromFileTTF("c:\\Windows\\Fonts\\msyh.ttc", 18.f, &config, io.Fonts->GetGlyphRangesChineseSimplifiedCommon());

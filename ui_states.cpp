@@ -319,12 +319,13 @@ void cUIStateNewProject::Update()
             g_cidx = (uint16_t)g_canvas.size() - 1;
 
             // Set the layer name if we choose a starting bg color
-            if (bg_option) g_canvas[g_cidx].layerNames[0] = "BG";
+            if (bg_option) {
+                g_canvas[g_cidx].layerNames[0] = "BG";
+                g_canvas[g_cidx].NewLayer();
 
-            if (bg_option) g_canvas[g_cidx].NewLayer();
-
-            // Set our current layer to the blank one above our background layer
-            if (bg_option) g_canvas[g_cidx].selLayerIndex++;
+                // Set our current layer to the blank one above our background layer
+                g_canvas[g_cidx].selLayerIndex++;
+            }
 
             // Create state for (undo) previous canvas of blank canvas
             g_canvas[g_cidx].UpdateCanvasHistory();
