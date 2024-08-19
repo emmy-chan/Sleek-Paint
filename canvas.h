@@ -30,6 +30,7 @@ enum eTools {
 	TOOL_ELIPSE,
 	TOOL_TEXT,
 	TOOL_PAN,
+	TOOL_ZOOM
 };
 
 class cCanvas
@@ -58,7 +59,7 @@ public:
 	void PasteSelection();
 	void CopySelection();
 	void DeleteSelection();
-	void UpdateZoom();
+	void UpdateZoom(float value);
 	void Editor();
 };
 

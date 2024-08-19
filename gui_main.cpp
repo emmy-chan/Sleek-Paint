@@ -652,9 +652,11 @@ void cGUI::Display()
         if (ImGui::Button(ICON_FA_EYE_DROPPER, ImVec2(25, 25))) paintToolSelected = 3;
         ImGui::PushStyleColor(ImGuiCol_Button, paintToolSelected == TOOL_PAN ? panelActiveColor : panelColor);
         if (ImGui::Button(ICON_FA_HAND_POINTER, ImVec2(25, 25))) paintToolSelected = TOOL_PAN;
+        ImGui::PushStyleColor(ImGuiCol_Button, paintToolSelected == TOOL_ZOOM ? panelActiveColor : panelColor);
+        if (ImGui::Button(ICON_FA_SEARCH, ImVec2(25, 25))) paintToolSelected = TOOL_ZOOM;
 
         ImGui::PopStyleVar();
-        ImGui::PopStyleColor(10);
+        ImGui::PopStyleColor(11);
         ImGui::End();
     }
 

@@ -511,23 +511,28 @@ void applyBrushEffect(const ImVec2& lastMousePos, int x, int y, const ImU32& col
         ImGui::GetBackgroundDrawList()->AddLine(borderPoints[i], borderPoints[i + 1], IM_COL32_WHITE, 1.0f);
 }
 
-void cCanvas::UpdateZoom() {
+void cCanvas::UpdateZoom(float value) {
     // Zooming
-    if (ImGui::GetIO().MouseWheel != 0.f) {
+    if (value != 0.f) {
         const float minZoom = 1.0f, maxZoom = 50.0f;
 
         // Calculate new zoom level
-        const float newZoom = glm::clamp(TILE_SIZE + ImGui::GetIO().MouseWheel * 4, minZoom, maxZoom);
+        float newZoom = glm::clamp(TILE_SIZE + value, minZoom, maxZoom);
         const auto mousePos = ImGui::GetMousePos();
 
         // Adjust camera position to keep the zoom centered around the mouse position
-        const ImVec2 offset = { (mousePos.x - g_cam.x) / TILE_SIZE * newZoom, 
-            (mousePos.y - g_cam.y) / TILE_SIZE * newZoom };
+        if (newZoom != TILE_SIZE) {
+            // Calculate the relative position of the mouse in the canvas
+            const ImVec2 relativeMousePos = { (mousePos.x - g_cam.x) / TILE_SIZE,
+                                              (mousePos.y - g_cam.y) / TILE_SIZE };
 
-        g_cam.x = mousePos.x - offset.x; 
-        g_cam.y = mousePos.y - offset.y;
+            // Adjust camera position based on the new zoom level
+            g_cam.x = mousePos.x - relativeMousePos.x * newZoom;
+            g_cam.y = mousePos.y - relativeMousePos.y * newZoom;
 
-        TILE_SIZE = newZoom;
+            // Update TILE_SIZE to the new zoom level
+            TILE_SIZE = newZoom;
+        }
     }
 }
 
@@ -570,7 +575,7 @@ void cCanvas::Editor() {
             else if (key_state.key_pressed('S')) paintToolSelected = TOOL_SELECT;
         }
 
-        UpdateZoom();
+        UpdateZoom(ImGui::GetIO().MouseWheel * 4.0f);
     }
 
     for (float y = 0; y < height; y++) {
@@ -838,6 +843,11 @@ void cCanvas::Editor() {
                 // Draw the ellipse on the canvas
                 DrawCircleOnCanvas(startX, startY, x, y, myCols[selColIndex]);
             }
+
+            break;
+        case TOOL_ZOOM:
+            if (g_util.MousePressed(0)) UpdateZoom(1.0f);
+            else if (g_util.MousePressed(1)) UpdateZoom(-1.0f);
 
             break;
         }
