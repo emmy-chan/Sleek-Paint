@@ -650,9 +650,11 @@ void cGUI::Display()
         if (ImGui::Button(ICON_FA_ERASER, ImVec2(25, 25))) paintToolSelected = 2;
         ImGui::PushStyleColor(ImGuiCol_Button, paintToolSelected == 3 ? panelActiveColor : panelColor);
         if (ImGui::Button(ICON_FA_EYE_DROPPER, ImVec2(25, 25))) paintToolSelected = 3;
+        ImGui::PushStyleColor(ImGuiCol_Button, paintToolSelected == TOOL_PAN ? panelActiveColor : panelColor);
+        if (ImGui::Button(ICON_FA_HAND_POINTER, ImVec2(25, 25))) paintToolSelected = TOOL_PAN;
 
         ImGui::PopStyleVar();
-        ImGui::PopStyleColor(9);
+        ImGui::PopStyleColor(10);
         ImGui::End();
     }
 

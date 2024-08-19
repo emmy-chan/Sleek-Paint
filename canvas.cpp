@@ -949,7 +949,7 @@ void cCanvas::Editor() {
                     UpdateCanvasHistory();
 
     // Middle mouse navigate
-    if (io.MouseDown[2]) {
+    if (io.MouseDown[2] || paintToolSelected == TOOL_PAN && io.MouseDown[0]) {
         if (io.MouseDelta.x || io.MouseDelta.y) {
             g_cam.x += io.MouseDelta.x; g_cam.y += io.MouseDelta.y;
         }
