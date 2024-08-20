@@ -60,6 +60,8 @@ void SaveCanvasToImage(const char* name, const char* format) {
             finalB = supportsTransparency ? 0.0f : 1.0f, finalA = supportsTransparency ? 0.0f : 1.0f;
 
             for (size_t layer = 0; layer < g_canvas[g_cidx].tiles.size(); layer++) {
+                if (!g_canvas[g_cidx].layerVisibility[layer]) continue; // Skip layers that are not visible
+                
                 const ImU32 color = g_canvas[g_cidx].tiles[layer][i + j * width];
 
                 // Extract RGBA components
