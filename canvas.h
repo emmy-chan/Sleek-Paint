@@ -15,6 +15,7 @@ inline uint8_t brush_size = 1;
 inline uint8_t line_size = 1;
 inline uint8_t magic_wand_threshold = 1;
 inline uint8_t bucket_fill_threshold = 1;
+inline uint8_t bandaid_strength = 50;
 inline bool constrain_proportions = 0;
 
 enum eTools {
@@ -30,7 +31,8 @@ enum eTools {
 	TOOL_ELIPSE,
 	TOOL_TEXT,
 	TOOL_PAN,
-	TOOL_ZOOM
+	TOOL_ZOOM,
+	TOOL_BANDAID
 };
 
 class cCanvas

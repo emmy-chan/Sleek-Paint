@@ -511,6 +511,95 @@ void applyBrushEffect(const ImVec2& lastMousePos, int x, int y, const ImU32& col
         ImGui::GetBackgroundDrawList()->AddLine(borderPoints[i], borderPoints[i + 1], IM_COL32_WHITE, 1.0f);
 }
 
+void applyBandAidBrushEffect(const ImVec2& lastMousePos, int x, int y) {
+    const float brushRadius = brush_size / 2.0f;
+    const int brushRadiusInt = static_cast<int>(brushRadius);
+
+    if (lastMousePos.x >= 0 && lastMousePos.y >= 0) {
+        const int lastX = static_cast<int>((lastMousePos.x - g_cam.x) / TILE_SIZE);
+        const int lastY = static_cast<int>((lastMousePos.y - g_cam.y) / TILE_SIZE);
+
+        const float distX = x - lastX, distY = y - lastY;
+        const float distance = glm::sqrt(distX * distX + distY * distY);
+
+        const int steps = static_cast<int>(distance) + 1;
+
+        for (int i = 0; i <= steps; ++i) {
+            const float t = static_cast<float>(i) / steps;
+            const int brushX = static_cast<int>(lastX + t * distX), brushY = static_cast<int>(lastY + t * distY);
+
+            for (int offsetY = -brushRadiusInt; offsetY <= brushRadiusInt; ++offsetY) {
+                for (int offsetX = -brushRadiusInt; offsetX <= brushRadiusInt; ++offsetX) {
+                    const float distanceFromCenter = glm::sqrt(offsetX * offsetX + offsetY * offsetY);
+                    if (distanceFromCenter <= brushRadius) {
+                        const int finalX = brushX + offsetX, finalY = brushY + offsetY;
+                        if (finalX >= 0 && finalX < g_canvas[g_cidx].width && finalY >= 0 && finalY < g_canvas[g_cidx].height) {
+                            selectedIndexes.insert(finalX + finalY * g_canvas[g_cidx].width);
+
+                            // Draw the brush effect with the same style as applyBrushEffect
+                            ImVec2 topLeft = { g_cam.x + finalX * TILE_SIZE, g_cam.y + finalY * TILE_SIZE };
+                            ImVec2 bottomRight = { topLeft.x + TILE_SIZE, topLeft.y + TILE_SIZE };
+
+                            ImGui::GetBackgroundDrawList()->AddRectFilled(topLeft, bottomRight, IM_COL32(255, 255, 255, 100)); // White overlay
+                            ImGui::GetBackgroundDrawList()->AddRect(topLeft, bottomRight, IM_COL32(0, 0, 0, 100)); // Black border
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+void applyBandAidEffect() {
+    if (selectedIndexes.empty()) return;
+
+    // Step 1: Collect surrounding colors of all selected tiles
+    std::vector<ImU32> surroundingColors;
+
+    for (auto index : selectedIndexes) {
+        const int x = index % g_canvas[g_cidx].width;
+        const int y = index / g_canvas[g_cidx].width;
+
+        for (int offsetY = -1; offsetY <= 1; ++offsetY) {
+            for (int offsetX = -1; offsetX <= 1; ++offsetX) {
+                const int sampleX = x + offsetX;
+                const int sampleY = y + offsetY;
+
+                if (sampleX >= 0 && sampleX < g_canvas[g_cidx].width && sampleY >= 0 && sampleY < g_canvas[g_cidx].height) {
+                    const ImU32 color = g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex][sampleY * g_canvas[g_cidx].width + sampleX];
+                    if (color != IM_COL32(0, 0, 0, 0) && selectedIndexes.find(sampleX + sampleY * g_canvas[g_cidx].width) == selectedIndexes.end()) {
+                        surroundingColors.push_back(color);
+                    }
+                }
+            }
+        }
+    }
+
+    if (surroundingColors.empty()) return;
+
+    int totalR = 0, totalG = 0, totalB = 0, totalA = 0;
+    for (const auto& color : surroundingColors) {
+        totalR += (color >> IM_COL32_R_SHIFT) & 0xFF;
+        totalG += (color >> IM_COL32_G_SHIFT) & 0xFF;
+        totalB += (color >> IM_COL32_B_SHIFT) & 0xFF;
+        totalA += (color >> IM_COL32_A_SHIFT) & 0xFF;
+    }
+
+    const int count = surroundingColors.size();
+    ImU32 blendedColor = IM_COL32(totalR / count, totalG / count, totalB / count, totalA / count);
+
+    // Step 3: Apply the blended color to the selected tiles
+    for (auto index : selectedIndexes) {
+        g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex][index] = blendedColor;
+    }
+
+    // Clear the selection after applying the effect
+    selectedIndexes.clear();
+
+    // Optionally, add the change to the history for undo functionality
+    g_canvas[g_cidx].UpdateCanvasHistory();
+}
+
 void cCanvas::UpdateZoom(float value) {
     // Zooming
     if (value != 0.f) {
@@ -848,6 +937,20 @@ void cCanvas::Editor() {
         case TOOL_ZOOM:
             if (g_util.MousePressed(0)) UpdateZoom(1.0f);
             else if (g_util.MousePressed(1)) UpdateZoom(-1.0f);
+
+            break;
+        case TOOL_BANDAID:
+            // Clear selected indexes
+            if (g_util.MousePressed(0)) selectedIndexes.clear();
+
+            if (ImGui::IsMouseDown(0)) {
+                applyBandAidBrushEffect(lastMousePos, x, y);
+            }
+
+            if (g_util.MouseReleased(0)) {
+                applyBandAidEffect();
+                selectedIndexes.clear();
+            }
 
             break;
         }

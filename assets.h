@@ -13,6 +13,7 @@ public:
     ID3D11ShaderResourceView* selection_texture = nullptr;
     ID3D11ShaderResourceView* bucket_texture = nullptr;
     ID3D11ShaderResourceView* wand_texture = nullptr;
+    ID3D11ShaderResourceView* bandaid_texture = nullptr;
 
     bool LoadTextureFromFile(const char* filename, ID3D11ShaderResourceView** out_srv, int* out_width, int* out_height);
     void LoadAssets();

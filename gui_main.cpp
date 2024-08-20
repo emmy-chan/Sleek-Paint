@@ -650,13 +650,15 @@ void cGUI::Display()
         if (ImGui::Button(ICON_FA_ERASER, ImVec2(25, 25))) paintToolSelected = 2;
         ImGui::PushStyleColor(ImGuiCol_Button, paintToolSelected == 3 ? panelActiveColor : panelColor);
         if (ImGui::Button(ICON_FA_EYE_DROPPER, ImVec2(25, 25))) paintToolSelected = 3;
+        ImGui::PushStyleColor(ImGuiCol_Button, paintToolSelected == TOOL_BANDAID ? panelActiveColor : panelColor);
+        if (ImGui::ImageButton((void*)g_assets.bandaid_texture, ImVec2(16, 16))) paintToolSelected = TOOL_BANDAID;
         ImGui::PushStyleColor(ImGuiCol_Button, paintToolSelected == TOOL_PAN ? panelActiveColor : panelColor);
         if (ImGui::Button(ICON_FA_HAND_POINTER, ImVec2(25, 25))) paintToolSelected = TOOL_PAN;
         ImGui::PushStyleColor(ImGuiCol_Button, paintToolSelected == TOOL_ZOOM ? panelActiveColor : panelColor);
         if (ImGui::Button(ICON_FA_SEARCH, ImVec2(25, 25))) paintToolSelected = TOOL_ZOOM;
 
         ImGui::PopStyleVar();
-        ImGui::PopStyleColor(11);
+        ImGui::PopStyleColor(12);
         ImGui::End();
     }
 
@@ -773,7 +775,7 @@ void cGUI::Display()
     }
 
     ImGui::Spacing(); ImGui::Separator();
-    if (paintToolSelected == TOOL_BRUSH || paintToolSelected == TOOL_ERASER) {
+    if (paintToolSelected == TOOL_BRUSH || paintToolSelected == TOOL_ERASER || paintToolSelected == TOOL_BANDAID) {
         ImGui::Text("Brush Size:");
         int temp_brush_size = static_cast<int>(brush_size);
 

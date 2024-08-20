@@ -593,6 +593,9 @@ void cAssets::LoadAssets()
     bool ret3 = LoadTextureFromFile("gfx/bucket2.png", &g_assets.bucket_texture, NULL, NULL);
     IM_ASSERT(ret3);
 
+    bool ret4 = LoadTextureFromFile("gfx/bandaid.png", &g_assets.bandaid_texture, NULL, NULL);
+    IM_ASSERT(ret4);
+
     cAssets assets;
     bitmapFont = new BitmapFont("gfx/fontsmall1.png", 6, 6, std::bind(&cAssets::LoadTextureFromFile, &assets, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4));
 }
