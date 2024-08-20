@@ -49,6 +49,7 @@ public:
 	std::vector<std::vector<ImU32>> tiles;
 	std::vector<uint8_t> layerVisibility;
 	std::vector<std::string> layerNames;
+	std::vector<uint8_t> layerOpacity;
 	uint16_t width;
 	uint16_t height;
 	void Initialize(const std::vector<ImU32>& initial_data = {}, const uint16_t& new_width = 0, const uint16_t& new_height = 0, const ImU32& color = IM_COL32(0, 0, 0, 0));

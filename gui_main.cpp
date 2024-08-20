@@ -762,6 +762,28 @@ void cGUI::Display()
             g_app.ui_state = std::make_unique<cUIStateRenameLayer>();
     }
 
+    int tempVal = g_canvas[g_cidx].layerOpacity[g_canvas[g_cidx].selLayerIndex];
+    if (ImGui::SliderInt("Opacity", &tempVal, 0, 255)) {
+        const int delta = tempVal - g_canvas[g_cidx].layerOpacity[g_canvas[g_cidx].selLayerIndex];
+        g_canvas[g_cidx].layerOpacity[g_canvas[g_cidx].selLayerIndex] = tempVal;
+
+        for (uint64_t y = 0; y < g_canvas[g_cidx].height; y++) {
+            for (uint64_t x = 0; x < g_canvas[g_cidx].width; x++) {
+                const uint64_t index = x + y * g_canvas[g_cidx].width;
+                ImU32& currentColor = g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex][index];
+
+                // Extract the alpha value
+                int alpha = (currentColor >> IM_COL32_A_SHIFT) & 0xFF;
+
+                // Modify the alpha value based on the delta
+                alpha = std::clamp(alpha + delta, 0, 255);
+
+                // Reconstruct the color with the new alpha value
+                currentColor = (currentColor & ~IM_COL32_A_MASK) | (alpha << IM_COL32_A_SHIFT);
+            }
+        }
+    }
+
     if (ImGui::Button("Add Layer", { ImGui::GetColumnWidth(), ImGui::GetFrameHeight() }))
         g_canvas[g_cidx].NewLayer();
 
@@ -770,6 +792,7 @@ void cGUI::Display()
             g_canvas[g_cidx].tiles.erase(g_canvas[g_cidx].tiles.begin() + g_canvas[g_cidx].selLayerIndex);
             g_canvas[g_cidx].layerVisibility.erase(g_canvas[g_cidx].layerVisibility.begin() + g_canvas[g_cidx].selLayerIndex);
             g_canvas[g_cidx].layerNames.erase(g_canvas[g_cidx].layerNames.begin() + g_canvas[g_cidx].selLayerIndex);
+            g_canvas[g_cidx].layerOpacity.erase(g_canvas[g_cidx].layerOpacity.begin() + g_canvas[g_cidx].selLayerIndex);
             if (g_canvas[g_cidx].selLayerIndex > 0) g_canvas[g_cidx].selLayerIndex--;
         }
     }
