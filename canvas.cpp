@@ -775,6 +775,8 @@ void cCanvas::Editor() {
                     for (int tileX = startTileX; tileX < endTileX; tileX++)
                         selectedIndexes.insert((uint16_t)(tileX + tileY * width));
                 }
+
+                if (selectedIndexes.size() <= 1) selectedIndexes.clear();
             }
 
             break;
