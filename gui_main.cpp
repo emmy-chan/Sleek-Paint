@@ -706,8 +706,15 @@ void cGUI::Display()
     ImGui::SetCursorPosY(ImGui::GetWindowHeight() * 0.5f);
     ImGui::PopStyleVar(2); ImGui::Spacing(); ImGui::Separator();
 
+    // Layer UI
     for (size_t i = 0; i < g_canvas[g_cidx].tiles.size(); i++) {
         const bool isSelected = (g_canvas[g_cidx].selLayerIndex == i);
+
+        // Set the text color based on the selection state
+        if (isSelected)
+            ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 1.0f, 1.0f, 1.0f)); // Full brightness for selected
+        else
+            ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.6f, 0.6f, 0.6f, 1.0f)); // Dimmed brightness for non-selected
 
         if (ImGui::Selectable(g_canvas[g_cidx].layerNames[i].c_str(), isSelected, 0, ImVec2(79, 0)))
             g_canvas[g_cidx].selLayerIndex = i;
@@ -760,6 +767,8 @@ void cGUI::Display()
         name = std::string(ICON_FA_EDIT) + "##" + std::to_string(i);
         if (ImGui::Button(name.c_str(), { 22, 22 }))
             g_app.ui_state = std::make_unique<cUIStateRenameLayer>();
+
+        ImGui::PopStyleColor();
     }
 
     int tempVal = g_canvas[g_cidx].layerOpacity[g_canvas[g_cidx].selLayerIndex];
