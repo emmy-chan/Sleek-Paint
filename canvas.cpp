@@ -668,30 +668,59 @@ void cCanvas::Editor() {
         UpdateZoom(ImGui::GetIO().MouseWheel * 4.0f);
     }
 
-    for (float y = 0; y < height; y++) {
-        for (float x = 0; x < width; x++) {
-            const uint64_t index = static_cast<uint64_t>(x) + static_cast<uint64_t>(y) * width;
+    // Define the dimensions of the UI elements
+    const int leftPanelWidth = 197;
+    const int topMenuBarHeight = 20;
+    const int rightToolbarWidth = 60;
+    const int bottomStatusBarHeight = 20;
 
-            // Draw grid background for the base layer
-            const ImU32 col = (static_cast<int>(x) + static_cast<int>(y)) % 2 == 0 ? IM_COL32(110, 110, 110, 255) : IM_COL32(175, 175, 175, 255);
+    // Calculate the actual drawing area
+    const float drawingAreaX = g_cam.x + leftPanelWidth;
+    const float drawingAreaY = g_cam.y + topMenuBarHeight;
+    const float drawingAreaWidth = io.DisplaySize.x - leftPanelWidth - rightToolbarWidth;
+    const float drawingAreaHeight = io.DisplaySize.y - topMenuBarHeight - bottomStatusBarHeight;
+
+    // Calculate the visible range for x and y, based on the adjusted drawing area
+    int startX = static_cast<int>(std::floor(drawingAreaX / TILE_SIZE));
+    int endX = static_cast<int>(std::ceil((drawingAreaX + drawingAreaWidth) / TILE_SIZE));
+
+    int startY = static_cast<int>(std::floor(drawingAreaY / TILE_SIZE));
+    int endY = static_cast<int>(std::ceil((drawingAreaY + drawingAreaHeight) / TILE_SIZE));
+
+    // Ensure start and end indices are within valid bounds of the canvas
+    startX = std::max(startX, 0);
+    endX = std::min(endX, (int)g_canvas[g_cidx].width);
+
+    startY = std::max(startY, 0);
+    endY = std::min(endY, (int)g_canvas[g_cidx].height);
+
+    for (int y = startY; y < endY; y++) {
+        for (int x = startX; x < endX; x++) {
+            const uint64_t index = static_cast<uint64_t>(x) + static_cast<uint64_t>(y) * g_canvas[g_cidx].width;
+
+            // Calculate the position of the tile in the window, relative to the camera
+            const float tilePosX = x * TILE_SIZE - g_cam.x;
+            const float tilePosY = y * TILE_SIZE - g_cam.y;
+
+            // Draw the background grid
+            const ImU32 col = (x + y) % 2 == 0 ? IM_COL32(110, 110, 110, 255) : IM_COL32(175, 175, 175, 255);
             d.AddRectFilled(
-                ImVec2(g_cam.x + x * TILE_SIZE, g_cam.y + y * TILE_SIZE),
-                ImVec2(g_cam.x + x * TILE_SIZE + TILE_SIZE, g_cam.y + y * TILE_SIZE + TILE_SIZE),
+                ImVec2(tilePosX, tilePosY),
+                ImVec2(tilePosX + TILE_SIZE, tilePosY + TILE_SIZE),
                 col
             );
 
-            // Draw each layer from bottom to top, including layers after the selected layer index
+            // Draw each layer from bottom to top
             for (size_t layer = 0; layer < g_canvas[g_cidx].tiles.size(); layer++) {
-                // Check if the layer is visible
                 if (!g_canvas[g_cidx].layerVisibility[layer]) continue;
 
                 const ImU32 tileColor = g_canvas[g_cidx].tiles[layer][index];
 
-                // Check for transparency in the tile color
+                // Draw the tile if it has opacity
                 if (((tileColor >> 24) & 0xFF) > 0) {
                     d.AddRectFilled(
-                        ImVec2(g_cam.x + x * TILE_SIZE, g_cam.y + y * TILE_SIZE),
-                        ImVec2(g_cam.x + x * TILE_SIZE + TILE_SIZE, g_cam.y + y * TILE_SIZE + TILE_SIZE),
+                        ImVec2(tilePosX, tilePosY),
+                        ImVec2(tilePosX + TILE_SIZE, tilePosY + TILE_SIZE),
                         tileColor
                     );
                 }
