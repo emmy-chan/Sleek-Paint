@@ -800,10 +800,16 @@ void cGUI::Display()
         ImGui::PopStyleColor();
     }
 
-    int tempVal = g_canvas[g_cidx].layerOpacity[g_canvas[g_cidx].selLayerIndex];
-    if (ImGui::SliderInt("Opacity", &tempVal, 0, 255)) {
-        const int delta = tempVal - g_canvas[g_cidx].layerOpacity[g_canvas[g_cidx].selLayerIndex];
-        g_canvas[g_cidx].layerOpacity[g_canvas[g_cidx].selLayerIndex] = tempVal;
+    int tempVal = g_canvas[g_cidx].layerOpacity[g_canvas[g_cidx].selLayerIndex] * 100 / 255;
+    if (ImGui::SliderInt("Opacity", &tempVal, 0, 100)) {
+        // Scale the slider value from 0-100 to 0-255
+        const int16_t scaledVal = tempVal * 255 / 100;
+
+        // Calculate the delta in the 0-255 range
+        const int16_t delta = scaledVal - g_canvas[g_cidx].layerOpacity[g_canvas[g_cidx].selLayerIndex];
+
+        // Update the layer's opacity with the scaled value
+        g_canvas[g_cidx].layerOpacity[g_canvas[g_cidx].selLayerIndex] = scaledVal;
 
         for (uint64_t y = 0; y < g_canvas[g_cidx].height; y++) {
             for (uint64_t x = 0; x < g_canvas[g_cidx].width; x++) {
@@ -811,7 +817,7 @@ void cGUI::Display()
                 ImU32& currentColor = g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex][index];
 
                 // Extract the alpha value
-                int alpha = (currentColor >> IM_COL32_A_SHIFT) & 0xFF;
+                int16_t alpha = (currentColor >> IM_COL32_A_SHIFT) & 0xFF;
 
                 // Modify the alpha value based on the delta
                 alpha = std::clamp(alpha + delta, 0, 255);
