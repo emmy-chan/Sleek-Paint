@@ -625,40 +625,65 @@ void cGUI::Display()
 
         ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, { 4.5f, 4.5f });
         ImGui::PushStyleVar(ImGuiStyleVar_ButtonTextAlign, { 0.7f, 1.f });
+        
         ImGui::PushStyleColor(ImGuiCol_Button, paintToolSelected == 5 ? panelActiveColor : panelColor);
         if (ImGui::ImageButton((void*)g_assets.wand_texture, ImVec2(16, 16))) paintToolSelected = 5;
-        ImGui::PopStyleColor();
+        if (ImGui::IsItemHovered()) ImGui::SetTooltip("Magic Wand Tool");
+
         ImGui::PushStyleColor(ImGuiCol_Button, paintToolSelected == 4 ? panelActiveColor : panelColor);
         if (ImGui::ImageButton((void*)g_assets.selection_texture, ImVec2(16, 16))) paintToolSelected = 4;
-        ImGui::PopStyleVar();
-        ImGui::PopStyleColor();
+        if (ImGui::IsItemHovered()) ImGui::SetTooltip("Selection Tool");
+
         ImGui::PushStyleColor(ImGuiCol_Button, paintToolSelected == 6 ? panelActiveColor : panelColor);
         if (ImGui::Button(ICON_FA_MOUSE_POINTER, ImVec2(25, 25))) paintToolSelected = 6;
+        if (ImGui::IsItemHovered()) ImGui::SetTooltip("Pointer Tool");
+
         ImGui::PushStyleColor(ImGuiCol_Button, paintToolSelected == 0 ? panelActiveColor : panelColor);
         if (ImGui::Button(ICON_FA_PENCIL, ImVec2(25, 25))) paintToolSelected = 0;
+        if (ImGui::IsItemHovered()) ImGui::SetTooltip("Pencil Tool");
+
         ImGui::PushStyleColor(ImGuiCol_Button, paintToolSelected == 1 ? panelActiveColor : panelColor);
-        if (ImGui::ImageButton((void*)g_assets.bucket_texture, ImVec2(16, 16))) paintToolSelected = 1; //u8"\uf573"
+        if (ImGui::ImageButton((void*)g_assets.bucket_texture, ImVec2(16, 16))) paintToolSelected = 1;
+        if (ImGui::IsItemHovered()) ImGui::SetTooltip("Bucket Tool");
+
         ImGui::PushStyleColor(ImGuiCol_Button, paintToolSelected == 7 ? panelActiveColor : panelColor);
         if (ImGui::Button("/", ImVec2(25, 25))) paintToolSelected = 7;
+        if (ImGui::IsItemHovered()) ImGui::SetTooltip("Line Tool");
+
         ImGui::PushStyleColor(ImGuiCol_Button, paintToolSelected == TOOL_TEXT ? panelActiveColor : panelColor);
         if (ImGui::Button(ICON_FA_FONT, ImVec2(25, 25))) paintToolSelected = TOOL_TEXT;
+        if (ImGui::IsItemHovered()) ImGui::SetTooltip("Text Tool");
+
         ImGui::PushStyleColor(ImGuiCol_Button, paintToolSelected == TOOL_SQUARE ? panelActiveColor : panelColor);
         if (ImGui::Button(ICON_FA_SQUARE, ImVec2(25, 25))) paintToolSelected = TOOL_SQUARE;
+        if (ImGui::IsItemHovered()) ImGui::SetTooltip("Square Tool");
+
         ImGui::PushStyleColor(ImGuiCol_Button, paintToolSelected == TOOL_ELIPSE ? panelActiveColor : panelColor);
         if (ImGui::Button(ICON_FA_CIRCLE, ImVec2(25, 25))) paintToolSelected = TOOL_ELIPSE;
+        if (ImGui::IsItemHovered()) ImGui::SetTooltip("Ellipse Tool");
+
         ImGui::PushStyleColor(ImGuiCol_Button, paintToolSelected == 2 ? panelActiveColor : panelColor);
         if (ImGui::Button(ICON_FA_ERASER, ImVec2(25, 25))) paintToolSelected = 2;
+        if (ImGui::IsItemHovered()) ImGui::SetTooltip("Eraser Tool");
+
         ImGui::PushStyleColor(ImGuiCol_Button, paintToolSelected == 3 ? panelActiveColor : panelColor);
         if (ImGui::Button(ICON_FA_EYE_DROPPER, ImVec2(25, 25))) paintToolSelected = 3;
+        if (ImGui::IsItemHovered()) ImGui::SetTooltip("Eyedropper Tool");
+
         ImGui::PushStyleColor(ImGuiCol_Button, paintToolSelected == TOOL_BANDAID ? panelActiveColor : panelColor);
         if (ImGui::ImageButton((void*)g_assets.bandaid_texture, ImVec2(16, 16))) paintToolSelected = TOOL_BANDAID;
+        if (ImGui::IsItemHovered()) ImGui::SetTooltip("Band-Aid Tool");
+
         ImGui::PushStyleColor(ImGuiCol_Button, paintToolSelected == TOOL_PAN ? panelActiveColor : panelColor);
         if (ImGui::Button(ICON_FA_HAND_POINTER, ImVec2(25, 25))) paintToolSelected = TOOL_PAN;
+        if (ImGui::IsItemHovered()) ImGui::SetTooltip("Pan Tool");
+
         ImGui::PushStyleColor(ImGuiCol_Button, paintToolSelected == TOOL_ZOOM ? panelActiveColor : panelColor);
         if (ImGui::Button(ICON_FA_SEARCH, ImVec2(25, 25))) paintToolSelected = TOOL_ZOOM;
+        if (ImGui::IsItemHovered()) ImGui::SetTooltip("Zoom Tool");
 
+        ImGui::PopStyleColor(13);
         ImGui::PopStyleVar();
-        ImGui::PopStyleColor(12);
         ImGui::End();
     }
 
