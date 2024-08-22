@@ -668,87 +668,89 @@ void cCanvas::Editor() {
         UpdateZoom(ImGui::GetIO().MouseWheel * 4.0f);
     }
 
-    // Define the dimensions of the UI elements
-    const int leftPanelWidth = 197;
-    const int topMenuBarHeight = 20;
-    const int rightToolbarWidth = 60;
-    const int bottomStatusBarHeight = 20;
+    {
+        // Define the dimensions of the UI elements
+        const int leftPanelWidth = 197;
+        const int topMenuBarHeight = 20;
+        const int rightToolbarWidth = 60;
+        const int bottomStatusBarHeight = 20;
 
-    // Calculate the actual drawing area
-    const float drawingAreaX = -g_cam.x + leftPanelWidth;
-    const float drawingAreaY = -g_cam.y + topMenuBarHeight;
-    const float drawingAreaWidth = io.DisplaySize.x - leftPanelWidth - rightToolbarWidth;
-    const float drawingAreaHeight = io.DisplaySize.y - topMenuBarHeight - bottomStatusBarHeight;
+        // Calculate the actual drawing area
+        const float drawingAreaX = -g_cam.x + leftPanelWidth;
+        const float drawingAreaY = -g_cam.y + topMenuBarHeight;
+        const float drawingAreaWidth = io.DisplaySize.x - leftPanelWidth - rightToolbarWidth;
+        const float drawingAreaHeight = io.DisplaySize.y - topMenuBarHeight - bottomStatusBarHeight;
 
-    // Calculate the visible range for x and y, based on the adjusted drawing area
-    int startX = static_cast<int>(std::floor(drawingAreaX / TILE_SIZE));
-    int endX = static_cast<int>(std::ceil((drawingAreaX + drawingAreaWidth) / TILE_SIZE));
+        // Calculate the visible range for x and y, based on the adjusted drawing area
+        int startX = static_cast<int>(std::floor(drawingAreaX / TILE_SIZE));
+        int endX = static_cast<int>(std::ceil((drawingAreaX + drawingAreaWidth) / TILE_SIZE));
 
-    int startY = static_cast<int>(std::floor(drawingAreaY / TILE_SIZE));
-    int endY = static_cast<int>(std::ceil((drawingAreaY + drawingAreaHeight) / TILE_SIZE));
+        int startY = static_cast<int>(std::floor(drawingAreaY / TILE_SIZE));
+        int endY = static_cast<int>(std::ceil((drawingAreaY + drawingAreaHeight) / TILE_SIZE));
 
-    // Ensure start and end indices are within valid bounds of the canvas
-    startX = std::max(startX, 0);
-    endX = std::min(endX, (int)g_canvas[g_cidx].width);
+        // Ensure start and end indices are within valid bounds of the canvas
+        startX = std::max(startX, 0);
+        endX = std::min(endX, (int)g_canvas[g_cidx].width);
 
-    startY = std::max(startY, 0);
-    endY = std::min(endY, (int)g_canvas[g_cidx].height);
+        startY = std::max(startY, 0);
+        endY = std::min(endY, (int)g_canvas[g_cidx].height);
 
-    for (int y = startY; y < endY; y++) {
-        for (int x = startX; x < endX; x++) {
-            const uint64_t index = static_cast<uint64_t>(x) + static_cast<uint64_t>(y) * g_canvas[g_cidx].width;
+        for (int y = startY; y < endY; y++) {
+            for (int x = startX; x < endX; x++) {
+                const uint64_t index = static_cast<uint64_t>(x) + static_cast<uint64_t>(y) * g_canvas[g_cidx].width;
 
-            // Calculate the position of the tile in the window, relative to the camera
-            const float tilePosX = x * TILE_SIZE + g_cam.x;
-            const float tilePosY = y * TILE_SIZE + g_cam.y;
+                // Calculate the position of the tile in the window, relative to the camera
+                const float tilePosX = x * TILE_SIZE + g_cam.x;
+                const float tilePosY = y * TILE_SIZE + g_cam.y;
 
-            // Check if any visible layer has a solid color covering this tile
-            bool isCoveredBySolidColor = false;
-            for (size_t layer = 0; layer < g_canvas[g_cidx].tiles.size(); layer++) {
-                if (!g_canvas[g_cidx].layerVisibility[layer]) continue;
+                // Check if any visible layer has a solid color covering this tile
+                bool isCoveredBySolidColor = false;
+                for (size_t layer = 0; layer < g_canvas[g_cidx].tiles.size(); layer++) {
+                    if (!g_canvas[g_cidx].layerVisibility[layer]) continue;
 
-                const ImU32 tileColor = g_canvas[g_cidx].tiles[layer][index];
-                if (((tileColor >> 24) & 0xFF) == 255) { // If the tile has opacity
-                    isCoveredBySolidColor = true;
-                    break;
-                }
-            }
-
-            // Draw the background grid only if it is not covered by any solid color
-            if (!isCoveredBySolidColor) {
-                const ImU32 col = (x + y) % 2 == 0 ? IM_COL32(110, 110, 110, 255) : IM_COL32(175, 175, 175, 255);
-                d.AddRectFilled(
-                    ImVec2(tilePosX, tilePosY),
-                    ImVec2(tilePosX + TILE_SIZE, tilePosY + TILE_SIZE),
-                    col
-                );
-            }
-
-            // Draw each layer from bottom to top
-            for (size_t layer = 0; layer < g_canvas[g_cidx].tiles.size(); layer++) {
-                if (!g_canvas[g_cidx].layerVisibility[layer]) continue;
-
-                const ImU32 tileColor = g_canvas[g_cidx].tiles[layer][index];
-
-                // Check if there is a solid color in any layer above the current one
-                bool isCovered = false;
-                for (size_t upperLayer = layer + 1; upperLayer < g_canvas[g_cidx].tiles.size(); upperLayer++) {
-                    if (!g_canvas[g_cidx].layerVisibility[upperLayer]) continue;
-
-                    const ImU32 upperTileColor = g_canvas[g_cidx].tiles[upperLayer][index];
-                    if (((upperTileColor >> 24) & 0xFF) == 255) { // If the upper layer tile has opacity
-                        isCovered = true;
+                    const ImU32 tileColor = g_canvas[g_cidx].tiles[layer][index];
+                    if (((tileColor >> 24) & 0xFF) == 255) { // If the tile has opacity
+                        isCoveredBySolidColor = true;
                         break;
                     }
                 }
 
-                // Draw the tile if it has opacity and is not covered by a solid color above
-                if (((tileColor >> 24) & 0xFF) > 0 && !isCovered) {
+                // Draw the background grid only if it is not covered by any solid color
+                if (!isCoveredBySolidColor) {
+                    const ImU32 col = (x + y) % 2 == 0 ? IM_COL32(110, 110, 110, 255) : IM_COL32(175, 175, 175, 255);
                     d.AddRectFilled(
                         ImVec2(tilePosX, tilePosY),
                         ImVec2(tilePosX + TILE_SIZE, tilePosY + TILE_SIZE),
-                        tileColor
+                        col
                     );
+                }
+
+                // Draw each layer from bottom to top
+                for (size_t layer = 0; layer < g_canvas[g_cidx].tiles.size(); layer++) {
+                    if (!g_canvas[g_cidx].layerVisibility[layer]) continue;
+
+                    const ImU32 tileColor = g_canvas[g_cidx].tiles[layer][index];
+
+                    // Check if there is a solid color in any layer above the current one
+                    bool isCovered = false;
+                    for (size_t upperLayer = layer + 1; upperLayer < g_canvas[g_cidx].tiles.size(); upperLayer++) {
+                        if (!g_canvas[g_cidx].layerVisibility[upperLayer]) continue;
+
+                        const ImU32 upperTileColor = g_canvas[g_cidx].tiles[upperLayer][index];
+                        if (((upperTileColor >> 24) & 0xFF) == 255) { // If the upper layer tile has opacity
+                            isCovered = true;
+                            break;
+                        }
+                    }
+
+                    // Draw the tile if it has opacity and is not covered by a solid color above
+                    if (((tileColor >> 24) & 0xFF) > 0 && !isCovered) {
+                        d.AddRectFilled(
+                            ImVec2(tilePosX, tilePosY),
+                            ImVec2(tilePosX + TILE_SIZE, tilePosY + TILE_SIZE),
+                            tileColor
+                        );
+                    }
                 }
             }
         }
