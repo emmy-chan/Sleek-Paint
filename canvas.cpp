@@ -702,13 +702,27 @@ void cCanvas::Editor() {
             const float tilePosX = x * TILE_SIZE + g_cam.x;
             const float tilePosY = y * TILE_SIZE + g_cam.y;
 
-            // Draw the background grid
-            const ImU32 col = (x + y) % 2 == 0 ? IM_COL32(110, 110, 110, 255) : IM_COL32(175, 175, 175, 255);
-            d.AddRectFilled(
-                ImVec2(tilePosX, tilePosY),
-                ImVec2(tilePosX + TILE_SIZE, tilePosY + TILE_SIZE),
-                col
-            );
+            // Check if any visible layer has a solid color covering this tile
+            bool isCoveredBySolidColor = false;
+            for (size_t layer = 0; layer < g_canvas[g_cidx].tiles.size(); layer++) {
+                if (!g_canvas[g_cidx].layerVisibility[layer]) continue;
+
+                const ImU32 tileColor = g_canvas[g_cidx].tiles[layer][index];
+                if (((tileColor >> 24) & 0xFF) == 255) { // If the tile has opacity
+                    isCoveredBySolidColor = true;
+                    break;
+                }
+            }
+
+            // Draw the background grid only if it is not covered by any solid color
+            if (!isCoveredBySolidColor) {
+                const ImU32 col = (x + y) % 2 == 0 ? IM_COL32(110, 110, 110, 255) : IM_COL32(175, 175, 175, 255);
+                d.AddRectFilled(
+                    ImVec2(tilePosX, tilePosY),
+                    ImVec2(tilePosX + TILE_SIZE, tilePosY + TILE_SIZE),
+                    col
+                );
+            }
 
             // Draw each layer from bottom to top
             for (size_t layer = 0; layer < g_canvas[g_cidx].tiles.size(); layer++) {
@@ -716,8 +730,20 @@ void cCanvas::Editor() {
 
                 const ImU32 tileColor = g_canvas[g_cidx].tiles[layer][index];
 
-                // Draw the tile if it has opacity
-                if (((tileColor >> 24) & 0xFF) > 0) {
+                // Check if there is a solid color in any layer above the current one
+                bool isCovered = false;
+                for (size_t upperLayer = layer + 1; upperLayer < g_canvas[g_cidx].tiles.size(); upperLayer++) {
+                    if (!g_canvas[g_cidx].layerVisibility[upperLayer]) continue;
+
+                    const ImU32 upperTileColor = g_canvas[g_cidx].tiles[upperLayer][index];
+                    if (((upperTileColor >> 24) & 0xFF) == 255) { // If the upper layer tile has opacity
+                        isCovered = true;
+                        break;
+                    }
+                }
+
+                // Draw the tile if it has opacity and is not covered by a solid color above
+                if (((tileColor >> 24) & 0xFF) > 0 && !isCovered) {
                     d.AddRectFilled(
                         ImVec2(tilePosX, tilePosY),
                         ImVec2(tilePosX + TILE_SIZE, tilePosY + TILE_SIZE),
