@@ -698,37 +698,32 @@ void cGUI::Display()
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, { 0, 0 });
 
     // Child window for color buttons with scrollbar
-    ImGui::BeginChild("##ColorButtons", ImVec2(0, io.DisplaySize.y * 0.25f), false);
-    const bool scrollbarVisible = ImGui::GetScrollMaxY() > 0.0f;
+    ImGui::BeginChild("##ColorButtons", ImVec2(0, io.DisplaySize.y * 0.25f), false); // Enable scrollbar
 
-    // Main color buttons rendering loop
+    // Calculate the number of buttons that can fit in one row
+    const float buttonSize = 20.0f;
+    const float itemSpacing = ImGui::GetStyle().ItemSpacing.x;
+    const float totalWidth = ImGui::GetContentRegionAvail().x;
+    const int buttonsPerRow = static_cast<int>(totalWidth / (buttonSize + itemSpacing));
+
     for (uint16_t i = 2; i < g_canvas[g_cidx].myCols.size(); i++) {
         const std::string id = "Color " + std::to_string(i + 1);
-        const uint8_t vis = scrollbarVisible ? 8 : 9;
 
-        if ((i - 2) % vis != 0) ImGui::SameLine();
+        // Start a new row if necessary
+        if ((i - 2) % buttonsPerRow != 0)
+            ImGui::SameLine();
 
         ImGui::PushStyleColor(ImGuiCol_FrameBg, g_canvas[g_cidx].selColIndex == i ? ImVec4(1.0f, 1.0f, 1.0f, 1.f) : ImVec4(0.05f, 0.05f, 0.05f, 1));
 
-        if (ImGui::ColorButton(id.c_str(), ImGui::ColorConvertU32ToFloat4(g_canvas[g_cidx].myCols[i]), NULL, { 20, 20 }))
+        if (ImGui::ColorButton(id.c_str(), ImGui::ColorConvertU32ToFloat4(g_canvas[g_cidx].myCols[i]), NULL, { buttonSize, buttonSize }))
             g_canvas[g_cidx].selColIndex = i;
 
         ImGui::PopStyleColor();
     }
 
-    if (ImGui::Button("-")) {
-        g_canvas[g_cidx].myCols.erase(g_canvas[g_cidx].myCols.begin() + g_canvas[g_cidx].selColIndex);
-        if (g_canvas[g_cidx].selColIndex > 0) g_canvas[g_cidx].selColIndex--;
-    }
-
-    ImGui::SameLine();
-
-    if (ImGui::Button("+"))
-        g_canvas[g_cidx].myCols.push_back(ImColor(0, 0, 0, 255));
-
     ImGui::EndChild();
 
-    ImGui::SetCursorPosY(ImGui::GetWindowHeight() * 0.5f);
+    ImGui::SetCursorPosY(ImGui::GetWindowHeight() * 0.475f);
     ImGui::PopStyleVar(2); ImGui::Spacing(); ImGui::Separator();
 
     // Layer UI
