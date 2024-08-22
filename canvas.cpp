@@ -675,8 +675,8 @@ void cCanvas::Editor() {
     const int bottomStatusBarHeight = 20;
 
     // Calculate the actual drawing area
-    const float drawingAreaX = g_cam.x + leftPanelWidth;
-    const float drawingAreaY = g_cam.y + topMenuBarHeight;
+    const float drawingAreaX = -g_cam.x + leftPanelWidth;
+    const float drawingAreaY = -g_cam.y + topMenuBarHeight;
     const float drawingAreaWidth = io.DisplaySize.x - leftPanelWidth - rightToolbarWidth;
     const float drawingAreaHeight = io.DisplaySize.y - topMenuBarHeight - bottomStatusBarHeight;
 
@@ -699,8 +699,8 @@ void cCanvas::Editor() {
             const uint64_t index = static_cast<uint64_t>(x) + static_cast<uint64_t>(y) * g_canvas[g_cidx].width;
 
             // Calculate the position of the tile in the window, relative to the camera
-            const float tilePosX = x * TILE_SIZE - g_cam.x;
-            const float tilePosY = y * TILE_SIZE - g_cam.y;
+            const float tilePosX = x * TILE_SIZE + g_cam.x;
+            const float tilePosY = y * TILE_SIZE + g_cam.y;
 
             // Draw the background grid
             const ImU32 col = (x + y) % 2 == 0 ? IM_COL32(110, 110, 110, 255) : IM_COL32(175, 175, 175, 255);
