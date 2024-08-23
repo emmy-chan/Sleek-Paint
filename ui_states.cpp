@@ -130,6 +130,7 @@ std::string SerializeCanvas(const cCanvas& canvas) {
         oss << "\n";
         oss << canvas.layerNames[i] << "\n";
         oss << canvas.layerVisibility[i] << "\n";
+        oss << canvas.layerOpacity[i] << "\n";
     }
 
     return oss.str();
@@ -487,6 +488,7 @@ cCanvas DeserializeCanvas(const std::string& data) {
     canvas.tiles.resize(layerCount);
     canvas.layerNames.resize(layerCount);
     canvas.layerVisibility.resize(layerCount);
+    canvas.layerOpacity.resize(layerCount);
 
     // Deserialize each layer's data
     for (size_t i = 0; i < layerCount; ++i) {
@@ -507,6 +509,7 @@ cCanvas DeserializeCanvas(const std::string& data) {
         iss >> std::ws; // Skip any whitespace
         std::getline(iss, canvas.layerNames[i]);
         iss >> canvas.layerVisibility[i];
+        iss >> canvas.layerOpacity[i];
     }
 
     return canvas;
