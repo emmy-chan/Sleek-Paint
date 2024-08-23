@@ -717,23 +717,19 @@ void cGUI::Display()
         // Square and Ellipse Tool with Popup
         void* shapeIcon = nullptr;
 
-        if (paintToolSelected == TOOL_SQUARE) {
+        if (paintToolSelected == TOOL_SQUARE)
             shapeIcon = (void*)ICON_FA_SQUARE;  // Show square icon when square tool is selected
-        }
-        else if (paintToolSelected == TOOL_ELIPSE) {
+        else if (paintToolSelected == TOOL_ELIPSE)
             shapeIcon = (void*)ICON_FA_CIRCLE;  // Show ellipse icon when ellipse tool is selected
-        }
-        else {
+        else
             shapeIcon = (void*)ICON_FA_SQUARE;  // Show rectangle (square) icon by default when no tool is selected
-        }
 
         ImGui::PushStyleColor(ImGuiCol_Button,
             (paintToolSelected == TOOL_SQUARE || paintToolSelected == TOOL_ELIPSE) ? panelActiveColor : panelColor);
 
         // Display the current shape icon
-        if (ImGui::Button((const char*)shapeIcon, ImVec2(25, 25))) {
+        if (ImGui::Button((const char*)shapeIcon, ImVec2(25, 25)))
             ImGui::OpenPopup("Shape Tool Popup");
-        }
 
         if (ImGui::IsItemHovered()) ImGui::SetTooltip("Shape Tools");
         ImGui::PopStyleColor();

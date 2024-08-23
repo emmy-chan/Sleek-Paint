@@ -1065,7 +1065,12 @@ void cCanvas::Editor() {
 
             break;
         case TOOL_FREEFORM_SELECT:
+            if (io.MouseDown[1]) {
+                freeformPath.clear(); selectedIndexes.clear();
+            }
+
             if (g_util.MousePressed(0)) {
+                selectedIndexes.clear();
                 freeformPath.clear();
                 freeformPath.push_back(ImGui::GetMousePos());
             }
