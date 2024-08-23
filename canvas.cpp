@@ -1054,9 +1054,7 @@ void cCanvas::Editor() {
             // Clear selected indexes
             if (g_util.MousePressed(0)) selectedIndexes.clear();
 
-            if (ImGui::IsMouseDown(0)) {
-                applyBandAidBrushEffect(lastMousePos, x, y);
-            }
+            if (ImGui::IsMouseDown(0)) applyBandAidBrushEffect(lastMousePos, x, y);
 
             if (g_util.MouseReleased(0)) {
                 applyBandAidEffect();
@@ -1075,9 +1073,8 @@ void cCanvas::Editor() {
                 freeformPath.push_back(ImGui::GetMousePos());
             }
 
-            if (ImGui::IsMouseDown(0)) {
+            if (ImGui::IsMouseDown(0))
                 freeformPath.push_back(ImGui::GetMousePos());
-            }
 
             if (g_util.MouseReleased(0)) {
                 // Finalize the freeform selection

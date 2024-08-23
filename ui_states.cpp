@@ -277,7 +277,7 @@ void cUIStateNewProject::Update()
         ImGui::Text("Background:");
         static int bg_option = 0;
         ImGui::PushItemWidth(ImGui::GetContentRegionMax().x - 8);
-        ImGui::Combo("##Background", &bg_option, " Transparent\0 Black\0 White");
+        ImGui::Combo("##Background", &bg_option, " Transparent\0 White\0 Black");
         ImGui::PopItemWidth();
 
         ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, { 1, 1 });
@@ -307,11 +307,11 @@ void cUIStateNewProject::Update()
                 case 0: // Transparent
                     color = IM_COL32(0, 0, 0, 0);
                     break;
-                case 1: // Black
-                    color = IM_COL32(0, 0, 0, 255);
-                    break;
-                case 2: // White
+                case 1: // White
                     color = IM_COL32(255, 255, 255, 255);
+                    break;
+                case 2: // Black
+                    color = IM_COL32(0, 0, 0, 255);
                     break;
             }
             
@@ -497,9 +497,8 @@ cCanvas DeserializeCanvas(const std::string& data) {
         std::cout << "Layer " << i << " size: " << layerSize << std::endl;
 
         // Check if layerSize is reasonable
-        if (layerSize > 1000000) { // Arbitrary large value to catch potential errors
+        if (layerSize > 1000000) // Arbitrary large value to catch potential errors
             throw std::runtime_error("Unreasonable layer size detected");
-        }
 
         canvas.tiles[i].resize(layerSize);
 
