@@ -443,15 +443,12 @@ void applyBrushEffect(const ImVec2& lastMousePos, int x, int y, const ImU32& col
             if (selectedIndexes.empty() || selectedIndexes.find((uint64_t)brushX + (uint64_t)brushY * g_canvas[g_cidx].width) != selectedIndexes.end()) {
                 for (int offsetY = -brushRadiusInt; offsetY <= brushRadiusInt; ++offsetY) {
                     for (int offsetX = -brushRadiusInt; offsetX <= brushRadiusInt; ++offsetX) {
-                        const float distance = glm::sqrt(offsetX * offsetX + offsetY * offsetY);
-                        if (distance <= brushRadius) {
-                            const int finalX = brushX + offsetX, finalY = brushY + offsetY;
-                            if (finalX >= 0 && finalX < g_canvas[g_cidx].width && finalY >= 0 && finalY < g_canvas[g_cidx].height) {
-                                if (ImGui::GetIO().MouseDown[0])
-                                    g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex][finalX + finalY * g_canvas[g_cidx].width] = col;
-                                else if (ImGui::GetIO().MouseDown[1])
-                                    g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex][finalX + finalY * g_canvas[g_cidx].width] = IM_COL32(0, 0, 0, 0);
-                            }
+                        const int finalX = brushX + offsetX, finalY = brushY + offsetY;
+                        if (finalX >= 0 && finalX < g_canvas[g_cidx].width && finalY >= 0 && finalY < g_canvas[g_cidx].height) {
+                            if (ImGui::GetIO().MouseDown[0])
+                                g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex][finalX + finalY * g_canvas[g_cidx].width] = col;
+                            else if (ImGui::GetIO().MouseDown[1])
+                                g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex][finalX + finalY * g_canvas[g_cidx].width] = IM_COL32(0, 0, 0, 0);
                         }
                     }
                 }
@@ -463,16 +460,13 @@ void applyBrushEffect(const ImVec2& lastMousePos, int x, int y, const ImU32& col
     std::unordered_set<uint64_t> brushIndexes;
     for (int offsetY = -brushRadiusInt; offsetY <= brushRadiusInt; ++offsetY) {
         for (int offsetX = -brushRadiusInt; offsetX <= brushRadiusInt; ++offsetX) {
-            const float distance = glm::sqrt(offsetX * offsetX + offsetY * offsetY);
-            if (distance <= brushRadius) {
-                const int brushX = x + offsetX, brushY = y + offsetY;
-                if (brushX >= 0 && brushX < g_canvas[g_cidx].width && brushY >= 0 && brushY < g_canvas[g_cidx].height) {
-                    ImGui::GetBackgroundDrawList()->AddRectFilled({ g_cam.x + brushX * TILE_SIZE, g_cam.y + brushY * TILE_SIZE },
-                        { g_cam.x + brushX * TILE_SIZE + TILE_SIZE, g_cam.y + brushY * TILE_SIZE + TILE_SIZE },
-                        col);
+            const int brushX = x + offsetX, brushY = y + offsetY;
+            if (brushX >= 0 && brushX < g_canvas[g_cidx].width && brushY >= 0 && brushY < g_canvas[g_cidx].height) {
+                ImGui::GetBackgroundDrawList()->AddRectFilled({ g_cam.x + brushX * TILE_SIZE, g_cam.y + brushY * TILE_SIZE },
+                    { g_cam.x + brushX * TILE_SIZE + TILE_SIZE, g_cam.y + brushY * TILE_SIZE + TILE_SIZE },
+                    col);
 
-                    brushIndexes.insert(brushX + brushY * g_canvas[g_cidx].width);
-                }
+                brushIndexes.insert(brushX + brushY * g_canvas[g_cidx].width);
             }
         }
     }
@@ -531,19 +525,16 @@ void applyBandAidBrushEffect(const ImVec2& lastMousePos, int x, int y) {
 
             for (int offsetY = -brushRadiusInt; offsetY <= brushRadiusInt; ++offsetY) {
                 for (int offsetX = -brushRadiusInt; offsetX <= brushRadiusInt; ++offsetX) {
-                    const float distanceFromCenter = glm::sqrt(offsetX * offsetX + offsetY * offsetY);
-                    if (distanceFromCenter <= brushRadius) {
-                        const int finalX = brushX + offsetX, finalY = brushY + offsetY;
-                        if (finalX >= 0 && finalX < g_canvas[g_cidx].width && finalY >= 0 && finalY < g_canvas[g_cidx].height) {
-                            selectedIndexes.insert(finalX + finalY * g_canvas[g_cidx].width);
+                    const int finalX = brushX + offsetX, finalY = brushY + offsetY;
+                    if (finalX >= 0 && finalX < g_canvas[g_cidx].width && finalY >= 0 && finalY < g_canvas[g_cidx].height) {
+                        selectedIndexes.insert(finalX + finalY * g_canvas[g_cidx].width);
 
-                            // Draw the brush effect with the same style as applyBrushEffect
-                            ImVec2 topLeft = { g_cam.x + finalX * TILE_SIZE, g_cam.y + finalY * TILE_SIZE };
-                            ImVec2 bottomRight = { topLeft.x + TILE_SIZE, topLeft.y + TILE_SIZE };
+                        // Draw the brush effect with the same style as applyBrushEffect
+                        const ImVec2 topLeft = { g_cam.x + finalX * TILE_SIZE, g_cam.y + finalY * TILE_SIZE };
+                        const ImVec2 bottomRight = { topLeft.x + TILE_SIZE, topLeft.y + TILE_SIZE };
 
-                            ImGui::GetBackgroundDrawList()->AddRectFilled(topLeft, bottomRight, IM_COL32(255, 255, 255, 100)); // White overlay
-                            ImGui::GetBackgroundDrawList()->AddRect(topLeft, bottomRight, IM_COL32(0, 0, 0, 100)); // Black border
-                        }
+                        ImGui::GetBackgroundDrawList()->AddRectFilled(topLeft, bottomRight, IM_COL32(255, 255, 255, 100)); // White overlay
+                        ImGui::GetBackgroundDrawList()->AddRect(topLeft, bottomRight, IM_COL32(0, 0, 0, 100)); // Black border
                     }
                 }
             }
