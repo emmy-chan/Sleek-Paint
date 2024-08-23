@@ -9,6 +9,7 @@
 extern uint16_t g_cidx;
 inline std::unordered_set<uint64_t> selectedIndexes;
 inline std::unordered_map<uint64_t, ImU32> copiedTiles; // Store copied tiles and their colors
+inline std::vector<ImVec2> freeformPath;
 inline uint16_t TILE_SIZE = 16;
 inline uint8_t paintToolSelected = 0;
 inline uint8_t brush_size = 1;
@@ -32,7 +33,8 @@ enum eTools {
 	TOOL_TEXT,
 	TOOL_PAN,
 	TOOL_ZOOM,
-	TOOL_BANDAID
+	TOOL_BANDAID,
+	TOOL_FREEFORM_SELECT
 };
 
 class cCanvas

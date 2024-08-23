@@ -626,6 +626,66 @@ void cCanvas::UpdateZoom(float value) {
     }
 }
 
+bool IsPointInPolygon(const ImVec2& point, const std::vector<ImVec2>& polygon) {
+    bool inside = false;
+    for (size_t i = 0, j = polygon.size() - 1; i < polygon.size(); j = i++) {
+        if ((polygon[i].y > point.y) != (polygon[j].y > point.y) &&
+            point.x < (polygon[j].x - polygon[i].x) * (point.y - polygon[i].y) / (polygon[j].y - polygon[i].y) + polygon[i].x) {
+            inside = !inside;
+        }
+    }
+    return inside;
+}
+
+bool DoLinesIntersect(ImVec2 a1, ImVec2 a2, ImVec2 b1, ImVec2 b2) {
+    auto crossProduct = [](ImVec2 v1, ImVec2 v2) {
+        return v1.x * v2.y - v1.y * v2.x;
+        };
+
+    ImVec2 r = ImVec2(a2.x - a1.x, a2.y - a1.y);
+    ImVec2 s = ImVec2(b2.x - b1.x, b2.y - b1.y);
+
+    float rxs = crossProduct(r, s);
+    float t = crossProduct(ImVec2(b1.x - a1.x, b1.y - a1.y), s) / rxs;
+    float u = crossProduct(ImVec2(b1.x - a1.x, b1.y - a1.y), r) / rxs;
+
+    return rxs != 0 && t >= 0 && t <= 1 && u >= 0 && u <= 1;
+}
+
+bool IsLineIntersectingPolygon(const std::vector<ImVec2>& polygon, ImVec2 p1, ImVec2 p2) {
+    for (size_t i = 0; i < polygon.size() - 1; ++i) {
+        if (DoLinesIntersect(p1, p2, polygon[i], polygon[i + 1])) {
+            return true;
+        }
+    }
+    // Also check the last edge connecting the last and the first point
+    return DoLinesIntersect(p1, p2, polygon.back(), polygon.front());
+}
+
+std::unordered_set<uint64_t> GetTilesWithinPolygon(const std::vector<ImVec2>& polygon, int width, int height) {
+    std::unordered_set<uint64_t> selectedTiles;
+
+    for (int y = 0; y < height; ++y) {
+        for (int x = 0; x < width; ++x) {
+            ImVec2 topLeft(g_cam.x + x * TILE_SIZE, g_cam.y + y * TILE_SIZE);
+            ImVec2 topRight = ImVec2(topLeft.x + TILE_SIZE, topLeft.y);
+            ImVec2 bottomLeft = ImVec2(topLeft.x, topLeft.y + TILE_SIZE);
+            ImVec2 bottomRight = ImVec2(topLeft.x + TILE_SIZE, topLeft.y + TILE_SIZE);
+
+            if (IsPointInPolygon(ImVec2(topLeft.x + TILE_SIZE / 2, topLeft.y + TILE_SIZE / 2), polygon) || // Center check
+                IsLineIntersectingPolygon(polygon, topLeft, topRight) || // Top edge
+                IsLineIntersectingPolygon(polygon, topRight, bottomRight) || // Right edge
+                IsLineIntersectingPolygon(polygon, bottomRight, bottomLeft) || // Bottom edge
+                IsLineIntersectingPolygon(polygon, bottomLeft, topLeft)) { // Left edge
+                uint64_t index = x + y * width;
+                selectedTiles.insert(index);
+            }
+        }
+    }
+
+    return selectedTiles;
+}
+
 void cCanvas::Editor() {
     if (g_canvas.empty() || g_canvas[g_cidx].tiles.empty() || g_canvas[g_cidx].layerVisibility.empty()) return;
     auto& d = *ImGui::GetBackgroundDrawList(); auto& io = ImGui::GetIO(); static bool isTypingText = false;
@@ -1010,6 +1070,37 @@ void cCanvas::Editor() {
             if (g_util.MouseReleased(0)) {
                 applyBandAidEffect();
                 selectedIndexes.clear();
+            }
+
+            break;
+        case TOOL_FREEFORM_SELECT:
+            if (g_util.MousePressed(0)) {
+                freeformPath.clear();
+                freeformPath.push_back(ImGui::GetMousePos());
+            }
+
+            if (ImGui::IsMouseDown(0)) {
+                freeformPath.push_back(ImGui::GetMousePos());
+            }
+
+            if (g_util.MouseReleased(0)) {
+                // Finalize the freeform selection
+                if (!freeformPath.empty()) {
+                    // Convert the path to a polygon and select tiles within it
+                    std::unordered_set<uint64_t> selectedTiles = GetTilesWithinPolygon(freeformPath, g_canvas[g_cidx].width, g_canvas[g_cidx].height);
+
+                    selectedIndexes.insert(selectedTiles.begin(), selectedTiles.end());
+                }
+
+                freeformPath.clear(); // Clear the path after selection
+            }
+
+            // Draw the freeform selection path
+            if (freeformPath.size() > 1) {
+                for (size_t i = 0; i < freeformPath.size() - 1; ++i) {
+                    ImGui::GetBackgroundDrawList()->AddLine(freeformPath[i], freeformPath[i + 1], IM_COL32_BLACK, 4.0f);
+                    ImGui::GetBackgroundDrawList()->AddLine(freeformPath[i], freeformPath[i + 1], IM_COL32_WHITE, 2.0f);
+                }
             }
 
             break;

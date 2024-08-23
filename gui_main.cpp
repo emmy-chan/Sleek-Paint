@@ -634,6 +634,10 @@ void cGUI::Display()
         if (ImGui::ImageButton((void*)g_assets.selection_texture, ImVec2(16, 16))) paintToolSelected = 4;
         if (ImGui::IsItemHovered()) ImGui::SetTooltip("Selection Tool");
 
+        ImGui::PushStyleColor(ImGuiCol_Button, paintToolSelected == TOOL_FREEFORM_SELECT ? panelActiveColor : panelColor);
+        if (ImGui::Button(ICON_FA_CUT, ImVec2(25, 25))) paintToolSelected = TOOL_FREEFORM_SELECT;
+        if (ImGui::IsItemHovered()) ImGui::SetTooltip("Free Form Selection Tool");
+
         ImGui::PushStyleColor(ImGuiCol_Button, paintToolSelected == 6 ? panelActiveColor : panelColor);
         if (ImGui::Button(ICON_FA_MOUSE_POINTER, ImVec2(25, 25))) paintToolSelected = 6;
         if (ImGui::IsItemHovered()) ImGui::SetTooltip("Pointer Tool");
@@ -682,7 +686,7 @@ void cGUI::Display()
         if (ImGui::Button(ICON_FA_SEARCH, ImVec2(25, 25))) paintToolSelected = TOOL_ZOOM;
         if (ImGui::IsItemHovered()) ImGui::SetTooltip("Zoom Tool");
 
-        ImGui::PopStyleColor(13);
+        ImGui::PopStyleColor(14);
         ImGui::PopStyleVar();
         ImGui::End();
     }
