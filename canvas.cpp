@@ -811,12 +811,12 @@ void cCanvas::Editor() {
     const uint16_t x = static_cast<int>((ImGui::GetMousePos().x - g_cam.x) / TILE_SIZE),
                    y = static_cast<int>((ImGui::GetMousePos().y - g_cam.y) / TILE_SIZE);
 
-    const bool bCanDraw = !g_util.IsClickingOutsideCanvas() && x >= 0 && x < g_canvas[g_cidx].width && y >= 0 && y < g_canvas[g_cidx].height;
-    static ImVec2 mouseStart; static ImVec2 lastMousePos = ImVec2(-1, -1);
+    static ImVec2 mouseStart;
+    if (g_util.MousePressed(0)) mouseStart = ImGui::GetMousePos();
+    const bool bCanDraw = !g_util.IsClickingOutsideCanvas(mouseStart.x > 0 && mouseStart.y > 0 ? mouseStart : io.MousePos);
+    static ImVec2 lastMousePos = ImVec2(-1, -1);
 
-    if (bCanDraw && g_util.Hovering(g_cam.x + x * TILE_SIZE, g_cam.y + y * TILE_SIZE, g_cam.x + x * TILE_SIZE + TILE_SIZE, g_cam.y + y * TILE_SIZE + TILE_SIZE)) {
-        if (g_util.MousePressed(0)) mouseStart = ImGui::GetMousePos();
-        
+    if (bCanDraw && x >= 0 && x < g_canvas[g_cidx].width && y >= 0 && y < g_canvas[g_cidx].height && g_util.Hovering(g_cam.x + x * TILE_SIZE, g_cam.y + y * TILE_SIZE, g_cam.x + x * TILE_SIZE + TILE_SIZE, g_cam.y + y * TILE_SIZE + TILE_SIZE)) {
         switch (paintToolSelected) {
         case TOOL_BRUSH:
             //brush

@@ -81,10 +81,10 @@ bool cUtils::IsTilesEqual(const std::vector<ImU32>& a, const std::vector<ImU32>&
     return true;
 }
 
-const bool cUtils::IsClickingOutsideCanvas() {
+const bool cUtils::IsClickingOutsideCanvas(ImVec2 mouse) {
     auto& io = ImGui::GetIO();
     static bool bToolFlip = true;
-    const bool bMouseOutsideCanvas = io.MousePos.x < 200 || io.MousePos.x > io.DisplaySize.x - 61 || io.MousePos.y > io.DisplaySize.y - 20 || io.MousePos.y < 24;
+    const bool bMouseOutsideCanvas = mouse.x < 200 || mouse.x > io.DisplaySize.x - 61 || mouse.y > io.DisplaySize.y - 20 || mouse.y < 24;
     static bool bCanDraw = !bMouseOutsideCanvas && !g_app.ui_state;
 
     if (bMouseOutsideCanvas && g_util.MousePressed(0))
