@@ -275,22 +275,20 @@ void cUIStateNewProject::Update()
         }
 
         ImGui::Text("Background:");
-        static int bg_option = 0;
         ImGui::PushItemWidth(ImGui::GetContentRegionMax().x - 8);
-        const ImVec2 size(18, 18);
+        
+        // Draw the checkerboard pattern behind the invisible button
+        const ImVec2 checkerboardSize = { 20, 20 };
         const ImVec2 pos = ImGui::GetCursorScreenPos(); // Get current cursor position
 
-        // Draw the checkerboard pattern behind the transparent button
-        const float padding = 4.0f;
-        const ImVec2 checkerboardSize = ImVec2(size.x + padding * 2, size.y + padding * 2);
-        const ImVec2 checkerboardPos = ImVec2(pos.x - padding, pos.y - padding);
+        ImGui::GetWindowDrawList()->AddRectFilled(pos, ImVec2(pos.x + checkerboardSize.x, pos.y + checkerboardSize.y), IM_COL32(200, 200, 200, 255));
+        ImGui::GetWindowDrawList()->AddRectFilled(ImVec2(pos.x + checkerboardSize.x / 2, pos.y), ImVec2(pos.x + checkerboardSize.x, pos.y + checkerboardSize.y / 2), IM_COL32(150, 150, 150, 255));
+        ImGui::GetWindowDrawList()->AddRectFilled(ImVec2(pos.x, pos.y + checkerboardSize.y / 2), ImVec2(pos.x + checkerboardSize.x / 2, pos.y + checkerboardSize.y), IM_COL32(150, 150, 150, 255));
 
-        ImGui::GetWindowDrawList()->AddRectFilled(checkerboardPos, ImVec2(checkerboardPos.x + checkerboardSize.x, checkerboardPos.y + checkerboardSize.y), IM_COL32(200, 200, 200, 255));
-        ImGui::GetWindowDrawList()->AddRectFilled(ImVec2(checkerboardPos.x + checkerboardSize.x / 2, checkerboardPos.y), ImVec2(checkerboardPos.x + checkerboardSize.x, checkerboardPos.y + checkerboardSize.y / 2), IM_COL32(150, 150, 150, 255));
-        ImGui::GetWindowDrawList()->AddRectFilled(ImVec2(checkerboardPos.x, checkerboardPos.y + checkerboardSize.y / 2), ImVec2(checkerboardPos.x + checkerboardSize.x / 2, checkerboardPos.y + checkerboardSize.y), IM_COL32(150, 150, 150, 255));
+        static int bg_option = 0;
 
-        // Transparent button
-        if (ImGui::ColorButton("##Transparent", { 1.0f, 1.0f, 1.0f, 0.3f }, 0, size))
+        // Transparent (invisible) button
+        if (ImGui::InvisibleButton("##Transparent", checkerboardSize))
             bg_option = 0;
         if (ImGui::IsItemHovered())
             ImGui::SetTooltip("Transparent");
