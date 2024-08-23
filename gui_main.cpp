@@ -11,6 +11,15 @@
 #include <unordered_set>
 #include "imgui_internal.h"
 
+// Function to get the texture ID for the current selection
+void* GetToolTexture(int tool) {
+    switch (tool) {
+        case 4: return (void*)g_assets.selection_texture; // Replace with your actual texture for the selection tool
+        case TOOL_FREEFORM_SELECT: return (void*)g_assets.freeform_selection_texture; // Replace with your actual texture for the free form tool
+        default: return g_assets.selection_texture; // No texture if no tool is selected
+    }
+}
+
 void cGUI::Display()
 {
     auto& io = ImGui::GetIO();
@@ -630,13 +639,46 @@ void cGUI::Display()
         if (ImGui::ImageButton((void*)g_assets.wand_texture, ImVec2(16, 16))) paintToolSelected = 5;
         if (ImGui::IsItemHovered()) ImGui::SetTooltip("Magic Wand Tool");
 
-        ImGui::PushStyleColor(ImGuiCol_Button, paintToolSelected == 4 ? panelActiveColor : panelColor);
-        if (ImGui::ImageButton((void*)g_assets.selection_texture, ImVec2(16, 16))) paintToolSelected = 4;
-        if (ImGui::IsItemHovered()) ImGui::SetTooltip("Selection Tool");
+        // Determine the texture based on the current tool selection
+        void* buttonTexture = GetToolTexture(paintToolSelected);
 
-        ImGui::PushStyleColor(ImGuiCol_Button, paintToolSelected == TOOL_FREEFORM_SELECT ? panelActiveColor : panelColor);
-        if (ImGui::Button(ICON_FA_CUT, ImVec2(25, 25))) paintToolSelected = TOOL_FREEFORM_SELECT;
-        if (ImGui::IsItemHovered()) ImGui::SetTooltip("Free Form Selection Tool");
+        ImGui::PushStyleColor(ImGuiCol_Button, paintToolSelected == 4 || paintToolSelected == TOOL_FREEFORM_SELECT ? panelActiveColor : panelColor);
+
+        // Check if the texture is valid before using it
+        if (buttonTexture) {
+            // Create a button with the current tool texture, resized to 16x16
+            if (ImGui::ImageButton(buttonTexture, ImVec2(16, 16)))
+                ImGui::OpenPopup("Select Tool Popup"); // Open the popup when the button is clicked
+        }
+        else {
+            // Render a placeholder button or handle the case when no texture is selected
+            if (ImGui::ImageButton(g_assets.selection_texture, ImVec2(16, 16)))
+                ImGui::OpenPopup("Select Tool Popup"); // Open the popup when the button is clicked
+        }
+        ImGui::PopStyleColor();
+
+        // Create the popup
+        if (ImGui::BeginPopup("Select Tool Popup")) {
+            // Selection Tool Button
+            ImGui::PushStyleColor(ImGuiCol_Button, paintToolSelected == 4 ? panelActiveColor : panelColor);
+            if (ImGui::ImageButton((void*)g_assets.selection_texture, ImVec2(16, 16))) {
+                paintToolSelected = 4;
+                ImGui::CloseCurrentPopup();
+            }
+            if (ImGui::IsItemHovered()) ImGui::SetTooltip("Selection Tool");
+            ImGui::PopStyleColor();
+
+            // Free Form Selection Tool Button
+            ImGui::PushStyleColor(ImGuiCol_Button, paintToolSelected == TOOL_FREEFORM_SELECT ? panelActiveColor : panelColor);
+            if (ImGui::ImageButton((void*)g_assets.freeform_selection_texture, ImVec2(16, 16))) {
+                paintToolSelected = TOOL_FREEFORM_SELECT;
+                ImGui::CloseCurrentPopup();
+            }
+            if (ImGui::IsItemHovered()) ImGui::SetTooltip("Free Form Selection Tool");
+            ImGui::PopStyleColor();
+
+            ImGui::EndPopup();
+        }
 
         ImGui::PushStyleColor(ImGuiCol_Button, paintToolSelected == 6 ? panelActiveColor : panelColor);
         if (ImGui::Button(ICON_FA_MOUSE_POINTER, ImVec2(25, 25))) paintToolSelected = 6;
@@ -686,7 +728,7 @@ void cGUI::Display()
         if (ImGui::Button(ICON_FA_SEARCH, ImVec2(25, 25))) paintToolSelected = TOOL_ZOOM;
         if (ImGui::IsItemHovered()) ImGui::SetTooltip("Zoom Tool");
 
-        ImGui::PopStyleColor(14);
+        ImGui::PopStyleColor(12);
         ImGui::PopStyleVar();
         ImGui::End();
     }

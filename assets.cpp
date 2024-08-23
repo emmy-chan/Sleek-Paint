@@ -596,6 +596,9 @@ void cAssets::LoadAssets()
     bool ret4 = LoadTextureFromFile("gfx/bandaid.png", &g_assets.bandaid_texture, NULL, NULL);
     IM_ASSERT(ret4);
 
+    bool ret5 = LoadTextureFromFile("gfx/freeform_selection.png", &g_assets.freeform_selection_texture, NULL, NULL);
+    IM_ASSERT(ret5);
+
     cAssets assets;
     bitmapFont = new BitmapFont("gfx/fontsmall1.png", 6, 6, std::bind(&cAssets::LoadTextureFromFile, &assets, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4));
 }

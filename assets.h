@@ -10,6 +10,7 @@ struct BitmapFont;
 
 class cAssets {
 public:
+    ID3D11ShaderResourceView* freeform_selection_texture = nullptr;
     ID3D11ShaderResourceView* selection_texture = nullptr;
     ID3D11ShaderResourceView* bucket_texture = nullptr;
     ID3D11ShaderResourceView* wand_texture = nullptr;
