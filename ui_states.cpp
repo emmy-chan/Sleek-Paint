@@ -277,7 +277,44 @@ void cUIStateNewProject::Update()
         ImGui::Text("Background:");
         static int bg_option = 0;
         ImGui::PushItemWidth(ImGui::GetContentRegionMax().x - 8);
-        ImGui::Combo("##Background", &bg_option, " Transparent\0 White\0 Black");
+        const ImVec2 size(18, 18);
+        const ImVec2 pos = ImGui::GetCursorScreenPos(); // Get current cursor position
+
+        // Draw the checkerboard pattern behind the transparent button
+        const float padding = 4.0f;
+        const ImVec2 checkerboardSize = ImVec2(size.x + padding * 2, size.y + padding * 2);
+        const ImVec2 checkerboardPos = ImVec2(pos.x - padding, pos.y - padding);
+
+        ImGui::GetWindowDrawList()->AddRectFilled(checkerboardPos, ImVec2(checkerboardPos.x + checkerboardSize.x, checkerboardPos.y + checkerboardSize.y), IM_COL32(200, 200, 200, 255));
+        ImGui::GetWindowDrawList()->AddRectFilled(ImVec2(checkerboardPos.x + checkerboardSize.x / 2, checkerboardPos.y), ImVec2(checkerboardPos.x + checkerboardSize.x, checkerboardPos.y + checkerboardSize.y / 2), IM_COL32(150, 150, 150, 255));
+        ImGui::GetWindowDrawList()->AddRectFilled(ImVec2(checkerboardPos.x, checkerboardPos.y + checkerboardSize.y / 2), ImVec2(checkerboardPos.x + checkerboardSize.x / 2, checkerboardPos.y + checkerboardSize.y), IM_COL32(150, 150, 150, 255));
+
+        // Transparent button
+        if (ImGui::ColorButton("##Transparent", { 1.0f, 1.0f, 1.0f, 0.3f }, 0, size))
+            bg_option = 0;
+        if (ImGui::IsItemHovered())
+            ImGui::SetTooltip("Transparent");
+        if (bg_option == 0)
+            ImGui::GetWindowDrawList()->AddRect(ImGui::GetItemRectMin(), ImGui::GetItemRectMax(), IM_COL32(225, 225, 15, 255), 0, ImDrawFlags_RoundCornersAll, 2.0f);
+        ImGui::SameLine();
+
+        // White button
+        if (ImGui::ColorButton("##White", { 1.0f, 1.0f, 1.0f, 1.0f }, 0, { 20, 20 }))
+            bg_option = 1;
+        if (ImGui::IsItemHovered())
+            ImGui::SetTooltip("White");
+        if (bg_option == 1)
+            ImGui::GetWindowDrawList()->AddRect(ImGui::GetItemRectMin(), ImGui::GetItemRectMax(), IM_COL32(225, 225, 15, 255), 0, ImDrawFlags_RoundCornersAll, 2.0f);
+        ImGui::SameLine();
+
+        // Black button
+        if (ImGui::ColorButton("##Black", { 0.0f, 0.0f, 0.0f, 1.0f }, 0, { 20, 20 }))
+            bg_option = 2;
+        if (ImGui::IsItemHovered())
+            ImGui::SetTooltip("Black");
+        if (bg_option == 2)
+            ImGui::GetWindowDrawList()->AddRect(ImGui::GetItemRectMin(), ImGui::GetItemRectMax(), IM_COL32(225, 225, 15, 255), 0, ImDrawFlags_RoundCornersAll, 2.0f);
+
         ImGui::PopItemWidth();
 
         ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, { 1, 1 });
@@ -285,7 +322,7 @@ void cUIStateNewProject::Update()
         ImGui::PopStyleVar();
 
         if (ImGui::Button("Ok")) {
-            //Todo: just call our canvas initialize function and pass the width / height
+            // Todo: just call our canvas initialize function and pass the width / height
             std::string scene_name = "Sprite " + std::to_string(g_canvas.size() + 1);
             uint16_t scene_idx = (uint16_t)g_canvas.size() + 2;
 
