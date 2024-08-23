@@ -14,8 +14,9 @@
 // Function to get the texture ID for the current selection
 void* GetToolTexture(int tool) {
     switch (tool) {
-        case 4: return (void*)g_assets.selection_texture; // Replace with your actual texture for the selection tool
-        case TOOL_FREEFORM_SELECT: return (void*)g_assets.freeform_selection_texture; // Replace with your actual texture for the free form tool
+        case 4: return (void*)g_assets.selection_texture;
+        case TOOL_FREEFORM_SELECT: return (void*)g_assets.freeform_selection_texture;
+        case TOOL_WAND: return (void*)g_assets.wand_texture;
         default: return g_assets.selection_texture; // No texture if no tool is selected
     }
 }
@@ -635,14 +636,18 @@ void cGUI::Display()
         ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, { 4.5f, 4.5f });
         ImGui::PushStyleVar(ImGuiStyleVar_ButtonTextAlign, { 0.7f, 1.f });
         
-        ImGui::PushStyleColor(ImGuiCol_Button, paintToolSelected == 5 ? panelActiveColor : panelColor);
-        if (ImGui::ImageButton((void*)g_assets.wand_texture, ImVec2(16, 16))) paintToolSelected = 5;
-        if (ImGui::IsItemHovered()) ImGui::SetTooltip("Magic Wand Tool");
+        ImGui::Begin("##Tools", NULL, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove);
+
+        ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, { 4.5f, 4.5f });
+        ImGui::PushStyleVar(ImGuiStyleVar_ButtonTextAlign, { 0.7f, 1.f });
 
         // Determine the texture based on the current tool selection
         void* buttonTexture = GetToolTexture(paintToolSelected);
 
-        ImGui::PushStyleColor(ImGuiCol_Button, paintToolSelected == 4 || paintToolSelected == TOOL_FREEFORM_SELECT ? panelActiveColor : panelColor);
+        ImGui::PushStyleColor(ImGuiCol_Button,
+            paintToolSelected == 4 ||
+            paintToolSelected == TOOL_FREEFORM_SELECT ||
+            paintToolSelected == 5 ? panelActiveColor : panelColor);
 
         // Check if the texture is valid before using it
         if (buttonTexture) {
@@ -657,7 +662,7 @@ void cGUI::Display()
         }
         ImGui::PopStyleColor();
 
-        // Create the popup
+        // Create the popup for all selection tools
         if (ImGui::BeginPopup("Select Tool Popup")) {
             // Selection Tool Button
             ImGui::PushStyleColor(ImGuiCol_Button, paintToolSelected == 4 ? panelActiveColor : panelColor);
@@ -675,6 +680,15 @@ void cGUI::Display()
                 ImGui::CloseCurrentPopup();
             }
             if (ImGui::IsItemHovered()) ImGui::SetTooltip("Free Form Selection Tool");
+            ImGui::PopStyleColor();
+
+            // Magic Wand Tool Button
+            ImGui::PushStyleColor(ImGuiCol_Button, paintToolSelected == 5 ? panelActiveColor : panelColor);
+            if (ImGui::ImageButton((void*)g_assets.wand_texture, ImVec2(16, 16))) {
+                paintToolSelected = 5;
+                ImGui::CloseCurrentPopup();
+            }
+            if (ImGui::IsItemHovered()) ImGui::SetTooltip("Magic Wand Tool");
             ImGui::PopStyleColor();
 
             ImGui::EndPopup();
@@ -700,13 +714,51 @@ void cGUI::Display()
         if (ImGui::Button(ICON_FA_FONT, ImVec2(25, 25))) paintToolSelected = TOOL_TEXT;
         if (ImGui::IsItemHovered()) ImGui::SetTooltip("Text Tool");
 
-        ImGui::PushStyleColor(ImGuiCol_Button, paintToolSelected == TOOL_SQUARE ? panelActiveColor : panelColor);
-        if (ImGui::Button(ICON_FA_SQUARE, ImVec2(25, 25))) paintToolSelected = TOOL_SQUARE;
-        if (ImGui::IsItemHovered()) ImGui::SetTooltip("Square Tool");
+        // Square and Ellipse Tool with Popup
+        void* shapeIcon = nullptr;
 
-        ImGui::PushStyleColor(ImGuiCol_Button, paintToolSelected == TOOL_ELIPSE ? panelActiveColor : panelColor);
-        if (ImGui::Button(ICON_FA_CIRCLE, ImVec2(25, 25))) paintToolSelected = TOOL_ELIPSE;
-        if (ImGui::IsItemHovered()) ImGui::SetTooltip("Ellipse Tool");
+        if (paintToolSelected == TOOL_SQUARE) {
+            shapeIcon = (void*)ICON_FA_SQUARE;  // Show square icon when square tool is selected
+        }
+        else if (paintToolSelected == TOOL_ELIPSE) {
+            shapeIcon = (void*)ICON_FA_CIRCLE;  // Show ellipse icon when ellipse tool is selected
+        }
+        else {
+            shapeIcon = (void*)ICON_FA_SQUARE;  // Show rectangle (square) icon by default when no tool is selected
+        }
+
+        ImGui::PushStyleColor(ImGuiCol_Button,
+            (paintToolSelected == TOOL_SQUARE || paintToolSelected == TOOL_ELIPSE) ? panelActiveColor : panelColor);
+
+        // Display the current shape icon
+        if (ImGui::Button((const char*)shapeIcon, ImVec2(25, 25))) {
+            ImGui::OpenPopup("Shape Tool Popup");
+        }
+
+        if (ImGui::IsItemHovered()) ImGui::SetTooltip("Shape Tools");
+        ImGui::PopStyleColor();
+
+        if (ImGui::BeginPopup("Shape Tool Popup")) {
+            // Square Tool Button
+            ImGui::PushStyleColor(ImGuiCol_Button, paintToolSelected == TOOL_SQUARE ? panelActiveColor : panelColor);
+            if (ImGui::Button(ICON_FA_SQUARE, ImVec2(25, 25))) {
+                paintToolSelected = TOOL_SQUARE;
+                ImGui::CloseCurrentPopup();
+            }
+            if (ImGui::IsItemHovered()) ImGui::SetTooltip("Square Tool");
+            ImGui::PopStyleColor();
+
+            // Ellipse Tool Button
+            ImGui::PushStyleColor(ImGuiCol_Button, paintToolSelected == TOOL_ELIPSE ? panelActiveColor : panelColor);
+            if (ImGui::Button(ICON_FA_CIRCLE, ImVec2(25, 25))) {
+                paintToolSelected = TOOL_ELIPSE;
+                ImGui::CloseCurrentPopup();
+            }
+            if (ImGui::IsItemHovered()) ImGui::SetTooltip("Ellipse Tool");
+            ImGui::PopStyleColor();
+
+            ImGui::EndPopup();
+        }
 
         ImGui::PushStyleColor(ImGuiCol_Button, paintToolSelected == 2 ? panelActiveColor : panelColor);
         if (ImGui::Button(ICON_FA_ERASER, ImVec2(25, 25))) paintToolSelected = 2;
@@ -728,7 +780,7 @@ void cGUI::Display()
         if (ImGui::Button(ICON_FA_SEARCH, ImVec2(25, 25))) paintToolSelected = TOOL_ZOOM;
         if (ImGui::IsItemHovered()) ImGui::SetTooltip("Zoom Tool");
 
-        ImGui::PopStyleColor(12);
+        ImGui::PopStyleColor(10);
         ImGui::PopStyleVar();
         ImGui::End();
     }
