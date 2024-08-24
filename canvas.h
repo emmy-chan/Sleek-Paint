@@ -55,7 +55,7 @@ public:
 	uint16_t width;
 	uint16_t height;
 	void Initialize(const std::vector<ImU32>& initial_data = {}, const uint16_t& new_width = 0, const uint16_t& new_height = 0, const ImU32& color = IM_COL32(0, 0, 0, 0));
-	void NewLayer(const std::vector<ImU32>& initial_data = {}, ImU32 color = IM_COL32(0, 0, 0, 0));
+	void NewLayer(std::string name = "", const std::vector<ImU32>& initial_data = {}, ImU32 color = IM_COL32(0, 0, 0, 0));
 	void AdaptNewSize(int width, int height);
 	void Clear();
 	void UpdateCanvasHistory();

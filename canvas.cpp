@@ -26,10 +26,10 @@ void cCanvas::Initialize(const std::vector<ImU32>& initial_data, const uint16_t&
     height = new_height;
 
     // Create new layer
-    NewLayer(initial_data, color);
+    NewLayer("Layer 1", initial_data, color);
 }
 
-void cCanvas::NewLayer(const std::vector<ImU32>& initial_data, ImU32 color) {
+void cCanvas::NewLayer(std::string name, const std::vector<ImU32>& initial_data, ImU32 color) {
     // Check if the number of layers is less than 100
     if (tiles.size() >= 99) {
         printf("Max number of layers exceeded!");
@@ -46,7 +46,7 @@ void cCanvas::NewLayer(const std::vector<ImU32>& initial_data, ImU32 color) {
 
     tiles.push_back(layer0);
     layerVisibility.push_back(true);
-    const std::string layerName = "Layer " + std::to_string(tiles.size());
+    const std::string layerName = name.empty() ? "Layer " + std::to_string(tiles.size()) : name;
     layerNames.push_back(layerName);
     layerOpacity.push_back(255);
 }

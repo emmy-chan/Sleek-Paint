@@ -921,10 +921,22 @@ void cGUI::Display()
         }
     }
 
-    if (ImGui::Button("Add Layer", { ImGui::GetColumnWidth(), ImGui::GetFrameHeight() }))
-        g_canvas[g_cidx].NewLayer();
+    if (ImGui::Button("Add Layer", { ImGui::GetContentRegionAvail().x, ImGui::GetFrameHeight() })) {
+        // Find a unique name for the new layer
+        std::string newLayerName = "Layer ";
+        int layerCount = 1;
 
-    if (ImGui::Button("Remove Layer", { ImGui::GetColumnWidth(), ImGui::GetFrameHeight() })) {
+        while (std::find(g_canvas[g_cidx].layerNames.begin(), g_canvas[g_cidx].layerNames.end(), newLayerName + std::to_string(layerCount)) != g_canvas[g_cidx].layerNames.end()) {
+            layerCount++;
+        }
+
+        newLayerName += std::to_string(layerCount);
+
+        // Add the new layer with the unique name
+        g_canvas[g_cidx].NewLayer(newLayerName);
+    }
+
+    if (ImGui::Button("Remove Layer", { ImGui::GetContentRegionAvail().x, ImGui::GetFrameHeight() })) {
         if (g_canvas[g_cidx].tiles.size() > 1) {
             g_canvas[g_cidx].tiles.erase(g_canvas[g_cidx].tiles.begin() + g_canvas[g_cidx].selLayerIndex);
             g_canvas[g_cidx].layerVisibility.erase(g_canvas[g_cidx].layerVisibility.begin() + g_canvas[g_cidx].selLayerIndex);
@@ -933,6 +945,7 @@ void cGUI::Display()
             if (g_canvas[g_cidx].selLayerIndex > 0) g_canvas[g_cidx].selLayerIndex--;
         }
     }
+
 
     ImGui::Spacing(); ImGui::Separator();
     if (paintToolSelected == TOOL_BRUSH || paintToolSelected == TOOL_ERASER || paintToolSelected == TOOL_BANDAID) {
