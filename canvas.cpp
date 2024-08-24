@@ -188,6 +188,112 @@ void DrawSelectionRectangle(const std::unordered_set<uint64_t>& indexes, float t
         ImGui::GetBackgroundDrawList()->AddLine(borderPoints[i], borderPoints[i + 1], col, float(thickness));
 }
 
+// Check if there is an image available in the clipboard
+bool IsImageInClipboard() {
+    if (!OpenClipboard(nullptr)) return false; // Open the clipboard
+    bool hasImage = IsClipboardFormatAvailable(CF_BITMAP) || IsClipboardFormatAvailable(CF_DIB) || IsClipboardFormatAvailable(CF_DIBV5);
+    CloseClipboard(); // Close the clipboard
+    return hasImage;
+}
+
+// Function to get image data from the clipboard
+std::vector<ImU32> GetImageFromClipboard(uint16_t& outWidth, uint16_t& outHeight) {
+    std::vector<ImU32> imageData;
+
+    if (!OpenClipboard(nullptr)) return imageData;
+
+    // Handle DIB (Device Independent Bitmap)
+    HANDLE hClipboardData = GetClipboardData(CF_DIB);
+    if (hClipboardData == nullptr) {
+        CloseClipboard();
+        return imageData;
+    }
+
+    // Lock clipboard memory to retrieve the data
+    BITMAPINFO* pBitmapInfo = (BITMAPINFO*)GlobalLock(hClipboardData);
+    if (pBitmapInfo == nullptr) {
+        CloseClipboard();
+        return imageData;
+    }
+
+    outWidth = pBitmapInfo->bmiHeader.biWidth;
+    outHeight = abs(pBitmapInfo->bmiHeader.biHeight); // Height could be negative
+
+    // Pointer to the image data
+    BYTE* pPixels = (BYTE*)pBitmapInfo + pBitmapInfo->bmiHeader.biSize + pBitmapInfo->bmiHeader.biClrUsed * sizeof(RGBQUAD);
+
+    imageData.resize(outWidth * outHeight);
+
+    // Convert image data to ImU32
+    for (int y = 0; y < outHeight; y++) {
+        for (int x = 0; x < outWidth; x++) {
+            BYTE* pPixel = pPixels + (y * outWidth + x) * 4; // Assuming 32-bit DIB
+            BYTE r = pPixel[2];
+            BYTE g = pPixel[1];
+            BYTE b = pPixel[0];
+            BYTE a = pPixel[3];
+
+            imageData[y * outWidth + x] = IM_COL32(r, g, b, a);
+        }
+    }
+
+    GlobalUnlock(hClipboardData);
+    CloseClipboard();
+    return imageData;
+}
+
+void cCanvas::PasteImageFromClipboard() {
+    uint16_t imageWidth, imageHeight;
+    const std::vector<ImU32> imageData = GetImageFromClipboard(imageWidth, imageHeight);
+
+    if (imageData.empty()) {
+        printf("No image data available in clipboard.\n");
+        return;
+    }
+
+    // Ensure the image fits into the canvas
+    if (imageWidth > width || imageHeight > height) {
+        printf("Image from clipboard is too large for the canvas.\n");
+        return;
+    }
+
+    // Clear any existing selection before pasting
+    selectedIndexes.clear();
+
+    // Create a new layer for the pasted image
+    NewLayer();
+    g_canvas[g_cidx].selLayerIndex = g_canvas[g_cidx].tiles.size() - 1; // Set to the newly created layer
+
+    // Calculate the starting position for the paste operation
+    int startX = 0; // Change this to the desired starting X position
+    int startY = 0; // Change this to the desired starting Y position
+
+    // Paste the image data into the selected layer and add indexes to the selection
+    for (int y = 0; y < imageHeight; y++) {
+        for (int x = 0; x < imageWidth; x++) {
+            const int canvasX = startX + x;
+            const int canvasY = startY + y;
+
+            if (canvasX >= 0 && canvasX < width && canvasY >= 0 && canvasY < height) {
+                uint16_t index = canvasX + canvasY * width;
+
+                // Check that the index is within the bounds of the layer
+                if (index < g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex].size()) {
+                    g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex][index] = imageData[y * imageWidth + x];
+
+                    // Add index to selectedIndexes
+                    selectedIndexes.insert(index);
+                }
+            }
+        }
+    }
+
+    // Update canvas history for undo functionality
+    UpdateCanvasHistory();
+    paintToolSelected = TOOL_MOVE;
+    printf("Image pasted and selected.\n");
+}
+
 std::unordered_set<uint64_t> initialSelectedIndexes;
 
 void cCanvas::PasteSelection() {
@@ -231,6 +337,7 @@ void cCanvas::DeleteSelection() {
     for (auto& index : selectedIndexes)
         g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex][index] = IM_COL32(0, 0, 0, 0);
 
+    selectedIndexes.clear();
     g_canvas[g_cidx].UpdateCanvasHistory();
 }
 
@@ -705,8 +812,12 @@ void cCanvas::Editor() {
             }
             else if (GetAsyncKeyState(VK_CONTROL) && key_state.key_pressed('C')) // Copy our selection area
                 CopySelection();
-            else if (GetAsyncKeyState(VK_CONTROL) && key_state.key_pressed('V') && !copiedTiles.empty()) // Paste our selection area
-                PasteSelection();
+            else if (GetAsyncKeyState(VK_CONTROL) && key_state.key_pressed('V')) { // Paste our selection area
+                if (IsImageInClipboard())
+                    PasteImageFromClipboard();
+                else if (!copiedTiles.empty())
+                    PasteSelection(); // Default paste functionality for non-image data
+            }
             else if (key_state.key_pressed('B')) paintToolSelected = TOOL_BRUSH;
             else if (key_state.key_pressed('G')) paintToolSelected = TOOL_BUCKET;
             else if (key_state.key_pressed('E')) paintToolSelected = TOOL_ERASER;
