@@ -921,7 +921,11 @@ void cGUI::Display()
         }
     }
 
-    if (ImGui::Button("Add Layer", { ImGui::GetContentRegionAvail().x, ImGui::GetFrameHeight() })) {
+    // Center the text within the button by adjusting padding
+    ImGui::PushStyleVar(ImGuiStyleVar_ButtonTextAlign, ImVec2(0.55f, 0.55f)); // Adjust padding for better centering
+
+    // Add Layer button
+    if (ImGui::Button("Add Layer", ImVec2(ImGui::GetContentRegionAvail().x, 0))) {
         // Find a unique name for the new layer
         std::string newLayerName = "Layer ";
         int layerCount = 1;
@@ -936,7 +940,8 @@ void cGUI::Display()
         g_canvas[g_cidx].NewLayer(newLayerName);
     }
 
-    if (ImGui::Button("Remove Layer", { ImGui::GetContentRegionAvail().x, ImGui::GetFrameHeight() })) {
+    // Remove Layer button
+    if (ImGui::Button("Remove Layer", ImVec2(ImGui::GetContentRegionAvail().x, 0))) {
         if (g_canvas[g_cidx].tiles.size() > 1) {
             g_canvas[g_cidx].tiles.erase(g_canvas[g_cidx].tiles.begin() + g_canvas[g_cidx].selLayerIndex);
             g_canvas[g_cidx].layerVisibility.erase(g_canvas[g_cidx].layerVisibility.begin() + g_canvas[g_cidx].selLayerIndex);
@@ -946,6 +951,8 @@ void cGUI::Display()
         }
     }
 
+    // Restore the original padding style
+    ImGui::PopStyleVar();
 
     ImGui::Spacing(); ImGui::Separator();
     if (paintToolSelected == TOOL_BRUSH || paintToolSelected == TOOL_ERASER || paintToolSelected == TOOL_BANDAID) {
