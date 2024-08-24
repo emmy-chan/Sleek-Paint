@@ -191,7 +191,7 @@ void DrawSelectionRectangle(const std::unordered_set<uint64_t>& indexes, float t
 // Check if there is an image available in the clipboard
 bool IsImageInClipboard() {
     if (!OpenClipboard(nullptr)) return false; // Open the clipboard
-    bool hasImage = IsClipboardFormatAvailable(CF_BITMAP) || IsClipboardFormatAvailable(CF_DIB) || IsClipboardFormatAvailable(CF_DIBV5);
+    const bool hasImage = IsClipboardFormatAvailable(CF_BITMAP) || IsClipboardFormatAvailable(CF_DIB) || IsClipboardFormatAvailable(CF_DIBV5);
     CloseClipboard(); // Close the clipboard
     return hasImage;
 }
@@ -275,7 +275,7 @@ void cCanvas::PasteImageFromClipboard() {
             const int canvasY = startY + y;
 
             if (canvasX >= 0 && canvasX < width && canvasY >= 0 && canvasY < height) {
-                uint16_t index = canvasX + canvasY * width;
+                const uint16_t index = canvasX + canvasY * width;
 
                 // Check that the index is within the bounds of the layer
                 if (index < g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex].size()) {
@@ -705,7 +705,7 @@ void cCanvas::UpdateZoom(float value) {
         const float minZoom = 1.0f, maxZoom = 50.0f;
 
         // Calculate new zoom level
-        float newZoom = glm::clamp(TILE_SIZE + value, minZoom, maxZoom);
+        const float newZoom = glm::clamp(TILE_SIZE + value, minZoom, maxZoom);
         const auto mousePos = ImGui::GetMousePos();
 
         // Adjust camera position to keep the zoom centered around the mouse position
@@ -738,23 +738,22 @@ bool IsPointInPolygon(const ImVec2& point, const std::vector<ImVec2>& polygon) {
 bool DoLinesIntersect(ImVec2 a1, ImVec2 a2, ImVec2 b1, ImVec2 b2) {
     auto crossProduct = [](ImVec2 v1, ImVec2 v2) {
         return v1.x * v2.y - v1.y * v2.x;
-        };
+    };
 
-    ImVec2 r = ImVec2(a2.x - a1.x, a2.y - a1.y);
-    ImVec2 s = ImVec2(b2.x - b1.x, b2.y - b1.y);
+    const ImVec2 r = ImVec2(a2.x - a1.x, a2.y - a1.y);
+    const ImVec2 s = ImVec2(b2.x - b1.x, b2.y - b1.y);
 
-    float rxs = crossProduct(r, s);
-    float t = crossProduct(ImVec2(b1.x - a1.x, b1.y - a1.y), s) / rxs;
-    float u = crossProduct(ImVec2(b1.x - a1.x, b1.y - a1.y), r) / rxs;
+    const float rxs = crossProduct(r, s);
+    const float t = crossProduct(ImVec2(b1.x - a1.x, b1.y - a1.y), s) / rxs;
+    const float u = crossProduct(ImVec2(b1.x - a1.x, b1.y - a1.y), r) / rxs;
 
     return rxs != 0 && t >= 0 && t <= 1 && u >= 0 && u <= 1;
 }
 
 bool IsLineIntersectingPolygon(const std::vector<ImVec2>& polygon, ImVec2 p1, ImVec2 p2) {
     for (size_t i = 0; i < polygon.size() - 1; ++i) {
-        if (DoLinesIntersect(p1, p2, polygon[i], polygon[i + 1])) {
+        if (DoLinesIntersect(p1, p2, polygon[i], polygon[i + 1]))
             return true;
-        }
     }
     // Also check the last edge connecting the last and the first point
     return DoLinesIntersect(p1, p2, polygon.back(), polygon.front());
@@ -765,17 +764,17 @@ std::unordered_set<uint64_t> GetTilesWithinPolygon(const std::vector<ImVec2>& po
 
     for (int y = 0; y < height; ++y) {
         for (int x = 0; x < width; ++x) {
-            ImVec2 topLeft(g_cam.x + x * TILE_SIZE, g_cam.y + y * TILE_SIZE);
-            ImVec2 topRight = ImVec2(topLeft.x + TILE_SIZE, topLeft.y);
-            ImVec2 bottomLeft = ImVec2(topLeft.x, topLeft.y + TILE_SIZE);
-            ImVec2 bottomRight = ImVec2(topLeft.x + TILE_SIZE, topLeft.y + TILE_SIZE);
+            const ImVec2 topLeft(g_cam.x + x * TILE_SIZE, g_cam.y + y * TILE_SIZE);
+            const ImVec2 topRight = ImVec2(topLeft.x + TILE_SIZE, topLeft.y);
+            const ImVec2 bottomLeft = ImVec2(topLeft.x, topLeft.y + TILE_SIZE);
+            const ImVec2 bottomRight = ImVec2(topLeft.x + TILE_SIZE, topLeft.y + TILE_SIZE);
 
             if (IsPointInPolygon(ImVec2(topLeft.x + TILE_SIZE / 2, topLeft.y + TILE_SIZE / 2), polygon) || // Center check
                 IsLineIntersectingPolygon(polygon, topLeft, topRight) || // Top edge
                 IsLineIntersectingPolygon(polygon, topRight, bottomRight) || // Right edge
                 IsLineIntersectingPolygon(polygon, bottomRight, bottomLeft) || // Bottom edge
                 IsLineIntersectingPolygon(polygon, bottomLeft, topLeft)) { // Left edge
-                uint64_t index = x + y * width;
+                const uint64_t index = x + y * width;
                 selectedTiles.insert(index);
             }
         }
