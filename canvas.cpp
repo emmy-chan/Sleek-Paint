@@ -274,11 +274,11 @@ void cCanvas::PasteImageFromClipboard() {
                 //    selectedIndexes.insert(canvasIndex);
 
                 // Debugging output for verification
-                printf("Pasting pixel from image (%d, %d) to canvas (%d, %d) - Color: 0x%X\n", x, y, x, y, imageData[imageIndex]);
+                //printf("Pasting pixel from image (%d, %d) to canvas (%d, %d) - Color: 0x%X\n", x, y, x, y, imageData[imageIndex]);
             }
-            else {
-                printf("Warning: Index out of bounds while pasting image. CanvasIndex: %d, ImageIndex: %d\n", canvasIndex, imageIndex);
-            }
+            //else {
+                //printf("Warning: Index out of bounds while pasting image. CanvasIndex: %d, ImageIndex: %d\n", canvasIndex, imageIndex);
+            //}
         }
     }
 
@@ -293,7 +293,7 @@ void cCanvas::PasteImageFromClipboard() {
     // Update canvas history for undo functionality
     UpdateCanvasHistory();
     paintToolSelected = TOOL_MOVE;
-    printf("Image pasted and selected.\n");
+    printf("Image pasted successfully.\n");
 }
 
 std::unordered_set<uint64_t> initialSelectedIndexes;
