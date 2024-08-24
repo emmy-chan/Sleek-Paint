@@ -278,7 +278,7 @@ void cUIStateNewProject::Update()
         ImGui::PushItemWidth(ImGui::GetContentRegionMax().x - 8);
         
         // Draw the checkerboard pattern behind the invisible button
-        const ImVec2 checkerboardSize = { 20, 20 };
+        const ImVec2 checkerboardSize = { 24, 24 };
         const ImVec2 pos = ImGui::GetCursorScreenPos(); // Get current cursor position
 
         ImGui::GetWindowDrawList()->AddRectFilled(pos, ImVec2(pos.x + checkerboardSize.x, pos.y + checkerboardSize.y), IM_COL32(200, 200, 200, 255));
@@ -297,7 +297,7 @@ void cUIStateNewProject::Update()
         ImGui::SameLine();
 
         // White button
-        if (ImGui::ColorButton("##White", { 1.0f, 1.0f, 1.0f, 1.0f }, 0, { 20, 20 }))
+        if (ImGui::ColorButton("##White", { 1.0f, 1.0f, 1.0f, 1.0f }, 0, { 24, 24 }))
             bg_option = 1;
         if (ImGui::IsItemHovered())
             ImGui::SetTooltip("White");
@@ -306,7 +306,7 @@ void cUIStateNewProject::Update()
         ImGui::SameLine();
 
         // Black button
-        if (ImGui::ColorButton("##Black", { 0.0f, 0.0f, 0.0f, 1.0f }, 0, { 20, 20 }))
+        if (ImGui::ColorButton("##Black", { 0.0f, 0.0f, 0.0f, 1.0f }, 0, { 24, 24 }))
             bg_option = 2;
         if (ImGui::IsItemHovered())
             ImGui::SetTooltip("Black");
