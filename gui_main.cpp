@@ -819,6 +819,41 @@ void cGUI::Display()
         ImGui::PopStyleColor();
     }
 
+    ImGui::Spacing();
+
+    // Color add button
+    if (ImGui::Button("+", { 26, 26 })) {
+        g_canvas[g_cidx].myCols.push_back(IM_COL32(0, 0, 0, 255));
+        g_canvas[g_cidx].selColIndex = g_canvas[g_cidx].myCols.size() - 1;
+    }
+
+    ImGui::SameLine(28.0f);
+
+    // Color delete button
+    if (ImGui::Button("-", { 26, 26 })) {
+        g_canvas[g_cidx].myCols.erase(g_canvas[g_cidx].myCols.begin() + g_canvas[g_cidx].selColIndex);
+
+        if (g_canvas[g_cidx].selColIndex > 2)
+            g_canvas[g_cidx].selColIndex--;
+    }
+
+    ImGui::SameLine(56.0f);
+
+    // Display gears button
+    if (ImGui::Button(ICON_FA_COGS, { 26, 26 }))
+        ImGui::OpenPopup("Color Options");
+
+    // Popup for additional settings
+    if (ImGui::BeginPopup("Color Options")) {
+        if (ImGui::Button(ICON_FA_FILE " Load Color Palette") && g_canvas.size() > 0)
+            g_app.ui_state = std::make_unique<cUIStateLoadPalette>();
+
+        if (ImGui::Button(ICON_FA_SAVE " Save Color Palette") && g_canvas.size() > 0)
+            g_app.ui_state = std::make_unique<cUIStateSavePalette>();
+
+        ImGui::EndPopup();
+    }
+
     ImGui::EndChild();
 
     ImGui::SetCursorPosY(ImGui::GetWindowHeight() * 0.475f);
