@@ -8,6 +8,7 @@
 #include <random>
 #include <stack>
 #include <set>
+#include "stb_image.h"
 
 cUtils g_util = cUtils();
 
@@ -284,4 +285,33 @@ std::string cUtils::RemoveFileExtension(const std::string& file_name) {
         }
     }
     return file_name;
+}
+
+// Load from file
+void cUtils::LoadImageFileToCanvas(const std::string& filepath, const std::string& filename) {
+    int image_width = 0;
+    int image_height = 0;
+    int channels = 0;
+    unsigned char* image_data = stbi_load(filepath.c_str(), &image_width, &image_height, &channels, 0);
+    if (image_data == NULL)
+        return;
+
+    std::vector<ImU32> image_layer;
+    const size_t image_size = image_width * image_height;
+
+    // Ensure we have 4 channels (RGBA)
+    for (size_t i = 0; i < image_size; ++i) {
+        const unsigned char r = image_data[i * channels];
+        const unsigned char g = (channels > 1) ? image_data[i * channels + 1] : r;
+        const unsigned char b = (channels > 2) ? image_data[i * channels + 2] : r;
+        const unsigned char a = (channels > 3) ? image_data[i * channels + 3] : 255;
+        image_layer.push_back(IM_COL32(r, g, b, a));
+    }
+
+    // Set our canvas dimensions based on the image
+    cCanvas canvas = cCanvas(filename.c_str(), image_width, image_height, IM_COL32(0, 0, 0, 0), image_layer);
+    g_canvas.push_back(canvas);
+    g_cidx = (uint16_t)g_canvas.size() - 1;
+
+    stbi_image_free(image_data);
 }

@@ -15,11 +15,14 @@
 #include <vector>
 #include <string>
 //#include <fstream>
+#include <iostream>
 
 //for shit that should be in its own file lmao
 #include "canvas.h"
 #include "assets.h"
 #include "gui_main.h"
+#include "utils.h"
+
 
 // Data
 static ID3D11DeviceContext* g_pd3dDeviceContext = NULL;
@@ -123,10 +126,10 @@ int main(int, char**)
     //ImGui_ImplWin32_EnableDpiAwareness();
     WNDCLASSEX wc = { sizeof(WNDCLASSEX), CS_CLASSDC, WndProc, 0L, 0L, GetModuleHandle(NULL), NULL, NULL, NULL, NULL, _T("Painteroni"), NULL };
     ::RegisterClassEx(&wc);
-    HWND hwnd = ::CreateWindow(wc.lpszClassName, _T("Paint"), WS_OVERLAPPEDWINDOW, 100, 100, 1000, 720, NULL, NULL, wc.hInstance, NULL);
+    g_app.windowHandle = ::CreateWindow(wc.lpszClassName, _T("Paint"), WS_OVERLAPPEDWINDOW, 100, 100, 1000, 720, NULL, NULL, wc.hInstance, NULL);
 
     // Initialize Direct3D
-    if (!CreateDeviceD3D(hwnd))
+    if (!CreateDeviceD3D(g_app.windowHandle))
     {
         CleanupDeviceD3D();
         ::UnregisterClass(wc.lpszClassName, wc.hInstance);
@@ -134,8 +137,11 @@ int main(int, char**)
     }
 
     // Show the window
-    ::ShowWindow(hwnd, SW_SHOWDEFAULT);
-    ::UpdateWindow(hwnd);
+    ::ShowWindow(g_app.windowHandle, SW_SHOWDEFAULT);
+    ::UpdateWindow(g_app.windowHandle);
+
+    // Accept file dragging
+    DragAcceptFiles(g_app.windowHandle, TRUE);
 
     // Setup Dear ImGui context
     IMGUI_CHECKVERSION();
@@ -166,7 +172,7 @@ int main(int, char**)
     SetupTheme();
 
     // Setup Platform/Renderer backends
-    ImGui_ImplWin32_Init(hwnd);
+    ImGui_ImplWin32_Init(g_app.windowHandle);
     ImGui_ImplDX11_Init(g_app.g_pd3dDevice, g_pd3dDeviceContext);
 
     //Load our images!
@@ -222,7 +228,7 @@ int main(int, char**)
     ImGui::DestroyContext();
 
     CleanupDeviceD3D();
-    ::DestroyWindow(hwnd);
+    ::DestroyWindow(g_app.windowHandle);
     ::UnregisterClass(wc.lpszClassName, wc.hInstance);
 
     return 0;
@@ -307,6 +313,31 @@ LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
     case WM_SYSCOMMAND:
         if ((wParam & 0xfff0) == SC_KEYMENU) // Disable ALT application menu
             return 0;
+        break;
+    case WM_DROPFILES:
+    {
+        HDROP hDrop = (HDROP)wParam;
+        UINT fileCount = DragQueryFile(hDrop, 0xFFFFFFFF, NULL, 0);
+
+        for (UINT i = 0; i < fileCount; ++i)
+        {
+            char filePath[MAX_PATH];
+            DragQueryFileA(hDrop, i, filePath, MAX_PATH);
+
+            // Use the file path as needed
+            std::string extension = std::string(filePath).substr(std::string(filePath).find_last_of('.'));
+            if (extension == ".jpg" || extension == ".png" || extension == ".bmp" || extension == ".tga")
+            {
+                std::cout << "Loading image file: " << filePath << std::endl;
+                g_util.LoadImageFileToCanvas(filePath, std::string(filePath).substr(std::string(filePath).find_last_of('\\') + 1));
+                g_canvas[g_cidx].UpdateCanvasHistory();
+            }
+            else
+                std::cerr << "Unsupported file format: " << extension << std::endl;
+        }
+
+        DragFinish(hDrop);
+    }
         break;
     case WM_DESTROY:
         ::PostQuitMessage(0);

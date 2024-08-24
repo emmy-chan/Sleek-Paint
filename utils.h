@@ -25,6 +25,7 @@ public:
 	ImU32 ApplyFloydSteinbergDithering(ImU32 color, uint64_t x, uint64_t y);
 	void FloodFill(const int& x, const int& y, bool paint);
 	std::string RemoveFileExtension(const std::string& file_name);
+	void LoadImageFileToCanvas(const std::string& filepath, const std::string& filename);
 	//bool InitializeInputState(void);
 	//void UpdateInputState();
 	//int m_mouse_x;

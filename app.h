@@ -11,6 +11,7 @@ public:
 class cApp {
 public:
 	// Data
+	HWND windowHandle = NULL;
 	ID3D11Device* g_pd3dDevice = NULL;
 	//ID3D11DeviceContext* g_pd3dDeviceContext = NULL;
 	//IDXGISwapChain* g_pSwapChain = NULL;

@@ -16,6 +16,7 @@ uint16_t g_cidx = uint16_t();
 #include <set>
 #include "keystate.h"
 #include "assets.h"
+#include <iostream>
 
 void cCanvas::Initialize(const std::vector<ImU32>& initial_data, const uint16_t& new_width, const uint16_t& new_height, const ImU32& color) {
     tiles.clear();
@@ -785,6 +786,32 @@ std::unordered_set<uint64_t> GetTilesWithinPolygon(const std::vector<ImVec2>& po
     return selectedTiles;
 }
 
+void HandleFileDragDrop()
+{
+    if (ImGui::BeginDragDropTarget())
+    {
+        if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("FILE_DRAG_DROP"))
+        {
+            // `payload->Data` is a `const void*` containing the data of the dragged item.
+            // In this case, it is the file path to the dropped file.
+            const char* file_path = (const char*)payload->Data;
+            std::string extension = std::string(file_path).substr(std::string(file_path).find_last_of('.'));
+
+            if (extension == ".jpg" || extension == ".png" || extension == ".bmp" || extension == ".tga")
+            {
+                std::cout << "Loading image file: " << file_path << std::endl;
+                g_util.LoadImageFileToCanvas(file_path, std::string(file_path).substr(std::string(file_path).find_last_of('/') + 1));
+                g_canvas[g_cidx].UpdateCanvasHistory();
+            }
+            else
+            {
+                std::cerr << "Unsupported file format: " << extension << std::endl;
+            }
+        }
+        ImGui::EndDragDropTarget();
+    }
+}
+
 void cCanvas::Editor() {
     if (g_canvas.empty() || g_canvas[g_cidx].tiles.empty() || g_canvas[g_cidx].layerVisibility.empty()) return;
     auto& d = *ImGui::GetBackgroundDrawList(); auto& io = ImGui::GetIO(); static bool isTypingText = false;
@@ -923,7 +950,7 @@ void cCanvas::Editor() {
     const uint16_t x = static_cast<int>((ImGui::GetMousePos().x - g_cam.x) / TILE_SIZE),
                    y = static_cast<int>((ImGui::GetMousePos().y - g_cam.y) / TILE_SIZE);
 
-    bool clickingInsideCanvas = x >= 0 && x < g_canvas[g_cidx].width && y >= 0 && y < g_canvas[g_cidx].height;
+    const bool clickingInsideCanvas = x >= 0 && x < g_canvas[g_cidx].width && y >= 0 && y < g_canvas[g_cidx].height;
     static ImVec2 mouseStart;
     if (g_util.MousePressed(0) && clickingInsideCanvas) mouseStart = ImGui::GetMousePos();
     const bool bCanDraw = !g_util.IsClickingOutsideCanvas(mouseStart.x > 0 && mouseStart.y > 0 ? mouseStart : io.MousePos);
