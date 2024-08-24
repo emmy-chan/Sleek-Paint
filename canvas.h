@@ -61,6 +61,7 @@ public:
 	void UpdateCanvasHistory();
 	void LoadColorPalette(std::string input);
 	void DestroyCanvas();
+	bool IsImageInClipboard();
 	void PasteImageFromClipboard();
 	void PasteSelection();
 	void CopySelection();

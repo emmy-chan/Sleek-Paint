@@ -69,8 +69,12 @@ void cGUI::Display()
             }
             if (ImGui::MenuItem(ICON_FA_COPY" Copy") && g_canvas.size() > 0)
                     g_canvas[g_cidx].CopySelection();
-            if (ImGui::MenuItem(ICON_FA_PASTE" Paste") && g_canvas.size() > 0)
-                    g_canvas[g_cidx].PasteSelection();
+            if (ImGui::MenuItem(ICON_FA_PASTE" Paste") && g_canvas.size() > 0) {
+                if (g_canvas[g_cidx].IsImageInClipboard())
+                    g_canvas[g_cidx].PasteImageFromClipboard();
+                else if (!copiedTiles.empty())
+                    g_canvas[g_cidx].PasteSelection(); // Default paste functionality for non-image data
+            }
             
             if (ImGui::MenuItem(ICON_FA_EXCHANGE " Convert Canvas Colors To Palette") && g_canvas.size() > 0) {
                 for (uint64_t y = 0; y < g_canvas[g_cidx].height; y++) {

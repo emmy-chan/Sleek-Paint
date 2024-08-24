@@ -189,27 +189,24 @@ void DrawSelectionRectangle(const std::unordered_set<uint64_t>& indexes, float t
 }
 
 // Check if there is an image available in the clipboard
-bool IsImageInClipboard() {
+bool cCanvas::IsImageInClipboard() {
     if (!OpenClipboard(nullptr)) return false; // Open the clipboard
     const bool hasImage = IsClipboardFormatAvailable(CF_BITMAP) || IsClipboardFormatAvailable(CF_DIB) || IsClipboardFormatAvailable(CF_DIBV5);
     CloseClipboard(); // Close the clipboard
     return hasImage;
 }
 
-// Function to get image data from the clipboard
 std::vector<ImU32> GetImageFromClipboard(uint16_t& outWidth, uint16_t& outHeight) {
     std::vector<ImU32> imageData;
 
     if (!OpenClipboard(nullptr)) return imageData;
 
-    // Handle DIB (Device Independent Bitmap)
     HANDLE hClipboardData = GetClipboardData(CF_DIB);
     if (hClipboardData == nullptr) {
         CloseClipboard();
         return imageData;
     }
 
-    // Lock clipboard memory to retrieve the data
     BITMAPINFO* pBitmapInfo = (BITMAPINFO*)GlobalLock(hClipboardData);
     if (pBitmapInfo == nullptr) {
         CloseClipboard();
@@ -217,17 +214,17 @@ std::vector<ImU32> GetImageFromClipboard(uint16_t& outWidth, uint16_t& outHeight
     }
 
     outWidth = pBitmapInfo->bmiHeader.biWidth;
-    outHeight = abs(pBitmapInfo->bmiHeader.biHeight); // Height could be negative
+    outHeight = abs(pBitmapInfo->bmiHeader.biHeight);
+    const bool isBottomUp = (pBitmapInfo->bmiHeader.biHeight > 0);
 
-    // Pointer to the image data
     BYTE* pPixels = (BYTE*)pBitmapInfo + pBitmapInfo->bmiHeader.biSize + pBitmapInfo->bmiHeader.biClrUsed * sizeof(RGBQUAD);
 
     imageData.resize(outWidth * outHeight);
 
-    // Convert image data to ImU32
     for (int y = 0; y < outHeight; y++) {
+        int sourceY = isBottomUp ? (outHeight - 1 - y) : y;
         for (int x = 0; x < outWidth; x++) {
-            BYTE* pPixel = pPixels + (y * outWidth + x) * 4; // Assuming 32-bit DIB
+            BYTE* pPixel = pPixels + (sourceY * outWidth + x) * 4; // Assuming 32-bit DIB
             BYTE r = pPixel[2];
             BYTE g = pPixel[1];
             BYTE b = pPixel[0];
@@ -251,42 +248,47 @@ void cCanvas::PasteImageFromClipboard() {
         return;
     }
 
-    // Ensure the image fits into the canvas
     if (imageWidth > width || imageHeight > height) {
         printf("Image from clipboard is too large for the canvas.\n");
         return;
     }
 
+    printf("Pasting image of width %d and height %d onto canvas of width %d and height %d.\n", imageWidth, imageHeight, width, height);
+
     // Clear any existing selection before pasting
     selectedIndexes.clear();
 
-    // Create a new layer for the pasted image
-    NewLayer();
-    g_canvas[g_cidx].selLayerIndex = g_canvas[g_cidx].tiles.size() - 1; // Set to the newly created layer
+    // Create a new layer for the image data
+    std::vector<ImU32> imageLayer(width * height, IM_COL32(0, 0, 0, 0)); // Initialize with transparent color
 
-    // Calculate the starting position for the paste operation
-    int startX = 0; // Change this to the desired starting X position
-    int startY = 0; // Change this to the desired starting Y position
-
-    // Paste the image data into the selected layer and add indexes to the selection
     for (int y = 0; y < imageHeight; y++) {
         for (int x = 0; x < imageWidth; x++) {
-            const int canvasX = startX + x;
-            const int canvasY = startY + y;
+            const int imageIndex = x + y * imageWidth;
+            const int canvasIndex = x + y * width; // Paste from top-left corner
 
-            if (canvasX >= 0 && canvasX < width && canvasY >= 0 && canvasY < height) {
-                const uint16_t index = canvasX + canvasY * width;
+            if (canvasIndex < imageLayer.size() && imageIndex < imageData.size()) {
+                imageLayer[canvasIndex] = imageData[imageIndex];
 
-                // Check that the index is within the bounds of the layer
-                if (index < g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex].size()) {
-                    g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex][index] = imageData[y * imageWidth + x];
+                // Add the index to the selected indexes if the pixel is not transparent
+                if (((imageData[imageIndex] >> 24) & 0xFF) > 0) // Check if pixel is not fully transparent
+                    selectedIndexes.insert(canvasIndex);
 
-                    // Add index to selectedIndexes
-                    selectedIndexes.insert(index);
-                }
+                // Debugging output for verification
+                printf("Pasting pixel from image (%d, %d) to canvas (%d, %d) - Color: 0x%X\n", x, y, x, y, imageData[imageIndex]);
+            }
+            else {
+                printf("Warning: Index out of bounds while pasting image. CanvasIndex: %d, ImageIndex: %d\n", canvasIndex, imageIndex);
             }
         }
     }
+
+    // Add the new layer with the image data
+    tiles.push_back(imageLayer);
+    layerVisibility.push_back(true);
+    const std::string layerName = "Layer " + std::to_string(tiles.size());
+    layerNames.push_back(layerName);
+    layerOpacity.push_back(255);
+    g_canvas[g_cidx].selLayerIndex = g_canvas[g_cidx].tiles.size() - 1; // Set to the newly created layer
 
     // Update canvas history for undo functionality
     UpdateCanvasHistory();
