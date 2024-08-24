@@ -256,7 +256,7 @@ void cCanvas::PasteImageFromClipboard() {
     printf("Pasting image of width %d and height %d onto canvas of width %d and height %d.\n", imageWidth, imageHeight, width, height);
 
     // Clear any existing selection before pasting
-    selectedIndexes.clear();
+    //selectedIndexes.clear();
 
     // Create a new layer for the image data
     std::vector<ImU32> imageLayer(width * height, IM_COL32(0, 0, 0, 0)); // Initialize with transparent color
@@ -270,8 +270,8 @@ void cCanvas::PasteImageFromClipboard() {
                 imageLayer[canvasIndex] = imageData[imageIndex];
 
                 // Add the index to the selected indexes if the pixel is not transparent
-                if (((imageData[imageIndex] >> 24) & 0xFF) > 0) // Check if pixel is not fully transparent
-                    selectedIndexes.insert(canvasIndex);
+                //if (((imageData[imageIndex] >> 24) & 0xFF) > 0) // Check if pixel is not fully transparent
+                //    selectedIndexes.insert(canvasIndex);
 
                 // Debugging output for verification
                 printf("Pasting pixel from image (%d, %d) to canvas (%d, %d) - Color: 0x%X\n", x, y, x, y, imageData[imageIndex]);
