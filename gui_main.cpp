@@ -76,85 +76,6 @@ void cGUI::Display()
                     g_canvas[g_cidx].PasteSelection(); // Default paste functionality for non-image data
             }
             
-            if (ImGui::MenuItem(ICON_FA_EXCHANGE " Convert Canvas Colors To Palette") && g_canvas.size() > 0) {
-                for (uint64_t y = 0; y < g_canvas[g_cidx].height; y++) {
-                    for (uint64_t x = 0; x < g_canvas[g_cidx].width; x++) {
-                        const uint64_t index = x + y * g_canvas[g_cidx].width;
-                        const ImU32 currentColor = g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex][index];
-
-                        // Skip processing for fully transparent tiles
-                        if (((currentColor >> IM_COL32_A_SHIFT) & 0xFF) == 0) continue; 
-
-                        ImU32 closestColor = g_canvas[g_cidx].myCols[0];
-                        int minDistance = g_util.ColorDistanceSquared(currentColor, closestColor);
-
-                        // Compare current tile color to each color in myCols to find the closest one
-                        for (size_t i = 1; i < g_canvas[g_cidx].myCols.size(); i++) {
-                            const int distance = g_util.ColorDistanceSquared(currentColor, g_canvas[g_cidx].myCols[i]);
-                            if (distance < minDistance) {
-                                closestColor = g_canvas[g_cidx].myCols[i];
-                                minDistance = distance;
-                            }
-                        }
-
-                        // Set the tile's color to the closest color found
-                        g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex][index] = closestColor;
-                    }
-                }
-
-                g_canvas[g_cidx].UpdateCanvasHistory(); // Update history after processing all tiles
-            }
-
-            if (ImGui::MenuItem(ICON_FA_COPY " Derive Color Palette") && g_canvas.size() > 0) {
-                // Clear the myCols vector
-                g_canvas[g_cidx].myCols.clear();
-
-                // Create our two main colors
-                const std::vector<ImU32> main_cols = { IM_COL32(0, 0, 0, 255), IM_COL32(255, 255, 255, 255) };
-
-                // Push our two main colors to the array
-                for (auto& c : main_cols)
-                    g_canvas[g_cidx].myCols.push_back(c);
-
-                // Create a set to store unique colors
-                std::unordered_set<ImU32> uniqueColors;
-
-                // Iterate over the canvas to collect unique colors
-                for (uint64_t y = 0; y < g_canvas[g_cidx].height; y++) {
-                    for (uint64_t x = 0; x < g_canvas[g_cidx].width; x++) {
-                        const uint64_t index = x + y * g_canvas[g_cidx].width;
-                        const ImU32 currentColor = g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex][index];
-
-                        // Check the alpha value
-                        if (((currentColor >> IM_COL32_A_SHIFT) & 0xFF) != 0)
-                            uniqueColors.insert(currentColor);
-                    }
-                }
-
-                // Push unique colors to the myCols vector
-                for (const auto& color : uniqueColors)
-                    g_canvas[g_cidx].myCols.push_back(color);
-
-                // Make sure colors are not duplicates, starting from the third element
-                for (int i = 2; i < g_canvas[g_cidx].myCols.size() - 1; i++) {
-                    bool duplicateFound = false;
-                    int duplicateIndex = -1;
-
-                    // Check for duplicate colors
-                    for (int j = g_canvas[g_cidx].myCols.size() - 1; j > i; j--) {
-                        if (g_canvas[g_cidx].myCols[j] == g_canvas[g_cidx].myCols[i]) {
-                            duplicateFound = true;
-                            duplicateIndex = j;
-                            break;
-                        }
-                    }
-
-                    if (duplicateFound)
-                        g_canvas[g_cidx].myCols.erase(g_canvas[g_cidx].myCols.begin() + duplicateIndex);
-                }
-            }
-
-
             if (ImGui::MenuItem(ICON_FA_ADJUST " Apply Dithering") && g_canvas.size() > 0) {
                 // Apply the changes to the canvas
                 for (uint64_t y = 0; y < g_canvas[g_cidx].height; y++) {
@@ -845,11 +766,89 @@ void cGUI::Display()
 
     // Popup for additional settings
     if (ImGui::BeginPopup("Color Options")) {
-        if (ImGui::Button(ICON_FA_FILE " Load Color Palette") && g_canvas.size() > 0)
+        if (ImGui::MenuItem(ICON_FA_FILE " Load Color Palette") && g_canvas.size() > 0)
             g_app.ui_state = std::make_unique<cUIStateLoadPalette>();
 
-        if (ImGui::Button(ICON_FA_SAVE " Save Color Palette") && g_canvas.size() > 0)
+        if (ImGui::MenuItem(ICON_FA_SAVE " Save Color Palette") && g_canvas.size() > 0)
             g_app.ui_state = std::make_unique<cUIStateSavePalette>();
+
+        if (ImGui::MenuItem(ICON_FA_ARROW_RIGHT " Convert Canvas Colors To Palette") && g_canvas.size() > 0) {
+            for (uint64_t y = 0; y < g_canvas[g_cidx].height; y++) {
+                for (uint64_t x = 0; x < g_canvas[g_cidx].width; x++) {
+                    const uint64_t index = x + y * g_canvas[g_cidx].width;
+                    const ImU32 currentColor = g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex][index];
+
+                    // Skip processing for fully transparent tiles
+                    if (((currentColor >> IM_COL32_A_SHIFT) & 0xFF) == 0) continue;
+
+                    ImU32 closestColor = g_canvas[g_cidx].myCols[0];
+                    int minDistance = g_util.ColorDistanceSquared(currentColor, closestColor);
+
+                    // Compare current tile color to each color in myCols to find the closest one
+                    for (size_t i = 1; i < g_canvas[g_cidx].myCols.size(); i++) {
+                        const int distance = g_util.ColorDistanceSquared(currentColor, g_canvas[g_cidx].myCols[i]);
+                        if (distance < minDistance) {
+                            closestColor = g_canvas[g_cidx].myCols[i];
+                            minDistance = distance;
+                        }
+                    }
+
+                    // Set the tile's color to the closest color found
+                    g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex][index] = closestColor;
+                }
+            }
+
+            g_canvas[g_cidx].UpdateCanvasHistory(); // Update history after processing all tiles
+        }
+
+        if (ImGui::MenuItem(ICON_FA_COPY " Derive Color Palette From Canvas") && g_canvas.size() > 0) {
+            // Clear the myCols vector
+            g_canvas[g_cidx].myCols.clear();
+
+            // Create our two main colors
+            const std::vector<ImU32> main_cols = { IM_COL32(0, 0, 0, 255), IM_COL32(255, 255, 255, 255) };
+
+            // Push our two main colors to the array
+            for (auto& c : main_cols)
+                g_canvas[g_cidx].myCols.push_back(c);
+
+            // Create a set to store unique colors
+            std::unordered_set<ImU32> uniqueColors;
+
+            // Iterate over the canvas to collect unique colors
+            for (uint64_t y = 0; y < g_canvas[g_cidx].height; y++) {
+                for (uint64_t x = 0; x < g_canvas[g_cidx].width; x++) {
+                    const uint64_t index = x + y * g_canvas[g_cidx].width;
+                    const ImU32 currentColor = g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex][index];
+
+                    // Check the alpha value
+                    if (((currentColor >> IM_COL32_A_SHIFT) & 0xFF) != 0)
+                        uniqueColors.insert(currentColor);
+                }
+            }
+
+            // Push unique colors to the myCols vector
+            for (const auto& color : uniqueColors)
+                g_canvas[g_cidx].myCols.push_back(color);
+
+            // Make sure colors are not duplicates, starting from the third element
+            for (int i = 2; i < g_canvas[g_cidx].myCols.size() - 1; i++) {
+                bool duplicateFound = false;
+                int duplicateIndex = -1;
+
+                // Check for duplicate colors
+                for (int j = g_canvas[g_cidx].myCols.size() - 1; j > i; j--) {
+                    if (g_canvas[g_cidx].myCols[j] == g_canvas[g_cidx].myCols[i]) {
+                        duplicateFound = true;
+                        duplicateIndex = j;
+                        break;
+                    }
+                }
+
+                if (duplicateFound)
+                    g_canvas[g_cidx].myCols.erase(g_canvas[g_cidx].myCols.begin() + duplicateIndex);
+            }
+        }
 
         ImGui::EndPopup();
     }
