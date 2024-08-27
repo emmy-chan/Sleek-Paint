@@ -115,7 +115,7 @@ void cCanvas::UpdateCanvasHistory() {
     // Only add the current state to history if it's different from the last saved state
     if (previousCanvases.empty() || (!tiles[g_canvas[g_cidx].selLayerIndex].empty() && !previousCanvases.empty() && !g_util.IsTilesEqual(tiles[g_canvas[g_cidx].selLayerIndex], previousCanvases.back()))) {
         previousCanvases.push_back(tiles[g_canvas[g_cidx].selLayerIndex]);
-        canvas_idx = previousCanvases.size() - 1;
+        canvas_idx = previousCanvases.size() - (size_t)1;
         printf("Canvas state created.\n");
     }
     else
@@ -151,13 +151,11 @@ void DrawSelectionRectangle(const std::unordered_set<uint64_t>& indexes, float t
     if (indexes.empty()) return;
 
     std::unordered_map<uint64_t, ImVec2> tilePositions;
-    for (uint64_t index : indexes) {
-        ImVec2 pos = GetTilePos(index, tileSize, camX, camY, width);
-        tilePositions[index] = pos;
-    }
+    for (uint64_t index : indexes)
+        tilePositions[index] = GetTilePos(index, tileSize, camX, camY, width);
 
     auto isBorderTile = [&](uint64_t index, int dx, int dy) {
-        uint64_t neighborIndex = index + dx + dy * width;
+        const uint64_t neighborIndex = index + dx + dy * width;
         return indexes.find(neighborIndex) == indexes.end();
     };
 
@@ -226,10 +224,10 @@ std::vector<ImU32> GetImageFromClipboard(uint16_t& outWidth, uint16_t& outHeight
         int sourceY = isBottomUp ? (outHeight - 1 - y) : y;
         for (int x = 0; x < outWidth; x++) {
             BYTE* pPixel = pPixels + (sourceY * outWidth + x) * 4; // Assuming 32-bit DIB
-            BYTE r = pPixel[2];
-            BYTE g = pPixel[1];
-            BYTE b = pPixel[0];
-            BYTE a = pPixel[3];
+            const BYTE r = pPixel[2];
+            const BYTE g = pPixel[1];
+            const BYTE b = pPixel[0];
+            const BYTE a = pPixel[3];
 
             imageData[y * outWidth + x] = IM_COL32(r, g, b, a);
         }
@@ -289,7 +287,7 @@ void cCanvas::PasteImageFromClipboard() {
     const std::string layerName = "Layer " + std::to_string(tiles.size());
     layerNames.push_back(layerName);
     layerOpacity.push_back(255);
-    g_canvas[g_cidx].selLayerIndex = g_canvas[g_cidx].tiles.size() - 1; // Set to the newly created layer
+    g_canvas[g_cidx].selLayerIndex = g_canvas[g_cidx].tiles.size() - (size_t)1; // Set to the newly created layer
 
     // Update canvas history for undo functionality
     UpdateCanvasHistory();
@@ -308,7 +306,7 @@ void cCanvas::PasteSelection() {
 
     // Create a new layer for pasting
     NewLayer();
-    g_canvas[g_cidx].selLayerIndex = g_canvas[g_cidx].tiles.size() - 1; // Set to the newly created layer
+    g_canvas[g_cidx].selLayerIndex = g_canvas[g_cidx].tiles.size() - (size_t)1; // Set to the newly created layer
 
     std::unordered_set<uint64_t> newSelectedIndexes;
     for (const auto& tile : copiedTiles) {
@@ -476,7 +474,7 @@ void DrawTextOnCanvas(BitmapFont& font, const std::string& text, int startX, int
     //printf("DrawTextOnCanvas called with text: %s\n", text.c_str());
 
     // Convert start position from screen coordinates to canvas coordinates
-    startX = (startX - g_cam.x) / TILE_SIZE; startY = (startY - g_cam.y) / TILE_SIZE;
+    startX = static_cast<int>((startX - g_cam.x) / TILE_SIZE); startY = static_cast<int>((startY - g_cam.y) / TILE_SIZE);
 
     // Check if the starting position is within the canvas bounds
     if (startX < 0 || startY < 0 || startX >= g_canvas[g_cidx].width || startY >= g_canvas[g_cidx].height) {
@@ -1077,8 +1075,8 @@ void cCanvas::Editor() {
                 offset.x -= mouseStart.x; offset.y -= mouseStart.y;
 
                 // Snap offset to grid
-                offset.x = static_cast<int>(offset.x / TILE_SIZE) * TILE_SIZE;
-                offset.y = static_cast<int>(offset.y / TILE_SIZE) * TILE_SIZE;
+                offset.x = static_cast<float>(static_cast<int>(offset.x / TILE_SIZE) * TILE_SIZE);
+                offset.y = static_cast<float>(static_cast<int>(offset.y / TILE_SIZE) * TILE_SIZE);
 
                 for (const auto& index : initialSelectedIndexes) {
                     const int selectX = index % width, selectY = index / width;
