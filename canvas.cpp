@@ -872,6 +872,10 @@ void HandleFileDragDrop()
     }
 }
 
+const uint8_t FIXED_CHECKER_SIZE = 1;
+const ImU32 CHECKER_COLOR1 = IM_COL32(128, 128, 128, 255); // Light gray color
+const ImU32 CHECKER_COLOR2 = IM_COL32(192, 192, 192, 255); // Dark gray color
+
 void CompositeLayersToBuffer(std::vector<ImU32>& compositedBuffer, const std::vector<std::vector<ImU32>>& tiles, const std::vector<uint8_t>& layerVisibility, const std::vector<uint8_t>& layerOpacity, uint32_t width, uint32_t height) {
     // Initialize the composited buffer with a transparent color
     compositedBuffer.resize(width * height, IM_COL32(0, 0, 0, 0));
@@ -880,6 +884,7 @@ void CompositeLayersToBuffer(std::vector<ImU32>& compositedBuffer, const std::ve
     for (uint32_t y = 0; y < height; ++y) {
         for (uint32_t x = 0; x < width; ++x) {
             ImU32& finalColor = compositedBuffer[y * width + x];
+            bool isTransparentAcrossAllLayers = true; // Assume transparency until proven otherwise
 
             // Iterate from bottom to top layer
             for (size_t layer = 0; layer < tiles.size(); ++layer) {
@@ -888,34 +893,18 @@ void CompositeLayersToBuffer(std::vector<ImU32>& compositedBuffer, const std::ve
                 const ImU32 color = tiles[layer][y * width + x];
                 const uint8_t a = (color >> IM_COL32_A_SHIFT) & 0xFF;
 
-                // Skip fully transparent pixels
-                if (a == 0) continue;
-
-                // If the current layer pixel is fully opaque, directly set the final color
-                if (a == 255) {
+                if (a > 0) {
+                    // Non-transparent pixel found, set the color
                     finalColor = color;
+                    isTransparentAcrossAllLayers = false;
+                    break; // Stop processing other layers as we have the topmost non-transparent pixel
                 }
-                else {
-                    // Extract RGBA components for blending
-                    uint8_t r = (color >> IM_COL32_R_SHIFT) & 0xFF;
-                    uint8_t g = (color >> IM_COL32_G_SHIFT) & 0xFF;
-                    uint8_t b = (color >> IM_COL32_B_SHIFT) & 0xFF;
+            }
 
-                    // Extract final color components
-                    uint8_t finalR = (finalColor >> IM_COL32_R_SHIFT) & 0xFF;
-                    uint8_t finalG = (finalColor >> IM_COL32_G_SHIFT) & 0xFF;
-                    uint8_t finalB = (finalColor >> IM_COL32_B_SHIFT) & 0xFF;
-                    uint8_t finalA = (finalColor >> IM_COL32_A_SHIFT) & 0xFF;
-
-                    // Alpha blending
-                    const float alpha = a / 255.0f;
-                    finalR = static_cast<uint8_t>(finalR * (1 - alpha) + r * alpha);
-                    finalG = static_cast<uint8_t>(finalG * (1 - alpha) + g * alpha);
-                    finalB = static_cast<uint8_t>(finalB * (1 - alpha) + b * alpha);
-                    finalA = static_cast<uint8_t>(finalA * (1 - alpha) + a * alpha);
-
-                    finalColor = IM_COL32(finalR, finalG, finalB, finalA);
-                }
+            // If all layers are transparent at this pixel, draw the checkerboard pattern
+            if (isTransparentAcrossAllLayers) {
+                const bool isCheckerTile1 = ((x / FIXED_CHECKER_SIZE) % 2 == (y / FIXED_CHECKER_SIZE) % 2);
+                finalColor = isCheckerTile1 ? CHECKER_COLOR1 : CHECKER_COLOR2;
             }
         }
     }
@@ -933,9 +922,8 @@ void UpdateCanvasTexture(ID3D11DeviceContext* context, const std::vector<ImU32>&
     const size_t rowPitch = mappedResource.RowPitch / sizeof(ImU32);  // Calculate the number of pixels per row in the destination
 
     // Loop through each row and copy the data from the composited buffer to the mapped texture
-    for (uint32_t y = 0; y < height; ++y) {
+    for (uint32_t y = 0; y < height; ++y)
         memcpy(dest + y * rowPitch, compositedBuffer.data() + y * width, width * sizeof(ImU32));
-    }
 
     // Unmap the texture after copying the data
     context->Unmap(canvasTexture, 0);
