@@ -18,7 +18,7 @@ uint16_t g_cidx = uint16_t();
 #include "assets.h"
 #include <iostream>
 
-void CreateCanvasTexture(ID3D11Device* device, uint32_t width, uint32_t height) {
+void cCanvas::CreateCanvasTexture(ID3D11Device* device, uint32_t width, uint32_t height) {
     // Release existing resources if they exist
     if (canvasTexture) {
         canvasTexture->Release();
