@@ -18,7 +18,59 @@ uint16_t g_cidx = uint16_t();
 #include "assets.h"
 #include <iostream>
 
+void CreateCanvasTexture(ID3D11Device* device, uint32_t width, uint32_t height) {
+    D3D11_TEXTURE2D_DESC desc;
+    ZeroMemory(&desc, sizeof(desc));
+    desc.Width = width;
+    desc.Height = height;
+    desc.MipLevels = 1;
+    desc.ArraySize = 1;
+    desc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+    desc.SampleDesc.Count = 1;
+    desc.Usage = D3D11_USAGE_DYNAMIC;
+    desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+    desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+    desc.MiscFlags = 0;
+
+    // Create the texture
+    HRESULT hr = device->CreateTexture2D(&desc, NULL, &canvasTexture);
+    if (FAILED(hr)) {
+        printf("Failed to create texture for canvas.\n");
+        return;
+    }
+
+    // Create the shader resource view
+    D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
+    srvDesc.Format = desc.Format;
+    srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
+    srvDesc.Texture2D.MipLevels = 1;
+    srvDesc.Texture2D.MostDetailedMip = 0;
+    hr = device->CreateShaderResourceView(canvasTexture, &srvDesc, &canvasSRV);
+    if (FAILED(hr)) {
+        printf("Failed to create shader resource view for canvas.\n");
+        return;
+    }
+}
+
+void CreateNearestNeighborSamplerState(ID3D11Device* device) {
+    D3D11_SAMPLER_DESC sampDesc = {};
+    sampDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_POINT; // Use point filtering for sharpness
+    sampDesc.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
+    sampDesc.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
+    sampDesc.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
+    sampDesc.ComparisonFunc = D3D11_COMPARISON_ALWAYS;
+    sampDesc.MinLOD = 0;
+    sampDesc.MaxLOD = D3D11_FLOAT32_MAX;
+
+    HRESULT hr = device->CreateSamplerState(&sampDesc, &g_pSamplerStatePoint);
+    if (FAILED(hr)) {
+        printf("Failed to create nearest-neighbor sampler state: 0x%08X\n", hr);
+    }
+}
+
 void cCanvas::Initialize(const std::vector<ImU32>& initial_data, const uint16_t& new_width, const uint16_t& new_height, const ImU32& color) {
+    CreateNearestNeighborSamplerState(g_app.g_pd3dDevice);
+    CreateCanvasTexture(g_app.g_pd3dDevice, new_width, new_height);
     tiles.clear();
     previousCanvases.clear();
 
@@ -810,6 +862,75 @@ void HandleFileDragDrop()
     }
 }
 
+void CompositeLayersToBuffer(std::vector<ImU32>& compositedBuffer, const std::vector<std::vector<ImU32>>& tiles, const std::vector<uint8_t>& layerVisibility, const std::vector<uint8_t>& layerOpacity, uint32_t width, uint32_t height) {
+    // Initialize the composited buffer with a transparent color
+    compositedBuffer.resize(width * height, IM_COL32(0, 0, 0, 0));
+
+    // Iterate through each pixel position
+    for (uint32_t y = 0; y < height; ++y) {
+        for (uint32_t x = 0; x < width; ++x) {
+            ImU32& finalColor = compositedBuffer[y * width + x];
+
+            // Iterate from bottom to top layer
+            for (size_t layer = 0; layer < tiles.size(); ++layer) {
+                if (!layerVisibility[layer]) continue; // Skip invisible layers
+
+                const ImU32 color = tiles[layer][y * width + x];
+                const uint8_t a = (color >> IM_COL32_A_SHIFT) & 0xFF;
+
+                // Skip fully transparent pixels
+                if (a == 0) continue;
+
+                // If the current layer pixel is fully opaque, directly set the final color
+                if (a == 255) {
+                    finalColor = color;
+                }
+                else {
+                    // Extract RGBA components for blending
+                    uint8_t r = (color >> IM_COL32_R_SHIFT) & 0xFF;
+                    uint8_t g = (color >> IM_COL32_G_SHIFT) & 0xFF;
+                    uint8_t b = (color >> IM_COL32_B_SHIFT) & 0xFF;
+
+                    // Extract final color components
+                    uint8_t finalR = (finalColor >> IM_COL32_R_SHIFT) & 0xFF;
+                    uint8_t finalG = (finalColor >> IM_COL32_G_SHIFT) & 0xFF;
+                    uint8_t finalB = (finalColor >> IM_COL32_B_SHIFT) & 0xFF;
+                    uint8_t finalA = (finalColor >> IM_COL32_A_SHIFT) & 0xFF;
+
+                    // Alpha blending
+                    const float alpha = a / 255.0f;
+                    finalR = static_cast<uint8_t>(finalR * (1 - alpha) + r * alpha);
+                    finalG = static_cast<uint8_t>(finalG * (1 - alpha) + g * alpha);
+                    finalB = static_cast<uint8_t>(finalB * (1 - alpha) + b * alpha);
+                    finalA = static_cast<uint8_t>(finalA * (1 - alpha) + a * alpha);
+
+                    finalColor = IM_COL32(finalR, finalG, finalB, finalA);
+                }
+            }
+        }
+    }
+}
+
+void UpdateCanvasTexture(ID3D11DeviceContext* context, const std::vector<ImU32>& compositedBuffer, uint32_t width, uint32_t height) {
+    D3D11_MAPPED_SUBRESOURCE mappedResource;
+    HRESULT hr = context->Map(canvasTexture, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
+    if (FAILED(hr)) {
+        printf("Failed to map texture for canvas update. HRESULT: 0x%08X\n", hr);
+        return;
+    }
+
+    ImU32* dest = static_cast<ImU32*>(mappedResource.pData);
+    const size_t rowPitch = mappedResource.RowPitch / sizeof(ImU32);  // Calculate the number of pixels per row in the destination
+
+    // Loop through each row and copy the data from the composited buffer to the mapped texture
+    for (uint32_t y = 0; y < height; ++y) {
+        memcpy(dest + y * rowPitch, compositedBuffer.data() + y * width, width * sizeof(ImU32));
+    }
+
+    // Unmap the texture after copying the data
+    context->Unmap(canvasTexture, 0);
+}
+
 void cCanvas::Editor() {
     if (g_canvas.empty() || g_canvas[g_cidx].tiles.empty() || g_canvas[g_cidx].layerVisibility.empty()) return;
     auto& d = *ImGui::GetBackgroundDrawList(); auto& io = ImGui::GetIO(); static bool isTypingText = false;
@@ -856,92 +977,19 @@ void cCanvas::Editor() {
         UpdateZoom(ImGui::GetIO().MouseWheel * 4.0f);
     }
 
-    {
-        // Define the dimensions of the UI elements
-        const int leftPanelWidth = 197;
-        const int topMenuBarHeight = 20;
-        const int rightToolbarWidth = 60;
-        const int bottomStatusBarHeight = 20;
+    std::vector<ImU32> compositedBuffer;
+    CompositeLayersToBuffer(compositedBuffer, g_canvas[g_cidx].tiles, g_canvas[g_cidx].layerVisibility, g_canvas[g_cidx].layerOpacity, g_canvas[g_cidx].width, g_canvas[g_cidx].height);
+    UpdateCanvasTexture(g_app.g_pd3dDeviceContext, compositedBuffer, width, height);
 
-        // Calculate the actual drawing area
-        const float drawingAreaX = -g_cam.x + leftPanelWidth;
-        const float drawingAreaY = -g_cam.y + topMenuBarHeight;
-        const float drawingAreaWidth = io.DisplaySize.x - leftPanelWidth - rightToolbarWidth;
-        const float drawingAreaHeight = io.DisplaySize.y - topMenuBarHeight - bottomStatusBarHeight;
+    // Assuming `canvasSRV` is the shader resource view for the texture
+    g_app.g_pd3dDeviceContext->PSSetShaderResources(0, 1, &canvasSRV);
 
-        // Calculate the visible range for x and y, based on the adjusted drawing area
-        int startX = static_cast<int>(std::floor(drawingAreaX / TILE_SIZE));
-        int endX = static_cast<int>(std::ceil((drawingAreaX + drawingAreaWidth) / TILE_SIZE));
+    // Assuming `g_pSamplerStatePoint` is the nearest-neighbor sampler state
+    g_app.g_pd3dDeviceContext->PSSetSamplers(0, 1, &g_pSamplerStatePoint);
 
-        int startY = static_cast<int>(std::floor(drawingAreaY / TILE_SIZE));
-        int endY = static_cast<int>(std::ceil((drawingAreaY + drawingAreaHeight) / TILE_SIZE));
-
-        // Ensure start and end indices are within valid bounds of the canvas
-        startX = std::max(startX, 0);
-        endX = std::min(endX, (int)g_canvas[g_cidx].width);
-
-        startY = std::max(startY, 0);
-        endY = std::min(endY, (int)g_canvas[g_cidx].height);
-
-        for (int y = startY; y < endY; y++) {
-            for (int x = startX; x < endX; x++) {
-                const uint64_t index = static_cast<uint64_t>(x) + static_cast<uint64_t>(y) * g_canvas[g_cidx].width;
-
-                // Calculate the position of the tile in the window, relative to the camera
-                const float tilePosX = x * TILE_SIZE + g_cam.x;
-                const float tilePosY = y * TILE_SIZE + g_cam.y;
-
-                // Check if any visible layer has a solid color covering this tile
-                bool isCoveredBySolidColor = false;
-                for (size_t layer = 0; layer < g_canvas[g_cidx].tiles.size(); layer++) {
-                    if (!g_canvas[g_cidx].layerVisibility[layer]) continue;
-
-                    const ImU32 tileColor = g_canvas[g_cidx].tiles[layer][index];
-                    if (((tileColor >> 24) & 0xFF) == 255) { // If the tile has opacity
-                        isCoveredBySolidColor = true;
-                        break;
-                    }
-                }
-
-                // Draw the background grid only if it is not covered by any solid color
-                if (!isCoveredBySolidColor) {
-                    const ImU32 col = (x + y) % 2 == 0 ? IM_COL32(110, 110, 110, 255) : IM_COL32(175, 175, 175, 255);
-                    d.AddRectFilled(
-                        ImVec2(tilePosX, tilePosY),
-                        ImVec2(tilePosX + TILE_SIZE, tilePosY + TILE_SIZE),
-                        col
-                    );
-                }
-
-                // Draw each layer from bottom to top
-                for (size_t layer = 0; layer < g_canvas[g_cidx].tiles.size(); layer++) {
-                    if (!g_canvas[g_cidx].layerVisibility[layer]) continue;
-
-                    const ImU32 tileColor = g_canvas[g_cidx].tiles[layer][index];
-
-                    // Check if there is a solid color in any layer above the current one
-                    bool isCovered = false;
-                    for (size_t upperLayer = layer + 1; upperLayer < g_canvas[g_cidx].tiles.size(); upperLayer++) {
-                        if (!g_canvas[g_cidx].layerVisibility[upperLayer]) continue;
-
-                        const ImU32 upperTileColor = g_canvas[g_cidx].tiles[upperLayer][index];
-                        if (((upperTileColor >> 24) & 0xFF) == 255) { // If the upper layer tile has opacity
-                            isCovered = true;
-                            break;
-                        }
-                    }
-
-                    // Draw the tile if it has opacity and is not covered by a solid color above
-                    if (((tileColor >> 24) & 0xFF) > 0 && !isCovered) {
-                        d.AddRectFilled(
-                            ImVec2(tilePosX, tilePosY),
-                            ImVec2(tilePosX + TILE_SIZE, tilePosY + TILE_SIZE),
-                            tileColor
-                        );
-                    }
-                }
-            }
-        }
+    if (canvasSRV) {
+        ImTextureID textureID = (ImTextureID)canvasSRV;
+        d.AddImage(textureID, { glm::floor(g_cam.x), glm::floor(g_cam.y) }, ImVec2(glm::floor(g_canvas[g_cidx].width * TILE_SIZE) + glm::floor(g_cam.x), glm::floor(g_canvas[g_cidx].height * TILE_SIZE) + glm::floor(g_cam.y)), ImVec2(0, 0), ImVec2(1, 1), IM_COL32_WHITE);
     }
 
     // Convert the screen coordinates to tile coordinates

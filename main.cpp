@@ -23,9 +23,7 @@
 #include "gui_main.h"
 #include "utils.h"
 
-
 // Data
-static ID3D11DeviceContext* g_pd3dDeviceContext = NULL;
 static IDXGISwapChain* g_pSwapChain = NULL;
 static ID3D11RenderTargetView* g_mainRenderTargetView = NULL;
 
@@ -173,7 +171,7 @@ int main(int, char**)
 
     // Setup Platform/Renderer backends
     ImGui_ImplWin32_Init(g_app.windowHandle);
-    ImGui_ImplDX11_Init(g_app.g_pd3dDevice, g_pd3dDeviceContext);
+    ImGui_ImplDX11_Init(g_app.g_pd3dDevice, g_app.g_pd3dDeviceContext);
 
     //Load our images!
     g_assets.LoadAssets();
@@ -213,8 +211,8 @@ int main(int, char**)
         // Rendering
         ImGui::Render();
         const float clear_color_with_alpha[4] = { 0.1f, 0.1f, 0.1f, 1.f };
-        g_pd3dDeviceContext->OMSetRenderTargets(1, &g_mainRenderTargetView, NULL);
-        g_pd3dDeviceContext->ClearRenderTargetView(g_mainRenderTargetView, clear_color_with_alpha);
+        g_app.g_pd3dDeviceContext->OMSetRenderTargets(1, &g_mainRenderTargetView, NULL);
+        g_app.g_pd3dDeviceContext->ClearRenderTargetView(g_mainRenderTargetView, clear_color_with_alpha);
         ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
 
         g_pSwapChain->Present(1, 0); // Present with vsync
@@ -235,7 +233,6 @@ int main(int, char**)
 }
 
 // Helper functions
-
 bool CreateDeviceD3D(HWND hWnd)
 {
     // Setup swap chain
@@ -259,7 +256,7 @@ bool CreateDeviceD3D(HWND hWnd)
     //createDeviceFlags |= D3D11_CREATE_DEVICE_DEBUG;
     D3D_FEATURE_LEVEL featureLevel;
     const D3D_FEATURE_LEVEL featureLevelArray[2] = { D3D_FEATURE_LEVEL_11_0, D3D_FEATURE_LEVEL_10_0, };
-    if (D3D11CreateDeviceAndSwapChain(NULL, D3D_DRIVER_TYPE_HARDWARE, NULL, createDeviceFlags, featureLevelArray, 2, D3D11_SDK_VERSION, &sd, &g_pSwapChain, &g_app.g_pd3dDevice, &featureLevel, &g_pd3dDeviceContext) != S_OK)
+    if (D3D11CreateDeviceAndSwapChain(NULL, D3D_DRIVER_TYPE_HARDWARE, NULL, createDeviceFlags, featureLevelArray, 2, D3D11_SDK_VERSION, &sd, &g_pSwapChain, &g_app.g_pd3dDevice, &featureLevel, &g_app.g_pd3dDeviceContext) != S_OK)
         return false;
 
     CreateRenderTarget();
@@ -270,7 +267,7 @@ void CleanupDeviceD3D()
 {
     CleanupRenderTarget();
     if (g_pSwapChain) { g_pSwapChain->Release(); g_pSwapChain = NULL; }
-    if (g_pd3dDeviceContext) { g_pd3dDeviceContext->Release(); g_pd3dDeviceContext = NULL; }
+    if (g_app.g_pd3dDeviceContext) { g_app.g_pd3dDeviceContext->Release(); g_app.g_pd3dDeviceContext = NULL; }
     if (g_app.g_pd3dDevice) { g_app.g_pd3dDevice->Release(); g_app.g_pd3dDevice = NULL; }
 }
 

@@ -7,6 +7,9 @@
 
 //The id of our current selected canvas project!
 extern uint16_t g_cidx;
+inline ID3D11Texture2D* canvasTexture = nullptr;
+inline ID3D11ShaderResourceView* canvasSRV = nullptr;
+inline ID3D11SamplerState* g_pSamplerStatePoint = nullptr;
 inline std::unordered_set<uint64_t> selectedIndexes;
 inline std::unordered_map<uint64_t, ImU32> copiedTiles; // Store copied tiles and their colors
 inline std::vector<ImVec2> freeformPath;
