@@ -556,12 +556,7 @@ void cGUI::Display()
         
         const ImVec4 panelColor = { 0.2f, 0.2f, 0.215f, 1.f };
         const ImVec4 panelActiveColor = { 0.f, 0.46f, 0.78f, 1.f };
-        
-        ImGui::Begin("##Tools", NULL, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove);
 
-        ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, { 4.5f, 4.5f });
-        ImGui::PushStyleVar(ImGuiStyleVar_ButtonTextAlign, { 0.7f, 1.f });
-        
         ImGui::Begin("##Tools", NULL, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove);
 
         ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, { 4.5f, 4.5f });
@@ -703,7 +698,7 @@ void cGUI::Display()
         if (ImGui::IsItemHovered()) ImGui::SetTooltip("Zoom Tool");
 
         ImGui::PopStyleColor(10);
-        ImGui::PopStyleVar();
+        ImGui::PopStyleVar(2);
         ImGui::End();
     }
 

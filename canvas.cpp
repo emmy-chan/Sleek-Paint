@@ -19,6 +19,11 @@ uint16_t g_cidx = uint16_t();
 #include <iostream>
 
 void cCanvas::CreateCanvasTexture(ID3D11Device* device, uint32_t width, uint32_t height) {
+    if (!device) {
+        printf("Error: Device is null.\n");
+        return;
+    }
+
     // Release existing resources if they exist
     if (canvasTexture) {
         canvasTexture->Release();
@@ -29,8 +34,13 @@ void cCanvas::CreateCanvasTexture(ID3D11Device* device, uint32_t width, uint32_t
         canvasSRV = nullptr;
     }
 
-    D3D11_TEXTURE2D_DESC desc;
-    ZeroMemory(&desc, sizeof(desc));
+    // Ensure valid dimensions
+    if (width == 0 || height == 0) {
+        printf("Error: Invalid texture dimensions.\n");
+        return;
+    }
+
+    D3D11_TEXTURE2D_DESC desc = {};
     desc.Width = width;
     desc.Height = height;
     desc.MipLevels = 1;
@@ -40,46 +50,26 @@ void cCanvas::CreateCanvasTexture(ID3D11Device* device, uint32_t width, uint32_t
     desc.Usage = D3D11_USAGE_DYNAMIC;
     desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
     desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-    desc.MiscFlags = 0;
 
-    // Create the texture
     HRESULT hr = device->CreateTexture2D(&desc, NULL, &canvasTexture);
-    if (FAILED(hr)) {
-        printf("Failed to create texture for canvas.\n");
+    if (FAILED(hr) || !canvasTexture) {
+        printf("Failed to create texture. HRESULT: 0x%08X\n", hr);
         return;
     }
 
-    // Create the shader resource view
     D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
     srvDesc.Format = desc.Format;
     srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
     srvDesc.Texture2D.MipLevels = 1;
-    srvDesc.Texture2D.MostDetailedMip = 0;
+
     hr = device->CreateShaderResourceView(canvasTexture, &srvDesc, &canvasSRV);
-    if (FAILED(hr)) {
-        printf("Failed to create shader resource view for canvas.\n");
+    if (FAILED(hr) || !canvasSRV) {
+        printf("Failed to create shader resource view. HRESULT: 0x%08X\n", hr);
         return;
     }
 }
 
-void CreateNearestNeighborSamplerState(ID3D11Device* device) {
-    D3D11_SAMPLER_DESC sampDesc = {};
-    sampDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_POINT; // Use point filtering for sharpness
-    sampDesc.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
-    sampDesc.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
-    sampDesc.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
-    sampDesc.ComparisonFunc = D3D11_COMPARISON_ALWAYS;
-    sampDesc.MinLOD = 0;
-    sampDesc.MaxLOD = D3D11_FLOAT32_MAX;
-
-    HRESULT hr = device->CreateSamplerState(&sampDesc, &g_pSamplerStatePoint);
-    if (FAILED(hr)) {
-        printf("Failed to create nearest-neighbor sampler state: 0x%08X\n", hr);
-    }
-}
-
 void cCanvas::Initialize(const std::vector<ImU32>& initial_data, const uint16_t& new_width, const uint16_t& new_height, const ImU32& color) {
-    CreateNearestNeighborSamplerState(g_app.g_pd3dDevice);
     CreateCanvasTexture(g_app.g_pd3dDevice, new_width, new_height);
     tiles.clear();
     previousCanvases.clear();
@@ -872,7 +862,6 @@ void HandleFileDragDrop()
     }
 }
 
-const uint8_t FIXED_CHECKER_SIZE = 1;
 const ImU32 CHECKER_COLOR1 = IM_COL32(128, 128, 128, 255); // Light gray color
 const ImU32 CHECKER_COLOR2 = IM_COL32(192, 192, 192, 255); // Dark gray color
 
@@ -903,7 +892,7 @@ void CompositeLayersToBuffer(std::vector<ImU32>& compositedBuffer, const std::ve
 
             // If all layers are transparent at this pixel, draw the checkerboard pattern
             if (isTransparentAcrossAllLayers) {
-                const bool isCheckerTile1 = ((x / FIXED_CHECKER_SIZE) % 2 == (y / FIXED_CHECKER_SIZE) % 2);
+                const bool isCheckerTile1 = (x % 2 == y % 2);
                 finalColor = isCheckerTile1 ? CHECKER_COLOR1 : CHECKER_COLOR2;
             }
         }
@@ -919,13 +908,11 @@ void UpdateCanvasTexture(ID3D11DeviceContext* context, const std::vector<ImU32>&
     }
 
     ImU32* dest = static_cast<ImU32*>(mappedResource.pData);
-    const size_t rowPitch = mappedResource.RowPitch / sizeof(ImU32);  // Calculate the number of pixels per row in the destination
+    const size_t rowPitch = mappedResource.RowPitch / sizeof(ImU32);
 
-    // Loop through each row and copy the data from the composited buffer to the mapped texture
     for (uint32_t y = 0; y < height; ++y)
         memcpy(dest + y * rowPitch, compositedBuffer.data() + y * width, width * sizeof(ImU32));
 
-    // Unmap the texture after copying the data
     context->Unmap(canvasTexture, 0);
 }
 
@@ -978,12 +965,6 @@ void cCanvas::Editor() {
     std::vector<ImU32> compositedBuffer;
     CompositeLayersToBuffer(compositedBuffer, g_canvas[g_cidx].tiles, g_canvas[g_cidx].layerVisibility, g_canvas[g_cidx].layerOpacity, g_canvas[g_cidx].width, g_canvas[g_cidx].height);
     UpdateCanvasTexture(g_app.g_pd3dDeviceContext, compositedBuffer, width, height);
-
-    // Assuming `canvasSRV` is the shader resource view for the texture
-    g_app.g_pd3dDeviceContext->PSSetShaderResources(0, 1, &canvasSRV);
-
-    // Assuming `g_pSamplerStatePoint` is the nearest-neighbor sampler state
-    g_app.g_pd3dDeviceContext->PSSetSamplers(0, 1, &g_pSamplerStatePoint);
 
     if (canvasSRV) {
         ImTextureID textureID = (ImTextureID)canvasSRV;
