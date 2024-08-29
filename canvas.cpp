@@ -19,6 +19,16 @@ uint16_t g_cidx = uint16_t();
 #include <iostream>
 
 void CreateCanvasTexture(ID3D11Device* device, uint32_t width, uint32_t height) {
+    // Release existing resources if they exist
+    if (canvasTexture) {
+        canvasTexture->Release();
+        canvasTexture = nullptr;
+    }
+    if (canvasSRV) {
+        canvasSRV->Release();
+        canvasSRV = nullptr;
+    }
+
     D3D11_TEXTURE2D_DESC desc;
     ZeroMemory(&desc, sizeof(desc));
     desc.Width = width;
