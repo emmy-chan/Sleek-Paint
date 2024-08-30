@@ -117,6 +117,22 @@ void SetupTheme() {
     //style.WindowBorderSize = 0.f;
 }
 
+void CreateNearestNeighborSamplerState(ID3D11Device* device) {
+    D3D11_SAMPLER_DESC sampDesc = {};
+    sampDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_POINT; // Use point filtering for sharpness
+    sampDesc.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
+    sampDesc.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
+    sampDesc.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
+    sampDesc.ComparisonFunc = D3D11_COMPARISON_ALWAYS;
+    sampDesc.MinLOD = 0;
+    sampDesc.MaxLOD = D3D11_FLOAT32_MAX;
+
+    HRESULT hr = device->CreateSamplerState(&sampDesc, &g_pSamplerStatePoint);
+    if (FAILED(hr)) {
+        printf("Failed to create nearest-neighbor sampler state: 0x%08X\n", hr);
+    }
+}
+
 // Main code
 int main(int, char**)
 {
@@ -172,6 +188,8 @@ int main(int, char**)
     // Setup Platform/Renderer backends
     ImGui_ImplWin32_Init(g_app.windowHandle);
     ImGui_ImplDX11_Init(g_app.g_pd3dDevice, g_app.g_pd3dDeviceContext);
+
+    CreateNearestNeighborSamplerState(g_app.g_pd3dDevice);
 
     //Load our images!
     g_assets.LoadAssets();
