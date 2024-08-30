@@ -239,6 +239,15 @@ int main(int, char**)
 
     shutdown_program:
     // Cleanup
+    if (canvasTexture) {
+        canvasTexture->Release();
+        canvasTexture = nullptr;
+    }
+    if (canvasSRV) {
+        canvasSRV->Release();
+        canvasSRV = nullptr;
+    }
+
     ImGui_ImplDX11_Shutdown();
     ImGui_ImplWin32_Shutdown();
     ImGui::DestroyContext();
