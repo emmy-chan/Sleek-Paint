@@ -511,8 +511,10 @@ void cGUI::Display()
                         //Maybe make this constructor take in the old value and return to our old scene / project index once we do something there?
                         g_app.ui_state = std::make_unique<cUIStateSaveWarning>();
                     }
-                    else
+                    else {
                         g_canvas[g_cidx].DestroyCanvas();
+                        g_canvas[g_cidx].CreateCanvasTexture(g_app.g_pd3dDevice, g_canvas[g_cidx].width, g_canvas[g_cidx].height);
+                    }
                 }
             }
 

@@ -148,7 +148,6 @@ void cUIStateSaveProject::Update()
 
     static std::string file_name;
     static std::string extension;
-    static std::string data;
 
     fileDialog.SetTypeFilters({ ".spr", ".jpg", ".png", ".bmp", ".tga" });
     if (fileDialog.GetTypeFilterIndex() == 0) fileDialog.SetCurrentTypeFilterIndex(3);
@@ -191,7 +190,6 @@ void cUIStateSaveProject::Update()
             g_app.ui_state.reset();
             bDisplayed = false;
             file_name.clear();
-            data.clear();
         }
         else {
             ImGui::OpenPopup("Warning");
@@ -219,7 +217,6 @@ void cUIStateSaveProject::Update()
                 g_app.ui_state.reset();
                 bDisplayed = false;
                 file_name.clear();
-                data.clear();
             }
 
             ImGui::SameLine();
@@ -231,7 +228,6 @@ void cUIStateSaveProject::Update()
                 g_app.ui_state.reset();
                 bDisplayed = false;
                 file_name.clear();
-                data.clear();
             }
 
             ImGui::EndPopup();
@@ -438,6 +434,7 @@ void cUIStateSaveWarning::Update()
         ImGui::SameLine();
         if (ImGui::Button("Don't save")) {
             g_canvas[g_cidx].DestroyCanvas();
+            g_canvas[g_cidx].CreateCanvasTexture(g_app.g_pd3dDevice, g_canvas[g_cidx].width, g_canvas[g_cidx].height);
             g_app.ui_state.reset();
         }
 
