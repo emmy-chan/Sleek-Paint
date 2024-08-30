@@ -237,10 +237,7 @@ void cUIStateSaveProject::Update()
 
 // Function to constrain proportions based on a fixed aspect ratio
 void ConstrainProportions(int& width, int& height, float aspectRatio, bool widthChanged) {
-    if (widthChanged) 
-        height = static_cast<int>(width / aspectRatio);
-    else
-        width = static_cast<int>(height * aspectRatio);
+    widthChanged ? height = static_cast<int>(width / aspectRatio) : width = static_cast<int>(height * aspectRatio);
 }
 
 void cUIStateNewProject::Update()
