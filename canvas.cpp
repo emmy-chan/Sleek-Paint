@@ -872,29 +872,44 @@ void CompositeLayersToBuffer(std::vector<ImU32>& compositedBuffer, const std::ve
     // Iterate through each pixel position
     for (uint32_t y = 0; y < height; ++y) {
         for (uint32_t x = 0; x < width; ++x) {
-            ImU32& finalColor = compositedBuffer[y * width + x];
-            bool isTransparentAcrossAllLayers = true; // Assume transparency until proven otherwise
+            ImU32 finalColor = IM_COL32(0, 0, 0, 0); // Start with a transparent color
+            bool hasVisiblePixel = false; // To check if any pixel is visible across all layers
 
             // Iterate from bottom to top layer
             for (size_t layer = 0; layer < tiles.size(); ++layer) {
                 if (!layerVisibility[layer]) continue; // Skip invisible layers
 
                 const ImU32 color = tiles[layer][y * width + x];
-                const uint8_t a = (color >> IM_COL32_A_SHIFT) & 0xFF;
+                const uint8_t layerAlpha = layerOpacity[layer]; // Layer-specific opacity
+                const uint8_t pixelAlpha = (color >> IM_COL32_A_SHIFT) & 0xFF;
 
-                if (a > 0) {
-                    // Non-transparent pixel found, set the color
-                    finalColor = color;
-                    isTransparentAcrossAllLayers = false;
-                    break; // Stop processing other layers as we have the topmost non-transparent pixel
+                if (pixelAlpha > 0) {
+                    // Blend the color with the composited color so far
+                    hasVisiblePixel = true;
+                    const uint8_t blendedAlpha = (pixelAlpha * layerAlpha) / 255;
+                    const uint8_t existingAlpha = (finalColor >> IM_COL32_A_SHIFT) & 0xFF;
+                    const uint8_t totalAlpha = blendedAlpha + ((existingAlpha * (255 - blendedAlpha)) / 255);
+
+                    // Calculate blended color components
+                    const uint8_t r = (uint8_t)(((color >> IM_COL32_R_SHIFT) & 0xFF) * blendedAlpha / 255 +
+                        ((finalColor >> IM_COL32_R_SHIFT) & 0xFF) * existingAlpha * (255 - blendedAlpha) / (255 * 255));
+                    const uint8_t g = (uint8_t)(((color >> IM_COL32_G_SHIFT) & 0xFF) * blendedAlpha / 255 +
+                        ((finalColor >> IM_COL32_G_SHIFT) & 0xFF) * existingAlpha * (255 - blendedAlpha) / (255 * 255));
+                    const uint8_t b = (uint8_t)(((color >> IM_COL32_B_SHIFT) & 0xFF) * blendedAlpha / 255 +
+                        ((finalColor >> IM_COL32_B_SHIFT) & 0xFF) * existingAlpha * (255 - blendedAlpha) / (255 * 255));
+
+                    finalColor = IM_COL32(r, g, b, totalAlpha);
                 }
             }
 
-            // If all layers are transparent at this pixel, draw the checkerboard pattern
-            if (isTransparentAcrossAllLayers) {
+            // If no visible pixel was found across all layers, draw the checkerboard pattern
+            if (!hasVisiblePixel) {
                 const bool isCheckerTile1 = (x % 2 == y % 2);
                 finalColor = isCheckerTile1 ? CHECKER_COLOR1 : CHECKER_COLOR2;
             }
+
+            // Set the final color to the composited buffer
+            compositedBuffer[y * width + x] = finalColor;
         }
     }
 }
