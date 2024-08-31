@@ -661,12 +661,8 @@ void applyBandAidBrushEffect(const ImVec2& lastMousePos, int x, int y) {
     const uint8_t brushRadiusInt = static_cast<uint8_t>(brushRadius);
 
     if (lastMousePos.x >= 0 && lastMousePos.y >= 0) {
-        const int lastX = static_cast<int>((lastMousePos.x - g_cam.x) / TILE_SIZE);
-        const int lastY = static_cast<int>((lastMousePos.y - g_cam.y) / TILE_SIZE);
-
-        const float distX = x - lastX, distY = y - lastY;
-        const float distance = glm::sqrt(distX * distX + distY * distY);
-
+        const int lastX = static_cast<int>((lastMousePos.x - g_cam.x) / TILE_SIZE), lastY = static_cast<int>((lastMousePos.y - g_cam.y) / TILE_SIZE);
+        const float distX = x - lastX, distY = y - lastY, distance = glm::sqrt(distX * distX + distY * distY);
         const int steps = static_cast<int>(distance) + 1;
 
         for (int i = 0; i <= steps; ++i) {
@@ -699,19 +695,16 @@ void applyBandAidEffect() {
     std::vector<ImU32> surroundingColors;
 
     for (auto index : selectedIndexes) {
-        const int x = index % g_canvas[g_cidx].width;
-        const int y = index / g_canvas[g_cidx].width;
+        const int x = index % g_canvas[g_cidx].width, y = index / g_canvas[g_cidx].width;
 
         for (int offsetY = -1; offsetY <= 1; ++offsetY) {
             for (int offsetX = -1; offsetX <= 1; ++offsetX) {
-                const int sampleX = x + offsetX;
-                const int sampleY = y + offsetY;
+                const int sampleX = x + offsetX, sampleY = y + offsetY;
 
                 if (sampleX >= 0 && sampleX < g_canvas[g_cidx].width && sampleY >= 0 && sampleY < g_canvas[g_cidx].height) {
                     const ImU32 color = g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex][sampleY * g_canvas[g_cidx].width + sampleX];
-                    if (color != IM_COL32(0, 0, 0, 0) && selectedIndexes.find(sampleX + sampleY * g_canvas[g_cidx].width) == selectedIndexes.end()) {
+                    if (color != IM_COL32(0, 0, 0, 0) && selectedIndexes.find(sampleX + sampleY * g_canvas[g_cidx].width) == selectedIndexes.end())
                         surroundingColors.push_back(color);
-                    }
                 }
             }
         }
@@ -1096,12 +1089,9 @@ void cCanvas::Editor() {
                 for (const auto& index : initialSelectedIndexes) {
                     const int selectX = index % width;
                     const int selectY = index / width;
-                    int newX = selectX + offsetX / TILE_SIZE;
-                    int newY = selectY + offsetY / TILE_SIZE;
 
                     // Wrap positions within canvas boundaries
-                    newX = (newX + width) % width;
-                    newY = (newY + height) % height;
+                    const int newX = (selectX + offsetX / TILE_SIZE + width) % width, newY = (selectY + offsetY / TILE_SIZE + height) % height;
 
                     const uint16_t newIndex = newX + newY * width;
                     newSelectedIndexes.insert(newIndex);
@@ -1134,8 +1124,7 @@ void cCanvas::Editor() {
 
             if (g_util.MouseReleased(0)) {
                 // Convert the screen coordinates to tile coordinates
-                const uint16_t startX = static_cast<int>((mouseStart.x - g_cam.x) / TILE_SIZE);
-                const uint16_t startY = static_cast<int>((mouseStart.y - g_cam.y) / TILE_SIZE);
+                const uint16_t startX = static_cast<int>((mouseStart.x - g_cam.x) / TILE_SIZE), startY = static_cast<int>((mouseStart.y - g_cam.y) / TILE_SIZE);
 
                 // Draw the line on the canvas
                 DrawLineOnCanvas(startX, startY, x, y, myCols[selColIndex]);
@@ -1146,8 +1135,7 @@ void cCanvas::Editor() {
             if (ImGui::IsMouseDown(0)) {
                 // Draw the preview rectangle
                 const ImVec2 mousePos = ImGui::GetMousePos();
-                const uint16_t endX = static_cast<int>((mousePos.x - g_cam.x) / TILE_SIZE);
-                const uint16_t endY = static_cast<int>((mousePos.y - g_cam.y) / TILE_SIZE);
+                const uint16_t endX = static_cast<int>((mousePos.x - g_cam.x) / TILE_SIZE), endY = static_cast<int>((mousePos.y - g_cam.y) / TILE_SIZE);
 
                 DrawRectangleOnCanvas(static_cast<int>((mouseStart.x - g_cam.x) / TILE_SIZE), static_cast<int>((mouseStart.y - g_cam.y) / TILE_SIZE), endX, endY, myCols[selColIndex], true);
             }
@@ -1155,34 +1143,24 @@ void cCanvas::Editor() {
                 d.AddRectFilled({ g_cam.x + x * TILE_SIZE, g_cam.y + y * TILE_SIZE }, { g_cam.x + x * TILE_SIZE + TILE_SIZE, g_cam.y + y * TILE_SIZE + TILE_SIZE }, myCols[selColIndex]);
 
             if (g_util.MouseReleased(0)) {
-                // Convert the screen coordinates to tile coordinates
-                const uint16_t startX = static_cast<int>((mouseStart.x - g_cam.x) / TILE_SIZE);
-                const uint16_t startY = static_cast<int>((mouseStart.y - g_cam.y) / TILE_SIZE);
-
-                // Draw the rectangle on the canvas
-                DrawRectangleOnCanvas(startX, startY, x, y, myCols[selColIndex]);
+                const uint16_t startX = static_cast<int>((mouseStart.x - g_cam.x) / TILE_SIZE), startY = static_cast<int>((mouseStart.y - g_cam.y) / TILE_SIZE); // Convert the screen coordinates to tile coordinates
+                DrawRectangleOnCanvas(startX, startY, x, y, myCols[selColIndex]); // Draw the rectangle on the canvas
             }
 
             break;
         case TOOL_ELIPSE:
             if (ImGui::IsMouseDown(0)) {
-                // Draw the preview ellipse
                 const ImVec2 mousePos = ImGui::GetMousePos();
-                const uint16_t endX = static_cast<int>((mousePos.x - g_cam.x) / TILE_SIZE);
-                const uint16_t endY = static_cast<int>((mousePos.y - g_cam.y) / TILE_SIZE);
+                const uint16_t endX = static_cast<int>((mousePos.x - g_cam.x) / TILE_SIZE), endY = static_cast<int>((mousePos.y - g_cam.y) / TILE_SIZE);
 
-                DrawCircleOnCanvas(static_cast<int>((mouseStart.x - g_cam.x) / TILE_SIZE), static_cast<int>((mouseStart.y - g_cam.y) / TILE_SIZE), endX, endY, myCols[selColIndex], true);
+                DrawCircleOnCanvas(static_cast<int>((mouseStart.x - g_cam.x) / TILE_SIZE), static_cast<int>((mouseStart.y - g_cam.y) / TILE_SIZE), endX, endY, myCols[selColIndex], true); // Draw the preview ellipse
             }
             else
                 d.AddRectFilled({ g_cam.x + x * TILE_SIZE, g_cam.y + y * TILE_SIZE }, { g_cam.x + x * TILE_SIZE + TILE_SIZE, g_cam.y + y * TILE_SIZE + TILE_SIZE }, myCols[selColIndex]);
 
             if (g_util.MouseReleased(0)) {
-                // Convert the screen coordinates to tile coordinates
-                const uint16_t startX = static_cast<int>((mouseStart.x - g_cam.x) / TILE_SIZE);
-                const uint16_t startY = static_cast<int>((mouseStart.y - g_cam.y) / TILE_SIZE);
-
-                // Draw the ellipse on the canvas
-                DrawCircleOnCanvas(startX, startY, x, y, myCols[selColIndex]);
+                const uint16_t startX = static_cast<int>((mouseStart.x - g_cam.x) / TILE_SIZE), startY = static_cast<int>((mouseStart.y - g_cam.y) / TILE_SIZE); // Convert the screen coordinates to tile coordinates
+                DrawCircleOnCanvas(startX, startY, x, y, myCols[selColIndex]); // Draw the ellipse on the canvas
             }
 
             break;
@@ -1222,7 +1200,6 @@ void cCanvas::Editor() {
                 if (!freeformPath.empty()) {
                     // Convert the path to a polygon and select tiles within it
                     std::unordered_set<uint64_t> selectedTiles = GetTilesWithinPolygon(freeformPath, g_canvas[g_cidx].width, g_canvas[g_cidx].height);
-
                     selectedIndexes.insert(selectedTiles.begin(), selectedTiles.end());
                 }
 
