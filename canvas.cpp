@@ -947,7 +947,7 @@ void cCanvas::Editor() {
             else if (key_state.key_pressed('S')) paintToolSelected = TOOL_SELECT;
         }
 
-        UpdateZoom(ImGui::GetIO().MouseWheel * 4.0f);
+        UpdateZoom(ImGui::GetIO().MouseWheel * glm::max(TILE_SIZE * 0.08f, 1.0f));
     }
 
     // Assuming `canvasSRV` is the shader resource view for the texture
