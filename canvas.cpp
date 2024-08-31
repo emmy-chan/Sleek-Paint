@@ -836,32 +836,6 @@ std::unordered_set<uint64_t> GetTilesWithinPolygon(const std::vector<ImVec2>& po
     return selectedTiles;
 }
 
-void HandleFileDragDrop()
-{
-    if (ImGui::BeginDragDropTarget())
-    {
-        if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("FILE_DRAG_DROP"))
-        {
-            // `payload->Data` is a `const void*` containing the data of the dragged item.
-            // In this case, it is the file path to the dropped file.
-            const char* file_path = (const char*)payload->Data;
-            std::string extension = std::string(file_path).substr(std::string(file_path).find_last_of('.'));
-
-            if (extension == ".jpg" || extension == ".png" || extension == ".bmp" || extension == ".tga")
-            {
-                std::cout << "Loading image file: " << file_path << std::endl;
-                g_util.LoadImageFileToCanvas(file_path, std::string(file_path).substr(std::string(file_path).find_last_of('/') + 1));
-                g_canvas[g_cidx].UpdateCanvasHistory();
-            }
-            else
-            {
-                std::cerr << "Unsupported file format: " << extension << std::endl;
-            }
-        }
-        ImGui::EndDragDropTarget();
-    }
-}
-
 void CompositeLayersToBuffer(std::vector<ImU32>& compositedBuffer, const std::vector<std::vector<ImU32>>& tiles, const std::vector<uint8_t>& layerVisibility, const std::vector<uint8_t>& layerOpacity, uint32_t width, uint32_t height) {
     // Initialize the composited buffer with a transparent color
     compositedBuffer.resize(width * height, IM_COL32(0, 0, 0, 0));
