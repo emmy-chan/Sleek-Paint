@@ -13,12 +13,16 @@
 cUtils g_util = cUtils();
 
 bool cUtils::Hovering(const short& iXStart, const short& iYStart, const short& iWidth, const short& iHeight) {
-    const int mouseX = (int)ImGui::GetMousePos().x;
-    const int mouseY = (int)ImGui::GetMousePos().y;
+    const int mouseX = static_cast<int>(ImGui::GetMousePos().x);
+    const int mouseY = static_cast<int>(ImGui::GetMousePos().y);
 
-    if (mouseX >= iXStart && iWidth - 1 >= mouseX)
-        if (mouseY >= iYStart && iHeight - 1 >= mouseY)
+    // Check if mouseX is within the horizontal bounds of the rectangle
+    if (mouseX >= iXStart && mouseX < (iXStart + iWidth)) {
+        // Check if mouseY is within the vertical bounds of the rectangle
+        if (mouseY >= iYStart && mouseY < (iYStart + iHeight)) {
             return true;
+        }
+    }
 
     return false;
 }
