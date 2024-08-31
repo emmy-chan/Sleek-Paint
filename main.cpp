@@ -116,6 +116,9 @@ void SetupTheme() {
     style.ScrollbarRounding = 0.0f;
     style.TabRounding = 0.0f;
     //style.WindowBorderSize = 0.f;
+
+    ImGui::GetStyle().AntiAliasedLines = false;
+    ImGui::GetStyle().AntiAliasedFill = false;
 }
 
 void CreateNearestNeighborSamplerState(ID3D11Device* device) {
