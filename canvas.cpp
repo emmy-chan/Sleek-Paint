@@ -20,24 +20,20 @@ uint16_t g_cidx = uint16_t();
 
 void cCanvas::CreateCanvasTexture(ID3D11Device* device, uint32_t width, uint32_t height) {
     if (!device) {
-        printf("Error: Device is null.\n");
-        return;
+        printf("Error: Device is null.\n"); return;
     }
 
     // Release existing resources if they exist
     if (canvasTexture) {
-        canvasTexture->Release();
-        canvasTexture = nullptr;
+        canvasTexture->Release(); canvasTexture = nullptr;
     }
     if (canvasSRV) {
-        canvasSRV->Release();
-        canvasSRV = nullptr;
+        canvasSRV->Release(); canvasSRV = nullptr;
     }
 
     // Ensure valid dimensions
     if (width == 0 || height == 0) {
-        printf("Error: Invalid texture dimensions.\n");
-        return;
+        printf("Error: Invalid texture dimensions.\n"); return;
     }
 
     D3D11_TEXTURE2D_DESC desc = {};
@@ -386,17 +382,14 @@ void cCanvas::CopySelection() {
 
 void cCanvas::DeleteSelection() {
     if (selectedIndexes.empty()) return;
-
-    for (auto& index : selectedIndexes)
-        g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex][index] = IM_COL32(0, 0, 0, 0);
+    for (auto& index : selectedIndexes) g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex][index] = IM_COL32(0, 0, 0, 0);
 
     selectedIndexes.clear();
     g_canvas[g_cidx].UpdateCanvasHistory();
 }
 
 void DrawLineOnCanvas(int x0, int y0, int x1, int y1, ImU32 color, bool preview = false) {
-    const int dx = abs(x1 - x0), dy = abs(y1 - y0);
-    const int sx = (x0 < x1) ? 1 : -1, sy = (y0 < y1) ? 1 : -1;
+    const int dx = abs(x1 - x0), dy = abs(y1 - y0), sx = (x0 < x1) ? 1 : -1, sy = (y0 < y1) ? 1 : -1;
     int err = dx - dy;
 
     // Calculate the half-thickness for offset calculations
@@ -454,15 +447,13 @@ void DrawCircleOnCanvas(int startX, int startY, int endX, int endY, ImU32 color,
                     const ImVec2 bottomRight = { topLeft.x + TILE_SIZE, topLeft.y + TILE_SIZE };
                     ImGui::GetBackgroundDrawList()->AddRectFilled(topLeft, bottomRight, color);
                 }
-                else {
+                else
                     g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex][py * g_canvas[g_cidx].width + px] = color;
-                }
             }
         }
     };
 
-    int x = 0;
-    int y = radiusY;
+    int x = 0, y = radiusY;
     int p1 = static_cast<int>(radiusY * radiusY - radiusX * radiusX * radiusY + 0.25 * radiusX * radiusX);
     int dx = 2 * radiusY * radiusY * x, dy = 2 * radiusX * radiusX * y;
 
@@ -585,8 +576,7 @@ void applyBrushEffect(const ImVec2& lastMousePos, int x, int y, const ImU32& col
 
     // Check if there is a valid previous position
     if (lastMousePos.x >= 0 && lastMousePos.y >= 0) {
-        const int lastX = static_cast<int>((lastMousePos.x - g_cam.x) / TILE_SIZE);
-        const int lastY = static_cast<int>((lastMousePos.y - g_cam.y) / TILE_SIZE);
+        const int lastX = static_cast<int>((lastMousePos.x - g_cam.x) / TILE_SIZE), lastY = static_cast<int>((lastMousePos.y - g_cam.y) / TILE_SIZE);
 
         // Calculate the distance between the previous and current mouse positions
         const float distX = x - lastX, distY = y - lastY;
@@ -668,7 +658,7 @@ void applyBrushEffect(const ImVec2& lastMousePos, int x, int y, const ImU32& col
 
 void applyBandAidBrushEffect(const ImVec2& lastMousePos, int x, int y) {
     const float brushRadius = brush_size / 2.0f;
-    const int brushRadiusInt = static_cast<int>(brushRadius);
+    const uint8_t brushRadiusInt = static_cast<uint8_t>(brushRadius);
 
     if (lastMousePos.x >= 0 && lastMousePos.y >= 0) {
         const int lastX = static_cast<int>((lastMousePos.x - g_cam.x) / TILE_SIZE);
@@ -738,12 +728,11 @@ void applyBandAidEffect() {
     }
 
     const int count = surroundingColors.size();
-    ImU32 blendedColor = IM_COL32(totalR / count, totalG / count, totalB / count, totalA / count);
+    const ImU32 blendedColor = IM_COL32(totalR / count, totalG / count, totalB / count, totalA / count);
 
     // Step 3: Apply the blended color to the selected tiles
-    for (auto index : selectedIndexes) {
+    for (auto index : selectedIndexes)
         g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex][index] = blendedColor;
-    }
 
     // Clear the selection after applying the effect
     selectedIndexes.clear();
@@ -759,7 +748,7 @@ void cCanvas::UpdateZoom(float value) {
 
         // Calculate new zoom level
         const float newZoom = glm::clamp(TILE_SIZE + value, minZoom, maxZoom);
-        const auto mousePos = ImGui::GetMousePos();
+        const ImVec2 mousePos = ImGui::GetMousePos();
 
         // Adjust camera position to keep the zoom centered around the mouse position
         if (newZoom != TILE_SIZE) {
@@ -793,8 +782,7 @@ bool DoLinesIntersect(ImVec2 a1, ImVec2 a2, ImVec2 b1, ImVec2 b2) {
         return v1.x * v2.y - v1.y * v2.x;
     };
 
-    const ImVec2 r = ImVec2(a2.x - a1.x, a2.y - a1.y);
-    const ImVec2 s = ImVec2(b2.x - b1.x, b2.y - b1.y);
+    const ImVec2 r = ImVec2(a2.x - a1.x, a2.y - a1.y), s = ImVec2(b2.x - b1.x, b2.y - b1.y);
 
     const float rxs = crossProduct(r, s);
     const float t = crossProduct(ImVec2(b1.x - a1.x, b1.y - a1.y), s) / rxs;
@@ -805,8 +793,7 @@ bool DoLinesIntersect(ImVec2 a1, ImVec2 a2, ImVec2 b1, ImVec2 b2) {
 
 bool IsLineIntersectingPolygon(const std::vector<ImVec2>& polygon, ImVec2 p1, ImVec2 p2) {
     for (size_t i = 0; i < polygon.size() - 1; ++i) {
-        if (DoLinesIntersect(p1, p2, polygon[i], polygon[i + 1]))
-            return true;
+        if (DoLinesIntersect(p1, p2, polygon[i], polygon[i + 1])) return true;
     }
     // Also check the last edge connecting the last and the first point
     return DoLinesIntersect(p1, p2, polygon.back(), polygon.front());
@@ -1047,13 +1034,8 @@ void cCanvas::Editor() {
             break;
 
         case TOOL_WAND:
-            if (g_util.MousePressed(1))
-                selectedIndexes.clear();
-
-            if (g_util.MousePressed(0)) {
-                if (x >= 0 && y < width && x >= 0 && y < height)
-                    g_util.FloodFill(x, y, false);
-            }
+            if (g_util.MousePressed(1)) selectedIndexes.clear();
+            if (g_util.MousePressed(0)) g_util.FloodFill(x, y, false);
 
             d.AddRectFilled({ g_cam.x + x * TILE_SIZE, g_cam.y + y * TILE_SIZE }, { g_cam.x + x * TILE_SIZE + TILE_SIZE, g_cam.y + y * TILE_SIZE + TILE_SIZE }, myCols[selColIndex]);
             break;
@@ -1114,14 +1096,16 @@ void cCanvas::Editor() {
                 for (const auto& index : initialSelectedIndexes) {
                     const int selectX = index % width;
                     const int selectY = index / width;
-                    const int newX = static_cast<int>(selectX + offsetX / TILE_SIZE);
-                    const int newY = static_cast<int>(selectY + offsetY / TILE_SIZE);
+                    int newX = selectX + offsetX / TILE_SIZE;
+                    int newY = selectY + offsetY / TILE_SIZE;
 
-                    if (newX >= 0 && newX < width && newY >= 0 && newY < height) {
-                        const uint16_t newIndex = newX + newY * width;
-                        newSelectedIndexes.insert(newIndex);
-                        newTileColors[newIndex] = tiles[g_canvas[g_cidx].selLayerIndex][index];
-                    }
+                    // Wrap positions within canvas boundaries
+                    newX = (newX + width) % width;
+                    newY = (newY + height) % height;
+
+                    const uint16_t newIndex = newX + newY * width;
+                    newSelectedIndexes.insert(newIndex);
+                    newTileColors[newIndex] = tiles[g_canvas[g_cidx].selLayerIndex][index];
                 }
 
                 // Clear the original positions
