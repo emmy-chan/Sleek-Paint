@@ -16,6 +16,7 @@
 #include <string>
 //#include <fstream>
 #include <iostream>
+#include <algorithm>
 
 //for shit that should be in its own file lmao
 #include "canvas.h"
@@ -349,8 +350,9 @@ LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
             DragQueryFileA(hDrop, i, filePath, MAX_PATH);
 
             // Use the file path as needed
-            std::string extension = std::string(filePath).substr(std::string(filePath).find_last_of('.'));
-            if (extension == ".jpg" || extension == ".png" || extension == ".bmp" || extension == ".tga")
+            const std::string extension = std::string(filePath).substr(std::string(filePath).find_last_of('.'));
+
+            if (extension == ".jpg" || extension == ".jpeg" || extension == ".png" || extension == ".bmp" || extension == ".tga")
             {
                 std::cout << "Loading image file: " << filePath << std::endl;
                 g_util.LoadImageFileToCanvas(filePath, std::string(filePath).substr(std::string(filePath).find_last_of('\\') + 1));
@@ -362,7 +364,7 @@ LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 
         DragFinish(hDrop);
     }
-        break;
+    break;
     case WM_DESTROY:
         ::PostQuitMessage(0);
         return 0;

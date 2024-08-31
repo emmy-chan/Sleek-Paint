@@ -513,7 +513,7 @@ void cGUI::Display()
                     }
                     else {
                         g_canvas[g_cidx].DestroyCanvas();
-                        g_canvas[g_cidx].CreateCanvasTexture(g_app.g_pd3dDevice, g_canvas[g_cidx].width, g_canvas[g_cidx].height);
+                        if (!g_canvas.empty()) g_canvas[g_cidx].CreateCanvasTexture(g_app.g_pd3dDevice, g_canvas[g_cidx].width, g_canvas[g_cidx].height);
                     }
                 }
             }

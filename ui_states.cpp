@@ -518,7 +518,7 @@ void cUIStateOpenProject::Update()
 {
     static ImGui::FileBrowser fileDialog(ImGuiFileBrowserFlags_EnterNewFilename | ImGuiFileBrowserFlags_CloseOnEsc | ImGuiFileBrowserFlags_CreateNewDir | ImGuiFileBrowserFlags_NoStatusBar);
     fileDialog.SetTitle("Load Project");
-    fileDialog.SetTypeFilters({ ".spr", ".jpg", ".png"});
+    fileDialog.SetTypeFilters({ ".spr", ".jpg", ".jpeg", ".png", ".bmp", ".tga"});
 
     if (!fileDialog.IsOpened()) fileDialog.Open();
 
