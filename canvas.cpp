@@ -862,9 +862,6 @@ void HandleFileDragDrop()
     }
 }
 
-const ImU32 CHECKER_COLOR1 = IM_COL32(128, 128, 128, 255); // Light gray color
-const ImU32 CHECKER_COLOR2 = IM_COL32(192, 192, 192, 255); // Dark gray color
-
 void CompositeLayersToBuffer(std::vector<ImU32>& compositedBuffer, const std::vector<std::vector<ImU32>>& tiles, const std::vector<uint8_t>& layerVisibility, const std::vector<uint8_t>& layerOpacity, uint32_t width, uint32_t height) {
     // Initialize the composited buffer with a transparent color
     compositedBuffer.resize(width * height, IM_COL32(0, 0, 0, 0));
@@ -905,6 +902,8 @@ void CompositeLayersToBuffer(std::vector<ImU32>& compositedBuffer, const std::ve
             // If no visible pixel was found across all layers, draw the checkerboard pattern
             if (!hasVisiblePixel) {
                 const bool isCheckerTile1 = (x % 2 == y % 2);
+                constexpr ImU32 CHECKER_COLOR1 = IM_COL32(128, 128, 128, 255); // Light gray color
+                constexpr ImU32 CHECKER_COLOR2 = IM_COL32(192, 192, 192, 255); // Dark gray color
                 finalColor = isCheckerTile1 ? CHECKER_COLOR1 : CHECKER_COLOR2;
             }
 
