@@ -232,7 +232,7 @@ void cUtils::FloodFill(const int& x, const int& y, bool paint) {
 
     if (!paint) selectedIndexes.clear();
 
-    std::set<uint16_t> visited; // To avoid processing the same pixel multiple times
+    std::set<uint32_t> visited; // Use uint32_t for larger canvas sizes
 
     while (!stack.empty()) {
         std::pair<int, int> p = stack.top();
@@ -243,7 +243,7 @@ void cUtils::FloodFill(const int& x, const int& y, bool paint) {
         if (curX < 0 || curX >= g_canvas[g_cidx].width || curY < 0 || curY >= g_canvas[g_cidx].height)
             continue;
 
-        const uint16_t currentIndex = curX + curY * g_canvas[g_cidx].width;
+        const uint32_t currentIndex = curX + curY * g_canvas[g_cidx].width; // Changed to uint32_t
 
         if (visited.find(currentIndex) != visited.end())
             continue; // Skip already processed pixels
