@@ -257,6 +257,7 @@ void cUIStateNewProject::Update()
         if (ImGui::InputInt("##Width", &wInput)) {
             widthChanged = true;
             if (constrain_proportions) ConstrainProportions(wInput, hInput, aspectRatio, widthChanged);
+            wInput = glm::clamp(wInput, 1, 2500);
         }
 
         ImGui::Text("Height:");
@@ -265,6 +266,7 @@ void cUIStateNewProject::Update()
         if (ImGui::InputInt("##Height", &hInput)) {
             widthChanged = false;
             if (constrain_proportions) ConstrainProportions(wInput, hInput, aspectRatio, widthChanged);
+            hInput = glm::clamp(hInput, 1, 2500);
         }
 
         ImGui::Text("Background:");
@@ -390,6 +392,7 @@ void cUIStateCanvasSize::Update()
         if (ImGui::InputInt("##Width", &wInput)) {
             widthChanged = true;
             if (constrain_proportions) ConstrainProportions(wInput, hInput, aspectRatio, widthChanged);
+            wInput = glm::clamp(wInput, 1, 2500);
         }
 
         ImGui::Text("Height:");
@@ -398,6 +401,7 @@ void cUIStateCanvasSize::Update()
         if (ImGui::InputInt("##Height", &hInput)) {
             widthChanged = false;
             if (constrain_proportions) ConstrainProportions(wInput, hInput, aspectRatio, widthChanged);
+            hInput = glm::clamp(hInput, 1, 2500);
         }
 
         ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, { 1, 1 });
@@ -407,6 +411,9 @@ void cUIStateCanvasSize::Update()
         if (ImGui::Button("Ok")) {
             // Adapt canvas size
             g_canvas[g_cidx].AdaptNewSize((int)wInput, (int)hInput);
+
+            // Re-initialize preview texture
+            if (!g_canvas.empty()) g_canvas[g_cidx].CreateCanvasTexture(g_app.g_pd3dDevice, g_canvas[g_cidx].width, g_canvas[g_cidx].height);
 
             // Reset our UI State
             g_app.ui_state.reset();
