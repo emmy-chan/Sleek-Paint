@@ -1083,17 +1083,18 @@ void cCanvas::Editor() {
                 const int offsetX = static_cast<int>((ImGui::GetMousePos().x - mouseStart.x) / TILE_SIZE) * TILE_SIZE;
                 const int offsetY = static_cast<int>((ImGui::GetMousePos().y - mouseStart.y) / TILE_SIZE) * TILE_SIZE;
 
-                std::unordered_set<uint64_t> newSelectedIndexes;
-                std::unordered_map<uint64_t, ImU32> newTileColors;
+                std::unordered_set<uint64_t> newSelectedIndexes; // Changed to uint32_t
+                std::unordered_map<uint64_t, ImU32> newTileColors; // Changed to uint32_t
 
                 for (const auto& index : initialSelectedIndexes) {
                     const int selectX = index % width;
                     const int selectY = index / width;
 
                     // Wrap positions within canvas boundaries
-                    const int newX = (selectX + offsetX / TILE_SIZE + width) % width, newY = (selectY + offsetY / TILE_SIZE + height) % height;
+                    const int newX = (selectX + offsetX / TILE_SIZE + width) % width;
+                    const int newY = (selectY + offsetY / TILE_SIZE + height) % height;
 
-                    const uint16_t newIndex = newX + newY * width;
+                    const uint32_t newIndex = newX + newY * width; // Changed to uint32_t
                     newSelectedIndexes.insert(newIndex);
                     newTileColors[newIndex] = tiles[g_canvas[g_cidx].selLayerIndex][index];
                 }
