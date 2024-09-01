@@ -36,9 +36,8 @@ void CleanupRenderTarget();
 LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
 void SetupTheme() {
-    //Disable INI file
-    //io.IniFilename = NULL;
-    //ImGui::SetMouseCursor(ImGuiMouseCursor_Hand);
+    // Disable INI file
+    ImGui::GetIO().IniFilename = NULL;
 
     // Setup Dear ImGui style
     constexpr auto ColorFromBytes = [](uint8_t r, uint8_t g, uint8_t b)
