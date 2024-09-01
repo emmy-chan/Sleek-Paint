@@ -16,15 +16,7 @@ bool cUtils::Hovering(const short& iXStart, const short& iYStart, const short& i
     const int mouseX = static_cast<int>(ImGui::GetMousePos().x);
     const int mouseY = static_cast<int>(ImGui::GetMousePos().y);
 
-    // Check if mouseX is within the horizontal bounds of the rectangle
-    if (mouseX >= iXStart && mouseX < (iXStart + iWidth)) {
-        // Check if mouseY is within the vertical bounds of the rectangle
-        if (mouseY >= iYStart && mouseY < (iYStart + iHeight)) {
-            return true;
-        }
-    }
-
-    return false;
+    return (mouseX >= iXStart && mouseX < (iXStart + iWidth) && mouseY >= iYStart && mouseY < (iYStart + iHeight));
 }
 
 bool cUtils::Holding(const short& iXStart, const short& iYStart, const short& iWidth, const short& iHeight, uint8_t mouseButton) {
