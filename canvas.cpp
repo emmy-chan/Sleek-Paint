@@ -745,13 +745,15 @@ void cCanvas::UpdateZoom(float value) {
 
         // Adjust camera position to keep the zoom centered around the mouse position
         if (newZoom != TILE_SIZE) {
-            // Calculate the relative position of the mouse in the canvas
-            const ImVec2 relativeMousePos = { (mousePos.x - g_cam.x) / TILE_SIZE,
-                                              (mousePos.y - g_cam.y) / TILE_SIZE };
+            // Calculate the position of the mouse in the world coordinates before zooming
+            const ImVec2 preZoomWorldPos = {
+                (mousePos.x - g_cam.x) / TILE_SIZE,
+                (mousePos.y - g_cam.y) / TILE_SIZE
+            };
 
-            // Adjust camera position based on the new zoom level
-            g_cam.x = mousePos.x - relativeMousePos.x * newZoom;
-            g_cam.y = mousePos.y - relativeMousePos.y * newZoom;
+            // Calculate the new camera position to keep the zoom centered
+            g_cam.x = mousePos.x - preZoomWorldPos.x * newZoom;
+            g_cam.y = mousePos.y - preZoomWorldPos.y * newZoom;
 
             // Update TILE_SIZE to the new zoom level
             TILE_SIZE = newZoom;
