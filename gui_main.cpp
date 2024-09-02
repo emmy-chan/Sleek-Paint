@@ -281,6 +281,59 @@ void cGUI::Display()
                 }
             }
 
+            if (ImGui::MenuItem(ICON_FA_REDO " Rotate Selection 90 Degrees") && g_canvas.size() > 0) {
+                if (!selectedIndexes.empty()) {
+                    // Calculate the bounding box for the selected tiles
+                    int minX = g_canvas[g_cidx].width, maxX = 0, minY = g_canvas[g_cidx].height, maxY = 0;
+
+                    for (const auto& index : selectedIndexes) {
+                        const uint64_t x = index % g_canvas[g_cidx].width;
+                        const uint64_t y = index / g_canvas[g_cidx].width;
+                        if (x < minX) minX = x;
+                        if (x > maxX) maxX = x;
+                        if (y < minY) minY = y;
+                        if (y > maxY) maxY = y;
+                    }
+
+                    // Create a new container for rotated indexes
+                    std::unordered_set<uint64_t> newSelectedIndexes;
+
+                    // Create a copy of the current tiles
+                    std::vector<ImU32> newTiles = g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex];
+
+                    // Clear previous selection area
+                    for (const auto& index : selectedIndexes) {
+                        newTiles[index] = 0; // Assuming 0 is the transparent or default state
+                    }
+
+                    // Rotate the selected tiles 90 degrees within their bounding box
+                    for (const auto& index : selectedIndexes) {
+                        const uint64_t x = index % g_canvas[g_cidx].width;
+                        const uint64_t y = index / g_canvas[g_cidx].width;
+
+                        // Calculate new position relative to the bounding box center
+                        const int newX = minY + (y - minY);
+                        const int newY = minX + (maxX - x);
+
+                        // Calculate the new index for the rotated position
+                        const uint64_t newIndex = newX + newY * g_canvas[g_cidx].width;
+
+                        // Set the new tile color and update new selected indexes
+                        newTiles[newIndex] = g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex][index];
+                        newSelectedIndexes.insert(newIndex);
+                    }
+
+                    // Update the canvas with the new tiles
+                    g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex] = std::move(newTiles);
+
+                    // Update the selected indexes to the new positions
+                    selectedIndexes.swap(newSelectedIndexes);
+
+                    // Update canvas history
+                    g_canvas[g_cidx].UpdateCanvasHistory();
+                }
+            }
+
             // Function to flip horizontally
             if (ImGui::MenuItem(ICON_FA_ARROW_RIGHT " Flip Selection Horizontal") && g_canvas.size() > 0) {
                 if (!selectedIndexes.empty()) {
@@ -342,59 +395,6 @@ void cGUI::Display()
                     // Update the selectedIndexes
                     selectedIndexes.swap(newSelectedIndexes);
 
-                    g_canvas[g_cidx].UpdateCanvasHistory();
-                }
-            }
-
-            if (ImGui::MenuItem(ICON_FA_REDO " Rotate Selection 90 Degrees") && g_canvas.size() > 0) {
-                if (!selectedIndexes.empty()) {
-                    // Calculate the bounding box for the selected tiles
-                    int minX = g_canvas[g_cidx].width, maxX = 0, minY = g_canvas[g_cidx].height, maxY = 0;
-
-                    for (const auto& index : selectedIndexes) {
-                        const uint64_t x = index % g_canvas[g_cidx].width;
-                        const uint64_t y = index / g_canvas[g_cidx].width;
-                        if (x < minX) minX = x;
-                        if (x > maxX) maxX = x;
-                        if (y < minY) minY = y;
-                        if (y > maxY) maxY = y;
-                    }
-
-                    // Create a new container for rotated indexes
-                    std::unordered_set<uint64_t> newSelectedIndexes;
-
-                    // Create a copy of the current tiles
-                    std::vector<ImU32> newTiles = g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex];
-
-                    // Clear previous selection area
-                    for (const auto& index : selectedIndexes) {
-                        newTiles[index] = 0; // Assuming 0 is the transparent or default state
-                    }
-
-                    // Rotate the selected tiles 90 degrees within their bounding box
-                    for (const auto& index : selectedIndexes) {
-                        const uint64_t x = index % g_canvas[g_cidx].width;
-                        const uint64_t y = index / g_canvas[g_cidx].width;
-
-                        // Calculate new position relative to the bounding box center
-                        const int newX = minY + (y - minY);
-                        const int newY = minX + (maxX - x);
-
-                        // Calculate the new index for the rotated position
-                        const uint64_t newIndex = newX + newY * g_canvas[g_cidx].width;
-
-                        // Set the new tile color and update new selected indexes
-                        newTiles[newIndex] = g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex][index];
-                        newSelectedIndexes.insert(newIndex);
-                    }
-
-                    // Update the canvas with the new tiles
-                    g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex] = std::move(newTiles);
-
-                    // Update the selected indexes to the new positions
-                    selectedIndexes.swap(newSelectedIndexes);
-
-                    // Update canvas history
                     g_canvas[g_cidx].UpdateCanvasHistory();
                 }
             }
