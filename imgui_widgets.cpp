@@ -2978,7 +2978,7 @@ bool ImGui::SliderScalar(const char* label, ImGuiDataType data_type, void* p_dat
     }
 
     // Draw frame
-    const ImU32 frame_col = GetColorU32(g.ActiveId == id ? ImGuiCol_FrameBgActive : hovered ? ImGuiCol_FrameBgHovered : ImGuiCol_FrameBg);
+    const ImU32 frame_col = GetColorU32(g.ActiveId == id ? IM_COL32(75, 75, 75, 255) : hovered ? IM_COL32(60, 60, 60, 255) : IM_COL32(75, 75, 75, 255));
     RenderNavHighlight(frame_bb, id);
 
     //Make em a bit thinner than the calculated frame
@@ -2995,7 +2995,7 @@ bool ImGui::SliderScalar(const char* label, ImGuiDataType data_type, void* p_dat
     // Render grab
     if (grab_bb.Max.x > grab_bb.Min.x) {
         ImVec2 pos = grab_bb.Min + (grab_bb.Max - grab_bb.Min) * 0.5f;
-        window->DrawList->AddRectFilled({ frame_bb.Min.x, frame_bb.Min.y + h }, { pos.x, frame_bb.Max.y - h }, GetColorU32(ImGuiCol_Border), ImGui::GetStyle().FrameRounding);
+        window->DrawList->AddRectFilled({ frame_bb.Min.x, frame_bb.Min.y + h }, { pos.x, frame_bb.Max.y - h }, IM_COL32(125, 125, 125, 255), ImGui::GetStyle().FrameRounding);
         //window->DrawList->AddRectFilledMultiColor({ frame_bb.Min.x, frame_bb.Min.y + h }, { pos.x, frame_bb.Max.y - h }, IM_COL32(45, 50, 60, 255), IM_COL32(45, 50, 60, 255), IM_COL32(25, 30, 40, 255), IM_COL32(25, 30, 40, 255));
         window->DrawList->AddCircleFilled(pos, frame_bb.GetHeight() * 0.5f, GetColorU32(g.ActiveId == id ? ImGuiCol_SliderGrabActive : ImGuiCol_SliderGrab));
     }
@@ -3134,9 +3134,13 @@ bool ImGui::VSliderScalar(const char* label, const ImVec2& size, ImGuiDataType d
     }
 
     // Draw frame
-    const ImU32 frame_col = GetColorU32(g.ActiveId == id ? ImGuiCol_FrameBgActive : hovered ? ImGuiCol_FrameBgHovered : ImGuiCol_FrameBg);
+    const ImU32 frame_col = GetColorU32(g.ActiveId == id ? IM_COL32(75, 75, 75, 255) : hovered ? IM_COL32(60, 60, 60, 255) : IM_COL32(75, 75, 75, 255));
     RenderNavHighlight(frame_bb, id);
-    RenderFrame(frame_bb.Min, frame_bb.Max, frame_col, true, g.Style.FrameRounding);
+
+    //Make em a bit thinner than the calculated frame
+    const uint16_t w = uint16_t(frame_bb.GetWidth() * 0.25f);
+
+    RenderFrame({ frame_bb.Min.x + w, frame_bb.Min.y }, { frame_bb.Max.x - w, frame_bb.Max.y }, frame_col, true, g.Style.FrameRounding);
 
     // Slider behavior
     ImRect grab_bb;
@@ -3149,7 +3153,7 @@ bool ImGui::VSliderScalar(const char* label, const ImVec2& size, ImGuiDataType d
     {
         ImVec2 pos = grab_bb.Min + (grab_bb.Max - grab_bb.Min) * 0.5f;
         const float circle_radius = frame_bb.GetWidth() * 0.5f;
-        window->DrawList->AddRectFilled(frame_bb.Min, ImVec2(frame_bb.Max.x, pos.y), GetColorU32(ImGuiCol_Border), ImGui::GetStyle().FrameRounding);
+        window->DrawList->AddRectFilled({ frame_bb.Min.x + w, frame_bb.Min.y }, { frame_bb.Max.x - w, pos.y }, IM_COL32(125, 125, 125, 255), ImGui::GetStyle().FrameRounding);
         window->DrawList->AddCircleFilled(pos, circle_radius, GetColorU32(g.ActiveId == id ? ImGuiCol_SliderGrabActive : ImGuiCol_SliderGrab));
     }
 

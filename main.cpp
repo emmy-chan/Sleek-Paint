@@ -80,8 +80,8 @@ void SetupTheme() {
     colors[ImGuiCol_ScrollbarGrabHovered] = veryLightBgColor;
     colors[ImGuiCol_ScrollbarGrabActive] = veryLightBgColor;
     colors[ImGuiCol_CheckMark] = panelActiveColor;
-    colors[ImGuiCol_SliderGrab] = bgColor;
-    colors[ImGuiCol_SliderGrabActive] = bgColor;
+    colors[ImGuiCol_SliderGrab] = ColorFromBytes(70, 70, 70);
+    colors[ImGuiCol_SliderGrabActive] = ColorFromBytes(60, 60, 60);
     colors[ImGuiCol_Button] = panelColor;
     colors[ImGuiCol_ButtonHovered] = panelHoverColor;
     colors[ImGuiCol_ButtonActive] = panelHoverColor;
