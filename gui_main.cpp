@@ -346,30 +346,57 @@ void cGUI::Display()
                 }
             }
 
-            if (ImGui::MenuItem(ICON_FA_REDO " Rotate 90 Degrees") && g_canvas.size() > 0) {
-                // Create a new canvas to store the rotated image
-                const uint64_t newWidth = g_canvas[g_cidx].height;
-                const uint64_t newHeight = g_canvas[g_cidx].width;
-                std::vector<std::vector<ImU32>> newTiles(g_canvas[g_cidx].tiles.size(), std::vector<ImU32>(newWidth * newHeight));
+            if (ImGui::MenuItem(ICON_FA_REDO " Rotate Selection 90 Degrees") && g_canvas.size() > 0) {
+                if (!selectedIndexes.empty()) {
+                    // Calculate the bounding box for the selected tiles
+                    int minX = g_canvas[g_cidx].width, maxX = 0, minY = g_canvas[g_cidx].height, maxY = 0;
 
-                for (uint64_t y = 0; y < g_canvas[g_cidx].height; y++) {
-                    for (uint64_t x = 0; x < g_canvas[g_cidx].width; x++) {
-                        const uint64_t oldIndex = x + y * g_canvas[g_cidx].width;
-                        const uint64_t newX = newHeight - 1 - y;
-                        const uint64_t newY = x;
-                        const uint64_t newIndex = newX + newY * newWidth;
-
-                        for (size_t layer = 0; layer < g_canvas[g_cidx].tiles.size(); ++layer)
-                            newTiles[layer][newIndex] = g_canvas[g_cidx].tiles[layer][oldIndex];
+                    for (const auto& index : selectedIndexes) {
+                        const uint64_t x = index % g_canvas[g_cidx].width;
+                        const uint64_t y = index / g_canvas[g_cidx].width;
+                        if (x < minX) minX = x;
+                        if (x > maxX) maxX = x;
+                        if (y < minY) minY = y;
+                        if (y > maxY) maxY = y;
                     }
+
+                    // Create a new container for rotated indexes
+                    std::unordered_set<uint64_t> newSelectedIndexes;
+
+                    // Create a copy of the current tiles
+                    std::vector<ImU32> newTiles = g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex];
+
+                    // Clear previous selection area
+                    for (const auto& index : selectedIndexes) {
+                        newTiles[index] = 0; // Assuming 0 is the transparent or default state
+                    }
+
+                    // Rotate the selected tiles 90 degrees within their bounding box
+                    for (const auto& index : selectedIndexes) {
+                        const uint64_t x = index % g_canvas[g_cidx].width;
+                        const uint64_t y = index / g_canvas[g_cidx].width;
+
+                        // Calculate new position relative to the bounding box center
+                        const int newX = minY + (y - minY);
+                        const int newY = minX + (maxX - x);
+
+                        // Calculate the new index for the rotated position
+                        const uint64_t newIndex = newX + newY * g_canvas[g_cidx].width;
+
+                        // Set the new tile color and update new selected indexes
+                        newTiles[newIndex] = g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex][index];
+                        newSelectedIndexes.insert(newIndex);
+                    }
+
+                    // Update the canvas with the new tiles
+                    g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex] = std::move(newTiles);
+
+                    // Update the selected indexes to the new positions
+                    selectedIndexes.swap(newSelectedIndexes);
+
+                    // Update canvas history
+                    g_canvas[g_cidx].UpdateCanvasHistory();
                 }
-
-                // Replace the old tiles with the new rotated tiles
-                g_canvas[g_cidx].width = newWidth;
-                g_canvas[g_cidx].height = newHeight;
-                g_canvas[g_cidx].tiles = std::move(newTiles);
-
-                g_canvas[g_cidx].UpdateCanvasHistory();
             }
 
             if (ImGui::CollapsingHeader("Scrambler")) {
