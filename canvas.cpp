@@ -395,8 +395,7 @@ void DrawLineOnCanvas(int x0, int y0, int x1, int y1, ImU32 color, bool preview 
     while (true) {
         for (int offsetX = -halfThickness; offsetX <= halfThickness; ++offsetX) {
             for (int offsetY = -halfThickness; offsetY <= halfThickness; ++offsetY) {
-                const int drawX = x0 + offsetX;
-                const int drawY = y0 + offsetY;
+                const int drawX = x0 + offsetX, drawY = y0 + offsetY;
 
                 if (drawX >= 0 && drawX < g_canvas[g_cidx].width && drawY >= 0 && drawY < g_canvas[g_cidx].height) {
                     if (preview) {
