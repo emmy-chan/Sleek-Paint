@@ -537,16 +537,25 @@ ImU32 BlendColor(ImU32 baseColor, uint8_t glyphAlpha) {
     return IM_COL32(blendedR, blendedG, blendedB, finalAlpha);
 }
 
-void DrawTextOnCanvasFreeType(FT_Face& face, const std::string& text, int startX, int startY, ImU32 color, int fontSize) {
+void DrawTextOnCanvasFreeType(FT_Face& face, const std::string& text, int mouseX, int mouseY, ImU32 color, int fontSize) {
     // Canvas dimensions
     int canvasWidth = g_canvas[g_cidx].width;
     int canvasHeight = g_canvas[g_cidx].height;
 
-    // Adjust starting positions based on the camera offset
-    int adjustedStartX = startX - static_cast<int>(g_cam.x);
-    int adjustedStartY = startY - static_cast<int>(g_cam.y);
+    // Convert mouse position to canvas coordinates considering zoom (TILE_SIZE) and camera offset
+    int startX = static_cast<int>((mouseX - g_cam.x) / TILE_SIZE);
+    int startY = static_cast<int>((mouseY - g_cam.y) / TILE_SIZE);
 
-    printf("Adjusted text position: (%d, %d), Canvas size: (%d, %d), Camera position: (%.6f, %.6f)\n", adjustedStartX, adjustedStartY, canvasWidth, canvasHeight, g_cam.x, g_cam.y);
+    // Ensure text starts within the canvas boundaries
+    startX = std::max(startX, 0);
+    startY = std::max(startY, 0);
+
+    // Clamp to canvas bounds
+    startX = glm::clamp(startX, 0, canvasWidth - 1);
+    startY = glm::clamp(startY, 0, canvasHeight - 1);
+
+    printf("Calculated text position: (%d, %d), Canvas size: (%d, %d), Camera position: (%.6f, %.6f), TILE_SIZE: (%.2f)\n",
+        startX, startY, canvasWidth, canvasHeight, g_cam.x, g_cam.y, TILE_SIZE);
 
     // Set the desired font size using FreeType
     if (FT_Set_Pixel_Sizes(face, 0, fontSize)) {
@@ -554,8 +563,10 @@ void DrawTextOnCanvasFreeType(FT_Face& face, const std::string& text, int startX
         return;
     }
 
-    int x = adjustedStartX;  // Start drawing at the adjusted x position
-    int y = adjustedStartY;  // Start drawing at the adjusted y position
+    int x = startX;  // Start drawing at the calculated canvas position
+    int y = startY;  // Start drawing at the calculated canvas position
+
+    int baselineY = y + (face->size->metrics.ascender >> 6); // Calculate the baseline
 
     for (size_t i = 0; i < text.size(); ++i) {
         char c = text[i];
@@ -568,23 +579,22 @@ void DrawTextOnCanvasFreeType(FT_Face& face, const std::string& text, int startX
 
         FT_GlyphSlot g = face->glyph;
 
-        // Adjust positions to consider glyph's bitmap origin
+        // Calculate the glyph position
         int glyph_x = x + g->bitmap_left;
-        int glyph_y = y - g->bitmap_top + (face->size->metrics.ascender >> 6);
+        int glyph_y = baselineY - g->bitmap_top;
 
-        // Ensure starting positions are within canvas bounds
-        if (glyph_x >= canvasWidth || glyph_y >= canvasHeight || glyph_x + g->bitmap.width < 0 || glyph_y + g->bitmap.rows < 0) {
+        // Ensure the glyph is within the canvas bounds
+        if (glyph_x < 0 || glyph_y < 0 || glyph_x + g->bitmap.width > canvasWidth || glyph_y + g->bitmap.rows > canvasHeight) {
             printf("Glyph position (%d, %d) is out of canvas bounds for character '%c'\n", glyph_x, glyph_y, c);
             continue;
         }
 
-        // Clip the glyph drawing to the canvas size
+        // Render glyph within canvas bounds
         for (int row = 0; row < g->bitmap.rows; ++row) {
             for (int col = 0; col < g->bitmap.width; ++col) {
                 int posX = glyph_x + col;
                 int posY = glyph_y + row;
 
-                // Ensure the position is within the canvas
                 if (posX >= 0 && posX < canvasWidth && posY >= 0 && posY < canvasHeight) {
                     uint8_t alpha = g->bitmap.buffer[row * g->bitmap.width + col];
                     if (alpha > 0) {
@@ -592,14 +602,23 @@ void DrawTextOnCanvasFreeType(FT_Face& face, const std::string& text, int startX
                         g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex][posY * canvasWidth + posX] = blendedColor;
                     }
                 }
-                else {
-                    printf("Position (%d, %d) out of canvas bounds\n", posX, posY);
-                }
             }
         }
 
-        // Advance cursor to the start position of the next character
-        x += (g->advance.x >> 6);  // Move the cursor to the right by the advance width
+        // Move the cursor to the next character's position
+        x += (g->advance.x >> 6);
+
+        // If text exceeds canvas width, move to the next line
+        if (x + g->bitmap.width >= canvasWidth) {
+            x = startX; // Reset x to start
+            baselineY += fontSize; // Move baseline down by the font size
+
+            // Stop rendering if the text exceeds the canvas height
+            if (baselineY + (face->size->metrics.ascender >> 6) >= canvasHeight) {
+                printf("Text exceeds canvas height; truncating further rendering.\n");
+                break;
+            }
+        }
     }
 }
 
@@ -1271,7 +1290,7 @@ void cCanvas::Editor() {
                 const ImWchar ch = io.InputQueueCharacters[c];
                 if (ch == '\n' || ch == '\r') {
                     // Handle Enter key: move to new line
-                    textPosition.y += currentFontSize; // Adjust with font size
+                    textPosition.y += currentFontSize * TILE_SIZE; // Adjust with font size and TILE_SIZE
                     textPosition.x = linePositions[0].x; // Reset x position to start of the line
                     lines.push_back(""); // Add a new line
                     linePositions.push_back(textPosition); // Save the position for the new line
@@ -1282,8 +1301,9 @@ void cCanvas::Editor() {
 
                 // Handle backspace
                 if (ch == 127 || ch == '\b') {
-                    if (!textInput.empty())
+                    if (!textInput.empty()) {
                         textInput.pop_back();
+                    }
                     else if (lines.size() > 1) {
                         // Move back to the previous line if the current line is empty
                         lines.pop_back();
@@ -1300,17 +1320,12 @@ void cCanvas::Editor() {
                 }
             }
 
-            // Clear the previously drawn text from the canvas
-            /*for (size_t i = 0; i < lines.size(); ++i) {
-                DrawTextOnCanvasFreeType(face, lines[i], static_cast<int>(linePositions[i].x - 1), static_cast<int>(linePositions[i].y), IM_COL32(0, 0, 0, 0), currentFontSize);
-            }*/
-
             // Update the current line content
-            if (!lines.empty()) lines.back() = textInput;
+            if (!lines.empty()) {
+                lines.back() = textInput;
+            }
 
             // Draw the current text at the mouse position using FreeType
-            const uint8_t red = (myCols[selColIndex] >> 0) & 0xFF, green = (myCols[selColIndex] >> 8) & 0xFF, blue = (myCols[selColIndex] >> 16) & 0xFF;
-
             for (size_t i = 0; i < lines.size(); ++i) {
                 DrawTextOnCanvasFreeType(face, lines[i], static_cast<int>(linePositions[i].x), static_cast<int>(linePositions[i].y), myCols[selColIndex], currentFontSize);
             }
@@ -1319,13 +1334,46 @@ void cCanvas::Editor() {
             previousTextInput = textInput;
             previousTextPosition = textPosition;
 
-            // Draw the text cursor
-            const ImVec2 cursorPos = { textPosition.x + textInput.size() * currentFontSize * 0.6f, textPosition.y };
+            // Calculate the cursor position and height
+            ImVec2 cursorPos;
+            float cursorHeight = 0.0f;
 
-            // Draw blinking cursor
+            // Set font size in FreeType
+            FT_Set_Pixel_Sizes(face, 0, static_cast<int>(currentFontSize * TILE_SIZE));
+
+            // Adjust cursor position based on text and glyph metrics
+            if (!textInput.empty()) {
+                // Load the last character to get its glyph metrics
+                if (FT_Load_Char(face, textInput.back(), FT_LOAD_RENDER) == 0) {
+                    FT_GlyphSlot g = face->glyph;
+
+                    // Adjust cursor X-position by accounting for the full advance of all characters
+                    cursorPos.x = linePositions.back().x + (textInput.size() * (g->advance.x >> 6)) * TILE_SIZE / currentFontSize;
+
+                    // Offset X-position slightly to the right to align perfectly after the last glyph
+                    cursorPos.x += 1.0f * TILE_SIZE / currentFontSize;  // Fine-tuning offset
+
+                    // Adjust cursor Y-position to align with the baseline and account for glyph metrics
+                    cursorPos.y = linePositions.back().y + (face->size->metrics.ascender >> 6) * TILE_SIZE / currentFontSize - (g->bitmap_top * TILE_SIZE / currentFontSize);
+
+                    // Set cursor height based on the tallest glyph in the font size
+                    cursorHeight = (face->size->metrics.ascender >> 6) * TILE_SIZE / currentFontSize;
+                    cursorHeight *= 0.25f;
+                }
+            }
+            else {
+                // Default cursor position and height if no text
+                cursorPos.x = linePositions.back().x - currentFontSize;
+                cursorPos.y = linePositions.back().y + (face->size->metrics.ascender >> 6) * TILE_SIZE / currentFontSize;
+                cursorHeight = (face->size->metrics.ascender >> 6) * TILE_SIZE;
+            }
+
+            // Draw blinking cursor with corrected position and height
             if (fmod(ImGui::GetTime(), 1.0f) > 0.5f) {
-                d.AddLine({ cursorPos.x, cursorPos.y }, { cursorPos.x, cursorPos.y + currentFontSize }, IM_COL32_BLACK, 2);
-                d.AddLine({ cursorPos.x, cursorPos.y }, { cursorPos.x, cursorPos.y + currentFontSize }, IM_COL32_WHITE, 1);
+                ImVec2 cursorPos1 = ImVec2(cursorPos.x, cursorPos.y - cursorHeight);
+                ImVec2 cursorPos2 = ImVec2(cursorPos.x, cursorPos.y + cursorHeight);
+                d.AddLine(cursorPos1, cursorPos2, IM_COL32_BLACK, 2.0f);
+                d.AddLine(cursorPos1, cursorPos2, IM_COL32_WHITE, 1.0f);
             }
         }
     }
