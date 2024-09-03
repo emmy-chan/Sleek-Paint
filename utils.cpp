@@ -13,26 +13,16 @@
 cUtils g_util = cUtils();
 
 bool cUtils::Hovering(const short& iXStart, const short& iYStart, const short& iWidth, const short& iHeight) {
-    const int mouseX = static_cast<int>(ImGui::GetMousePos().x);
-    const int mouseY = static_cast<int>(ImGui::GetMousePos().y);
-
+    const int mouseX = static_cast<int>(ImGui::GetMousePos().x), mouseY = static_cast<int>(ImGui::GetMousePos().y);
     return (mouseX >= iXStart && mouseX < (iXStart + iWidth) && mouseY >= iYStart && mouseY < (iYStart + iHeight));
 }
 
 bool cUtils::Holding(const short& iXStart, const short& iYStart, const short& iWidth, const short& iHeight, uint8_t mouseButton) {
-    if (ImGui::GetIO().MouseDown[mouseButton]) // && hwWindow == GetActiveWindow()
-        if (Hovering(iXStart, iYStart, iWidth, iHeight))
-            return true;
-
-    return false;
+    return ImGui::GetIO().MouseDown[mouseButton] && Hovering(iXStart, iYStart, iWidth, iHeight); // && hwWindow == GetActiveWindow()
 }
 
 bool cUtils::Clicked(const short& iXStart, const short& iYStart, const short& iWidth, const short& iHeight, uint8_t btn) {
-    if (MousePressed(btn))
-        if (Hovering(iXStart, iYStart, iWidth, iHeight))
-            return true;
-
-    return false;
+    return MousePressed(btn) && Hovering(iXStart, iYStart, iWidth, iHeight);
 }
 
 bool cUtils::MousePressed(const uint8_t& btn)
@@ -84,8 +74,7 @@ const bool cUtils::IsClickingOutsideCanvas(ImVec2 mouse) {
     const bool bMouseOutsideCanvas = mouse.x < 200 || mouse.x > io.DisplaySize.x - 61 || mouse.y > io.DisplaySize.y - 20 || mouse.y < 24;
     static bool bCanDraw = !bMouseOutsideCanvas && !g_app.ui_state;
 
-    if (bMouseOutsideCanvas && g_util.MousePressed(0))
-        bToolFlip = false;
+    if (bMouseOutsideCanvas && g_util.MousePressed(0)) bToolFlip = false;
 
     if (!bToolFlip) {
         if (g_util.MouseReleased(0)) bToolFlip = !g_app.ui_state;
@@ -275,10 +264,9 @@ std::string cUtils::RemoveFileExtension(const std::string& file_name) {
     
     const size_t last_dot = file_name.find_last_of('.');
     if (last_dot != std::string::npos) {
-        std::string extension = file_name.substr(last_dot);
-        if (supported_extensions.find(extension) != supported_extensions.end()) {
+        const std::string extension = file_name.substr(last_dot);
+        if (supported_extensions.find(extension) != supported_extensions.end())
             return file_name.substr(0, last_dot);
-        }
     }
     return file_name;
 }
