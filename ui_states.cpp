@@ -646,3 +646,37 @@ void cUIStateRenameLayer::Update()
         ImGui::OpenPopup("Rename Layer");
     }
 }
+
+void cUIStateHelp::Update() {
+    auto& io = ImGui::GetIO();
+    ImGui::SetNextWindowSize({ 250, io.DisplaySize.y * 0.53f }, ImGuiCond_Appearing);
+    ImGui::SetNextWindowPos({ io.DisplaySize.x / 2 - 125, io.DisplaySize.y / 2 - (io.DisplaySize.y * 0.2f) }, ImGuiCond_Appearing);
+
+    if (ImGui::BeginPopupModal("Keyboard Shortcuts", NULL, ImGuiWindowFlags_NoResize)) { //ImGuiWindowFlags_AlwaysAutoResize
+        ImGui::Separator();
+        ImGui::Text("Ctrl+Z - Undo");
+        ImGui::Text("Ctrl+Y - Redo");
+        ImGui::Text("Delete - Delete Selection");
+        ImGui::Text("Ctrl+X - Cut Selection");
+        ImGui::Text("Ctrl+C - Copy Selection");
+        ImGui::Text("Ctrl+V - Paste Selection");
+        ImGui::Text("B - Select Brush Tool");
+        ImGui::Text("G - Select Bucket Tool");
+        ImGui::Text("E - Select Eraser Tool");
+        ImGui::Text("X - Select Dropper Tool");
+        ImGui::Text("M - Select Move Tool");
+        ImGui::Text("W - Select Wand Tool");
+        ImGui::Text("S - Select Selection Tool");
+        
+        if (ImGui::Button(ICON_FA_TIMES, { ImGui::GetWindowWidth() * 0.5f - 12, 0 })) {
+            ImGui::CloseCurrentPopup();
+
+            // Reset our UI State
+            g_app.ui_state.reset();
+        }
+
+        ImGui::EndPopup();
+    }
+    else
+        ImGui::OpenPopup("Keyboard Shortcuts");
+}

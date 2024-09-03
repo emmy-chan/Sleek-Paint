@@ -42,3 +42,8 @@ class cUIStateRenameLayer : public cState {
 public:
 	void Update() override;
 };
+
+class cUIStateHelp : public cState {
+public:
+	void Update() override;
+};
