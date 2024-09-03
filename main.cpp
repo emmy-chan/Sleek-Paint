@@ -131,9 +131,7 @@ void CreateNearestNeighborSamplerState(ID3D11Device* device) {
     sampDesc.MaxLOD = D3D11_FLOAT32_MAX;
 
     HRESULT hr = device->CreateSamplerState(&sampDesc, &g_pSamplerStatePoint);
-    if (FAILED(hr)) {
-        printf("Failed to create nearest-neighbor sampler state: 0x%08X\n", hr);
-    }
+    if (FAILED(hr)) printf("Failed to create nearest-neighbor sampler state: 0x%08X\n", hr);
 }
 
 // Main code
@@ -194,11 +192,11 @@ int main(int, char**)
 
     CreateNearestNeighborSamplerState(g_app.g_pd3dDevice);
 
-    //Load our images!
+    // Load our images!
     g_assets.LoadAssets();
 
     // Main loop
-    while (1)
+    while (true)
     {
         // Poll and handle messages (inputs, window resize, etc.)
         // See the WndProc() function below for our to dispatch events to the Win32 backend.
@@ -216,17 +214,13 @@ int main(int, char**)
         ImGui_ImplWin32_NewFrame();
         ImGui::NewFrame();
 
-        if (!g_canvas.empty())
-            g_canvas[g_cidx].Editor();
-
-        if (g_app.ui_state)
-            g_app.ui_state->Update();
+        // Update UI state / Canvas
+        if (!g_canvas.empty()) g_canvas[g_cidx].Editor();
+        if (g_app.ui_state) g_app.ui_state->Update();
 
         {
             cGUI gui;
             gui.Display();
-            //ImGui::Text("%.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
-            //ImGui::Text("%.1f FPS", ImGui::GetIO().Framerate);
         }
 
         // Rendering
@@ -237,10 +231,10 @@ int main(int, char**)
         ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
 
         g_pSwapChain->Present(1, 0); // Present with vsync
-        //g_pSwapChain->Present(0, 0); // Present without vsync
     }
 
     shutdown_program:
+
     // Cleanup
     if (canvasTexture) {
         canvasTexture->Release();
@@ -324,8 +318,7 @@ extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg
 // Generally you may always pass all inputs to dear imgui, and hide them from your application based on those two flags.
 LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
-    if (ImGui_ImplWin32_WndProcHandler(hWnd, msg, wParam, lParam))
-        return true;
+    if (ImGui_ImplWin32_WndProcHandler(hWnd, msg, wParam, lParam)) return true;
 
     switch (msg)
     {
@@ -338,8 +331,7 @@ LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
         }
         return 0;
     case WM_SYSCOMMAND:
-        if ((wParam & 0xfff0) == SC_KEYMENU) // Disable ALT application menu
-            return 0;
+        if ((wParam & 0xfff0) == SC_KEYMENU) return 0; // Disable ALT application menu   
         break;
     case WM_DROPFILES:
     {
