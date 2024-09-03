@@ -65,8 +65,6 @@ void cCanvas::CreateCanvasTexture(ID3D11Device* device, uint32_t width, uint32_t
 
 void cCanvas::Initialize(const std::vector<ImU32>& initial_data, const uint16_t& new_width, const uint16_t& new_height, const ImU32& color) {
     CreateCanvasTexture(g_app.g_pd3dDevice, new_width, new_height);
-    tiles.clear();
-    previousCanvases.clear();
 
     // Initialize canvas dimensions
     width = new_width;
