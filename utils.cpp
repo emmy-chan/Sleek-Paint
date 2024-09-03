@@ -197,6 +197,34 @@ ImU32 cUtils::ApplyFloydSteinbergDithering(ImU32 color, uint64_t x, uint64_t y) 
     return IM_COL32(r, g, b, 255);
 }
 
+ImU32 cUtils::BlendColor(ImU32 baseColor, uint8_t glyphAlpha) {
+    // Extract base color components
+    uint8_t baseR = (baseColor >> IM_COL32_R_SHIFT) & 0xFF;
+    uint8_t baseG = (baseColor >> IM_COL32_G_SHIFT) & 0xFF;
+    uint8_t baseB = (baseColor >> IM_COL32_B_SHIFT) & 0xFF;
+    uint8_t baseA = (baseColor >> IM_COL32_A_SHIFT) & 0xFF;
+
+    // If glyph is fully opaque, return the color as is
+    if (glyphAlpha == 255) {
+        return baseColor;
+    }
+
+    // If glyph is fully transparent, do not blend
+    if (glyphAlpha == 0) {
+        return baseColor;
+    }
+
+    // Calculate the blended alpha
+    uint8_t finalAlpha = (glyphAlpha * baseA) / 255;
+
+    // Calculate the blended color components
+    uint8_t blendedR = (glyphAlpha * ((baseColor >> IM_COL32_R_SHIFT) & 0xFF) + (255 - glyphAlpha) * baseR) / 255;
+    uint8_t blendedG = (glyphAlpha * ((baseColor >> IM_COL32_G_SHIFT) & 0xFF) + (255 - glyphAlpha) * baseG) / 255;
+    uint8_t blendedB = (glyphAlpha * ((baseColor >> IM_COL32_B_SHIFT) & 0xFF) + (255 - glyphAlpha) * baseB) / 255;
+
+    return IM_COL32(blendedR, blendedG, blendedB, finalAlpha);
+}
+
 // Flood fill function
 void cUtils::FloodFill(const int& x, const int& y, bool paint) {
     if (x < 0 || x >= g_canvas[g_cidx].width || y < 0 || y >= g_canvas[g_cidx].height)

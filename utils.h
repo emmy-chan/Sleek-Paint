@@ -23,6 +23,7 @@ public:
 	ImU32 AdjustSaturation(ImU32 color, float saturationFactor);
 	ImU32 AdjustContrast(ImU32 color, float contrastFactor);
 	ImU32 ApplyFloydSteinbergDithering(ImU32 color, uint64_t x, uint64_t y);
+	ImU32 BlendColor(ImU32 baseColor, uint8_t glyphAlpha);
 	void FloodFill(const int& x, const int& y, bool paint);
 	std::string RemoveFileExtension(const std::string& file_name);
 	void LoadImageFileToCanvas(const std::string& filepath, const std::string& filename);
