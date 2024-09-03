@@ -1042,6 +1042,13 @@ void cGUI::Display()
         if (ImGui::SliderInt("##Line Size", &temp, 1, 10))
             line_size = static_cast<uint8_t>(temp);
     }
+    else if (paintToolSelected == TOOL_TEXT) {
+        ImGui::Text("Text Size:");
+        int temp = static_cast<int>(text_size);
+
+        if (ImGui::SliderInt("##Text Size", &temp, 8, 100))
+            text_size = static_cast<uint8_t>(temp);
+    }
 
     ImGui::End();
 

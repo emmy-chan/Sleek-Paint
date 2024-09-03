@@ -1231,7 +1231,6 @@ void cCanvas::Editor() {
     static std::string textInput, previousTextInput;
     static std::vector<ImVec2> linePositions;
     static std::vector<std::string> lines;
-    auto currentFontSize = 12.0f;
 
     // Handle text input
     if (paintToolSelected == TOOL_TEXT) {
@@ -1256,7 +1255,7 @@ void cCanvas::Editor() {
                 const ImWchar ch = io.InputQueueCharacters[c];
                 if (ch == '\n' || ch == '\r') {
                     // Handle Enter key: move to new line
-                    textPosition.y += currentFontSize * TILE_SIZE; // Adjust with font size and TILE_SIZE
+                    textPosition.y += text_size * TILE_SIZE; // Adjust with font size and TILE_SIZE
                     textPosition.x = linePositions[0].x; // Reset x position to start of the line
                     lines.push_back(""); // Add a new line
                     linePositions.push_back(textPosition); // Save the position for the new line
@@ -1291,7 +1290,7 @@ void cCanvas::Editor() {
 
             // Draw the current text at the mouse position using FreeType
             for (size_t i = 0; i < lines.size(); ++i)
-                DrawTextOnCanvasFreeType(face, lines[i], static_cast<int>(linePositions[i].x), static_cast<int>(linePositions[i].y), myCols[selColIndex], currentFontSize);
+                DrawTextOnCanvasFreeType(face, lines[i], static_cast<int>(linePositions[i].x), static_cast<int>(linePositions[i].y), myCols[selColIndex], text_size);
 
             // Update the previous text input and position
             previousTextInput = textInput;
@@ -1302,7 +1301,7 @@ void cCanvas::Editor() {
             float cursorHeight = 0.0f;
 
             // Set font size in FreeType
-            FT_Set_Pixel_Sizes(face, 0, static_cast<int>(currentFontSize * TILE_SIZE));
+            FT_Set_Pixel_Sizes(face, 0, static_cast<int>(text_size* TILE_SIZE));
 
             // Adjust cursor position based on text and glyph metrics
             if (!textInput.empty()) {
@@ -1311,23 +1310,23 @@ void cCanvas::Editor() {
                     FT_GlyphSlot g = face->glyph;
 
                     // Adjust cursor X-position by accounting for the full advance of all characters
-                    cursorPos.x = linePositions.back().x + (textInput.size() * (g->advance.x >> 6)) * TILE_SIZE / currentFontSize;
+                    cursorPos.x = linePositions.back().x + (textInput.size() * (g->advance.x >> 6)) * TILE_SIZE / text_size;
 
                     // Offset X-position slightly to the right to align perfectly after the last glyph
-                    cursorPos.x += 1.0f * TILE_SIZE / currentFontSize;  // Fine-tuning offset
+                    cursorPos.x += 1.0f * TILE_SIZE / text_size;  // Fine-tuning offset
 
                     // Adjust cursor Y-position to align with the baseline and account for glyph metrics
-                    cursorPos.y = linePositions.back().y + (face->size->metrics.ascender >> 6) * TILE_SIZE / currentFontSize - (g->bitmap_top * TILE_SIZE / currentFontSize);
+                    cursorPos.y = linePositions.back().y + (face->size->metrics.ascender >> 6) * TILE_SIZE / text_size - (g->bitmap_top * TILE_SIZE / text_size);
 
                     // Set cursor height based on the tallest glyph in the font size
-                    cursorHeight = (face->size->metrics.ascender >> 6) * TILE_SIZE / currentFontSize;
+                    cursorHeight = (face->size->metrics.ascender >> 6) * TILE_SIZE / text_size;
                     cursorHeight *= 0.25f;
                 }
             }
             else {
                 // Default cursor position and height if no text
-                cursorPos.x = linePositions.back().x - currentFontSize;
-                cursorPos.y = linePositions.back().y + (face->size->metrics.ascender >> 6) * TILE_SIZE / currentFontSize;
+                cursorPos.x = linePositions.back().x - text_size;
+                cursorPos.y = linePositions.back().y + (face->size->metrics.ascender >> 6) * TILE_SIZE / text_size;
                 cursorHeight = (face->size->metrics.ascender >> 6) * TILE_SIZE;
             }
 
