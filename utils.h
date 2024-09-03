@@ -27,6 +27,8 @@ public:
 	void FloodFill(const int& x, const int& y, bool paint);
 	std::string RemoveFileExtension(const std::string& file_name);
 	void LoadImageFileToCanvas(const std::string& filepath, const std::string& filename);
+	std::vector<uint8_t> CompressCanvasDataRLE(const std::vector<ImU32>& input);
+	std::vector<ImU32> DecompressCanvasDataRLE(const std::vector<uint8_t>& input);
 	//bool InitializeInputState(void);
 	//void UpdateInputState();
 	//int m_mouse_x;

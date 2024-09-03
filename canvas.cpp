@@ -158,13 +158,18 @@ void cCanvas::UpdateCanvasHistory() {
         previousCanvases.resize(canvas_idx + 1);
 
     // Only add the current state to history if it's different from the last saved state
-    if (previousCanvases.empty() || (!tiles[g_canvas[g_cidx].selLayerIndex].empty() && !previousCanvases.empty() && !g_util.IsTilesEqual(tiles[g_canvas[g_cidx].selLayerIndex], previousCanvases.back()))) {
-        previousCanvases.push_back(tiles[g_canvas[g_cidx].selLayerIndex]);
+    if (previousCanvases.empty() || (!tiles[g_canvas[g_cidx].selLayerIndex].empty() && !previousCanvases.empty() && !g_util.IsTilesEqual(tiles[g_canvas[g_cidx].selLayerIndex], g_util.DecompressCanvasDataRLE(previousCanvases.back())))) {
+        // Compress current canvas data
+        auto compressedData = g_util.CompressCanvasDataRLE(tiles[g_canvas[g_cidx].selLayerIndex]);
+
+        // Add the compressed data to history
+        previousCanvases.push_back(compressedData);
         canvas_idx = previousCanvases.size() - (size_t)1;
-        printf("Canvas state created.\n");
+        printf("Canvas state created with RLE compression.\n");
     }
-    else
+    else {
         printf("No changes detected; canvas state not updated.\n");
+    }
 }
 
 void cCanvas::LoadColorPalette(std::string input) {
@@ -913,15 +918,19 @@ void cCanvas::Editor() {
 
         if (!isTypingText) {
             if (GetAsyncKeyState(VK_CONTROL) && key_state.key_pressed('Z') & 1) {
+                // Undo operation
                 if (g_canvas[g_cidx].canvas_idx > 0) {
                     g_canvas[g_cidx].canvas_idx--;
-                    g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex] = g_canvas[g_cidx].previousCanvases[g_canvas[g_cidx].canvas_idx];
+                    auto decompressedData = g_util.DecompressCanvasDataRLE(g_canvas[g_cidx].previousCanvases[g_canvas[g_cidx].canvas_idx]);
+                    g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex] = decompressedData;
                 }
             }
             else if (GetAsyncKeyState(VK_CONTROL) && key_state.key_pressed('Y') & 1) {
+                // Redo operation
                 if (g_canvas[g_cidx].canvas_idx < g_canvas[g_cidx].previousCanvases.size() - 1) {
                     g_canvas[g_cidx].canvas_idx++;
-                    g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex] = g_canvas[g_cidx].previousCanvases[g_canvas[g_cidx].canvas_idx];
+                    auto decompressedData = g_util.DecompressCanvasDataRLE(g_canvas[g_cidx].previousCanvases[g_canvas[g_cidx].canvas_idx]);
+                    g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex] = decompressedData;
                 }
             }
             else if (GetAsyncKeyState(VK_DELETE)) // Delete our selection area

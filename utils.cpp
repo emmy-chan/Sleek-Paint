@@ -327,3 +327,58 @@ void cUtils::LoadImageFileToCanvas(const std::string& filepath, const std::strin
 
     stbi_image_free(image_data);
 }
+
+// Compress a vector of ImU32 using Run-Length Encoding (RLE)
+std::vector<uint8_t> cUtils::CompressCanvasDataRLE(const std::vector<ImU32>& input) {
+    std::vector<uint8_t> compressedData;
+    if (input.empty()) return compressedData;
+
+    size_t count = 1;
+    ImU32 previous = input[0];
+
+    for (size_t i = 1; i < input.size(); ++i) {
+        if (input[i] == previous && count < 255) {
+            ++count;
+        }
+        else {
+            // Store the count and value in the compressed data
+            compressedData.push_back(static_cast<uint8_t>(count));
+            compressedData.push_back(static_cast<uint8_t>((previous >> IM_COL32_R_SHIFT) & 0xFF));
+            compressedData.push_back(static_cast<uint8_t>((previous >> IM_COL32_G_SHIFT) & 0xFF));
+            compressedData.push_back(static_cast<uint8_t>((previous >> IM_COL32_B_SHIFT) & 0xFF));
+            compressedData.push_back(static_cast<uint8_t>((previous >> IM_COL32_A_SHIFT) & 0xFF));
+
+            // Reset for the next value
+            previous = input[i];
+            count = 1;
+        }
+    }
+
+    // Add the final run to the compressed data
+    compressedData.push_back(static_cast<uint8_t>(count));
+    compressedData.push_back(static_cast<uint8_t>((previous >> IM_COL32_R_SHIFT) & 0xFF));
+    compressedData.push_back(static_cast<uint8_t>((previous >> IM_COL32_G_SHIFT) & 0xFF));
+    compressedData.push_back(static_cast<uint8_t>((previous >> IM_COL32_B_SHIFT) & 0xFF));
+    compressedData.push_back(static_cast<uint8_t>((previous >> IM_COL32_A_SHIFT) & 0xFF));
+
+    return compressedData;
+}
+
+// Decompress a vector of ImU32 using Run-Length Encoding (RLE)
+std::vector<ImU32> cUtils::DecompressCanvasDataRLE(const std::vector<uint8_t>& input) {
+    std::vector<ImU32> decompressedData;
+    if (input.empty() || input.size() % 5 != 0) return decompressedData; // Each entry has 5 bytes: count and RGBA
+
+    for (size_t i = 0; i < input.size(); i += 5) {
+        uint8_t count = input[i];
+        uint8_t r = input[i + 1];
+        uint8_t g = input[i + 2];
+        uint8_t b = input[i + 3];
+        uint8_t a = input[i + 4];
+
+        ImU32 color = IM_COL32(r, g, b, a);
+        decompressedData.insert(decompressedData.end(), count, color);
+    }
+
+    return decompressedData;
+}

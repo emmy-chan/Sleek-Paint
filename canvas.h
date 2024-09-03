@@ -51,7 +51,7 @@ public:
 	std::string name;
 	uint16_t canvas_idx = 1;
 	
-	std::vector<std::vector<ImU32>> previousCanvases;
+	std::vector<std::vector<uint8_t>> previousCanvases;
 	std::vector<ImU32> myCols;
 	uint16_t selColIndex = 0;
 	uint8_t selLayerIndex = 0;
