@@ -509,60 +509,97 @@ void DrawRectangleOnCanvas(int x0, int y0, int x1, int y1, ImU32 color, bool pre
     }
 }
 
-void DrawTextOnCanvas(BitmapFont& font, const std::string& text, int startX, int startY, ImU32 color) {
-    //printf("DrawTextOnCanvas called with text: %s\n", text.c_str());
+ImU32 BlendColor(ImU32 baseColor, uint8_t glyphAlpha) {
+    // Extract base color components
+    uint8_t baseR = (baseColor >> IM_COL32_R_SHIFT) & 0xFF;
+    uint8_t baseG = (baseColor >> IM_COL32_G_SHIFT) & 0xFF;
+    uint8_t baseB = (baseColor >> IM_COL32_B_SHIFT) & 0xFF;
+    uint8_t baseA = (baseColor >> IM_COL32_A_SHIFT) & 0xFF;
 
-    // Convert start position from screen coordinates to canvas coordinates
-    startX = static_cast<int>((startX - g_cam.x) / TILE_SIZE); startY = static_cast<int>((startY - g_cam.y) / TILE_SIZE);
+    // If glyph is fully opaque, return the color as is
+    if (glyphAlpha == 255) {
+        return baseColor;
+    }
 
-    // Check if the starting position is within the canvas bounds
-    if (startX < 0 || startY < 0 || startX >= g_canvas[g_cidx].width || startY >= g_canvas[g_cidx].height) {
-        printf("Starting position (%d, %d) out of bounds\n", startX, startY);
+    // If glyph is fully transparent, do not blend
+    if (glyphAlpha == 0) {
+        return baseColor;
+    }
+
+    // Calculate the blended alpha
+    uint8_t finalAlpha = (glyphAlpha * baseA) / 255;
+
+    // Calculate the blended color components
+    uint8_t blendedR = (glyphAlpha * ((baseColor >> IM_COL32_R_SHIFT) & 0xFF) + (255 - glyphAlpha) * baseR) / 255;
+    uint8_t blendedG = (glyphAlpha * ((baseColor >> IM_COL32_G_SHIFT) & 0xFF) + (255 - glyphAlpha) * baseG) / 255;
+    uint8_t blendedB = (glyphAlpha * ((baseColor >> IM_COL32_B_SHIFT) & 0xFF) + (255 - glyphAlpha) * baseB) / 255;
+
+    return IM_COL32(blendedR, blendedG, blendedB, finalAlpha);
+}
+
+void DrawTextOnCanvasFreeType(FT_Face& face, const std::string& text, int startX, int startY, ImU32 color, int fontSize) {
+    // Canvas dimensions
+    int canvasWidth = g_canvas[g_cidx].width;
+    int canvasHeight = g_canvas[g_cidx].height;
+
+    // Adjust starting positions based on the camera offset
+    int adjustedStartX = startX - static_cast<int>(g_cam.x);
+    int adjustedStartY = startY - static_cast<int>(g_cam.y);
+
+    printf("Adjusted text position: (%d, %d), Canvas size: (%d, %d), Camera position: (%.6f, %.6f)\n", adjustedStartX, adjustedStartY, canvasWidth, canvasHeight, g_cam.x, g_cam.y);
+
+    // Set the desired font size using FreeType
+    if (FT_Set_Pixel_Sizes(face, 0, fontSize)) {
+        printf("Failed to set pixel sizes\n");
         return;
     }
 
-    for (size_t i = 0; i < text.length(); ++i) {
+    int x = adjustedStartX;  // Start drawing at the adjusted x position
+    int y = adjustedStartY;  // Start drawing at the adjusted y position
+
+    for (size_t i = 0; i < text.size(); ++i) {
         char c = text[i];
-        // Handle spaces by moving the cursor forward
-        if (c == ' ') {
-            startX += font.charWidth + 1; // Adjust this to the desired space width
+
+        // Load the glyph for the current character
+        if (FT_Load_Char(face, c, FT_LOAD_RENDER)) {
+            printf("Failed to load glyph for character: %c\n", c);
             continue;
         }
 
-        //printf("Mapping character: '%c'\n", c);
+        FT_GlyphSlot g = face->glyph;
 
-        if (font.charBitmaps.find(c) == font.charBitmaps.end()) {
-            printf("Character '%c' not found in charBitmaps\n", c);
-            continue; // Skip unsupported characters
-        }
+        // Adjust positions to consider glyph's bitmap origin
+        int glyph_x = x + g->bitmap_left;
+        int glyph_y = y - g->bitmap_top + (face->size->metrics.ascender >> 6);
 
-        const auto& bitmap = font.charBitmaps[c];
-
-        // Verify bitmap dimensions
-        const int currentCharHeight = bitmap.size(), currentCharWidth = bitmap.empty() ? 0 : bitmap[0].size();
-
-        if (currentCharHeight != font.charHeight) {
-            printf("Bitmap height for character '%c' is incorrect\n", c);
+        // Ensure starting positions are within canvas bounds
+        if (glyph_x >= canvasWidth || glyph_y >= canvasHeight || glyph_x + g->bitmap.width < 0 || glyph_y + g->bitmap.rows < 0) {
+            printf("Glyph position (%d, %d) is out of canvas bounds for character '%c'\n", glyph_x, glyph_y, c);
             continue;
         }
 
-        for (int y = 0; y < currentCharHeight; ++y) {
-            for (int x = 0; x < currentCharWidth; ++x) {
-                if (bitmap[y][x] == 1) {
-                    const int posX = startX + x, posY = startY + y; // Adjust horizontal position dynamically
+        // Clip the glyph drawing to the canvas size
+        for (int row = 0; row < g->bitmap.rows; ++row) {
+            for (int col = 0; col < g->bitmap.width; ++col) {
+                int posX = glyph_x + col;
+                int posY = glyph_y + row;
 
-                    // Ensure position is within the canvas boundaries
-                    if (posX >= 0 && posX < g_canvas[g_cidx].width && posY >= 0 && posY < g_canvas[g_cidx].height) {
-                        //printf("Drawing pixel at (%d, %d) with color %08X\n", posX, posY, color);
-                        g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex][posY * g_canvas[g_cidx].width + posX] = color;
+                // Ensure the position is within the canvas
+                if (posX >= 0 && posX < canvasWidth && posY >= 0 && posY < canvasHeight) {
+                    uint8_t alpha = g->bitmap.buffer[row * g->bitmap.width + col];
+                    if (alpha > 0) {
+                        ImU32 blendedColor = BlendColor(color, alpha);
+                        g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex][posY * canvasWidth + posX] = blendedColor;
                     }
-                    //else
-                        //printf("Position (%d, %d) out of bounds\n", posX, posY);
+                }
+                else {
+                    printf("Position (%d, %d) out of canvas bounds\n", posX, posY);
                 }
             }
         }
 
-        startX += currentCharWidth + 1; // Move start position for next character
+        // Advance cursor to the start position of the next character
+        x += (g->advance.x >> 6);  // Move the cursor to the right by the advance width
     }
 }
 
@@ -1209,6 +1246,7 @@ void cCanvas::Editor() {
     static std::string textInput, previousTextInput;
     static std::vector<ImVec2> linePositions;
     static std::vector<std::string> lines;
+    auto currentFontSize = 12.0f;
 
     // Handle text input
     if (paintToolSelected == TOOL_TEXT) {
@@ -1233,7 +1271,7 @@ void cCanvas::Editor() {
                 const ImWchar ch = io.InputQueueCharacters[c];
                 if (ch == '\n' || ch == '\r') {
                     // Handle Enter key: move to new line
-                    textPosition.y += bitmapFont->charHeight * TILE_SIZE;
+                    textPosition.y += currentFontSize; // Adjust with font size
                     textPosition.x = linePositions[0].x; // Reset x position to start of the line
                     lines.push_back(""); // Add a new line
                     linePositions.push_back(textPosition); // Save the position for the new line
@@ -1263,24 +1301,18 @@ void cCanvas::Editor() {
             }
 
             // Clear the previously drawn text from the canvas
-            if (bitmapFont) {
-                for (size_t i = 0; i < lines.size(); ++i) {
-                    DrawTextOnCanvas(*bitmapFont, lines[i], static_cast<int>(linePositions[i].x - TILE_SIZE), static_cast<int>(linePositions[i].y), IM_COL32(0, 0, 0, 0));
-                    DrawTextOnCanvas(*bitmapFont, lines[i], static_cast<int>(linePositions[i].x), static_cast<int>(linePositions[i].y), IM_COL32(0, 0, 0, 0));
-                }
-            }
+            /*for (size_t i = 0; i < lines.size(); ++i) {
+                DrawTextOnCanvasFreeType(face, lines[i], static_cast<int>(linePositions[i].x - 1), static_cast<int>(linePositions[i].y), IM_COL32(0, 0, 0, 0), currentFontSize);
+            }*/
 
             // Update the current line content
             if (!lines.empty()) lines.back() = textInput;
 
-            // Draw the current text at the mouse position using the bitmap font
-            if (bitmapFont) {
-                const uint8_t red = (myCols[selColIndex] >> 0) & 0xFF, green = (myCols[selColIndex] >> 8) & 0xFF, blue = (myCols[selColIndex] >> 16) & 0xFF;
+            // Draw the current text at the mouse position using FreeType
+            const uint8_t red = (myCols[selColIndex] >> 0) & 0xFF, green = (myCols[selColIndex] >> 8) & 0xFF, blue = (myCols[selColIndex] >> 16) & 0xFF;
 
-                for (size_t i = 0; i < lines.size(); ++i) {
-                    DrawTextOnCanvas(*bitmapFont, lines[i], static_cast<int>(linePositions[i].x - TILE_SIZE), static_cast<int>(linePositions[i].y), red + green + blue > 50 ? IM_COL32_BLACK : IM_COL32_WHITE);
-                    DrawTextOnCanvas(*bitmapFont, lines[i], static_cast<int>(linePositions[i].x), static_cast<int>(linePositions[i].y), myCols[selColIndex]);
-                }
+            for (size_t i = 0; i < lines.size(); ++i) {
+                DrawTextOnCanvasFreeType(face, lines[i], static_cast<int>(linePositions[i].x), static_cast<int>(linePositions[i].y), myCols[selColIndex], currentFontSize);
             }
 
             // Update the previous text input and position
@@ -1288,12 +1320,12 @@ void cCanvas::Editor() {
             previousTextPosition = textPosition;
 
             // Draw the text cursor
-            const ImVec2 cursorPos = { textPosition.x + textInput.size() * bitmapFont->charWidth * (TILE_SIZE * 1.25f), textPosition.y };
+            const ImVec2 cursorPos = { textPosition.x + textInput.size() * currentFontSize * 0.6f, textPosition.y };
 
             // Draw blinking cursor
             if (fmod(ImGui::GetTime(), 1.0f) > 0.5f) {
-                d.AddLine({ cursorPos.x, cursorPos.y }, { cursorPos.x, cursorPos.y + bitmapFont->charHeight * TILE_SIZE }, IM_COL32_BLACK, 2);
-                d.AddLine({ cursorPos.x, cursorPos.y }, { cursorPos.x, cursorPos.y + bitmapFont->charHeight * TILE_SIZE }, IM_COL32_WHITE, 1);
+                d.AddLine({ cursorPos.x, cursorPos.y }, { cursorPos.x, cursorPos.y + currentFontSize }, IM_COL32_BLACK, 2);
+                d.AddLine({ cursorPos.x, cursorPos.y }, { cursorPos.x, cursorPos.y + currentFontSize }, IM_COL32_WHITE, 1);
             }
         }
     }

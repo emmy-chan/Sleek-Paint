@@ -23,6 +23,8 @@
 #include "assets.h"
 #include "gui_main.h"
 #include "utils.h"
+#include <ft2build.h>
+#include FT_FREETYPE_H
 
 // Data
 static IDXGISwapChain* g_pSwapChain = NULL;
@@ -182,6 +184,23 @@ int main(int, char**)
 
     // Build font atlas
     ImGuiFreeType::BuildFontAtlas(io.Fonts, ImGuiFreeTypeBuilderFlags_ForceAutoHint);
+
+    FT_Library ft;
+
+    // Initialize FreeType
+    if (FT_Init_FreeType(&ft)) {
+        printf("Could not initialize FreeType library\n");
+        return 0;
+    }
+
+    // Load the font from memory
+    if (FT_New_Memory_Face(ft, Custom, sizeof(Custom), 0, &face)) {
+        printf("Failed to load font from memory\n");
+        return 0;
+    }
+
+    // Set the default font size (this can be changed dynamically)
+    FT_Set_Pixel_Sizes(face, 0, 12); // 18 pixels font size
 
     // Setup our IMGUI theme!
     SetupTheme();

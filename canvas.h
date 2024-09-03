@@ -4,9 +4,12 @@
 #include "includes.h"
 #include <unordered_set>
 #include <string>
+#include <ft2build.h>
+#include FT_FREETYPE_H
 
 //The id of our current selected canvas project!
 extern uint16_t g_cidx;
+inline FT_Face face;
 inline ID3D11Texture2D* canvasTexture = nullptr;
 inline ID3D11ShaderResourceView* canvasSRV = nullptr;
 inline ID3D11SamplerState* g_pSamplerStatePoint = nullptr;
