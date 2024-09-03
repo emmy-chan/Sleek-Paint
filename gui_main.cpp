@@ -75,6 +75,9 @@ void cGUI::Display()
                 else if (!copiedTiles.empty())
                     g_canvas[g_cidx].PasteSelection(); // Default paste functionality for non-image data
             }
+
+            if (ImGui::MenuItem(ICON_FA_MINUS_SQUARE" Deselect") && g_canvas.size() > 0)
+                selectedIndexes.clear();
             
             if (ImGui::MenuItem(ICON_FA_ADJUST " Apply Dithering") && g_canvas.size() > 0) {
                 // Apply the changes to the canvas

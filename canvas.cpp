@@ -1049,6 +1049,8 @@ void cCanvas::Editor() {
             break;
 
         case TOOL_MOVE:
+            if (g_util.MousePressed(1)) selectedIndexes.clear();
+
             if (g_util.MousePressed(0)) {
                 initialSelectedIndexes = selectedIndexes;
 
