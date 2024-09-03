@@ -173,7 +173,7 @@ int main(int, char**)
     config.MergeMode = true;
 
     // Store default font
-    io.Fonts->AddFontFromMemoryTTF(const_cast<std::uint8_t*>(Custom), sizeof(Custom), 18.f, &config);
+    io.Fonts->AddFontFromMemoryTTF(const_cast<std::uint8_t*>(Custom), sizeof(Custom), 18.f, &config, io.Fonts->GetGlyphRangesDefault());
 
     // Load icons!
     {
