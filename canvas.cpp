@@ -1250,6 +1250,8 @@ void cCanvas::Editor() {
             // Hotkey to quit typing
             if (GetAsyncKeyState(VK_ESCAPE)) isTypingText = false;
 
+            ImVec2 cursorPos;
+
             // Capture text input
             for (int c = 0; c < io.InputQueueCharacters.Size; c++) {
                 const ImWchar ch = io.InputQueueCharacters[c];
@@ -1266,16 +1268,49 @@ void cCanvas::Editor() {
 
                 // Handle backspace
                 if (ch == 127 || ch == '\b') {
-                    if (!textInput.empty())
-                        textInput.pop_back();
+                    if (!textInput.empty()) {
+                        textInput.pop_back();  // Remove the last character from input
+
+                        // Recalculate cursor position for last character
+                        if (!textInput.empty()) {
+                            if (FT_Load_Char(face, textInput.back(), FT_LOAD_RENDER) == 0) {
+                                FT_GlyphSlot g = face->glyph;
+                                int glyphWidth = g->advance.x >> 6;
+
+                                // Move cursor back by the width of the last glyph
+                                cursorPos.x -= glyphWidth + 1.5f * TILE_SIZE / text_size;  // Add extra spacing to align correctly
+
+                                // Clear the last character's area on the canvas
+                                int glyph_x = static_cast<int>(cursorPos.x);
+                                int glyph_y = static_cast<int>(cursorPos.y - (face->size->metrics.ascender >> 6));
+                                int glyph_height = (face->size->metrics.height >> 6);
+
+                                // Erase the previous character from the canvas
+                                for (int row = 0; row < glyph_height; ++row) {
+                                    for (int col = 0; col < glyphWidth; ++col) {
+                                        int posX = glyph_x + col;
+                                        int posY = glyph_y + row;
+
+                                        if (posX >= 0 && posX < width && posY >= 0 && posY < height) {
+                                            g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex][posY * width + posX] = IM_COL32(0, 0, 0, 0); // Background color or transparent
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        else {
+                            // If text input is empty, reset the position to start of line
+                            cursorPos.x = linePositions.back().x;
+                        }
+                    }
                     else if (lines.size() > 1) {
-                        // Move back to the previous line if the current line is empty
+                        // Handle backspace when current line is empty
                         lines.pop_back();
                         linePositions.pop_back();
                         textPosition = linePositions.back();
                         textInput = lines.back();
-                        lines.back().clear(); // Clear the last line after moving back
                         previousTextInput = textInput;
+                        // Clear the entire line space on canvas
                     }
                 }
                 else {
@@ -1297,11 +1332,10 @@ void cCanvas::Editor() {
             previousTextPosition = textPosition;
 
             // Calculate the cursor position and height
-            ImVec2 cursorPos;
             float cursorHeight = 0.0f;
 
             // Set font size in FreeType
-            FT_Set_Pixel_Sizes(face, 0, static_cast<int>(text_size* TILE_SIZE));
+            FT_Set_Pixel_Sizes(face, 0, static_cast<int>(text_size * TILE_SIZE));
 
             // Adjust cursor position based on text and glyph metrics
             if (!textInput.empty()) {
@@ -1310,7 +1344,7 @@ void cCanvas::Editor() {
                     FT_GlyphSlot g = face->glyph;
 
                     // Adjust cursor X-position by accounting for the full advance of all characters
-                    cursorPos.x = linePositions.back().x + (textInput.size() * (g->advance.x >> 6)) * TILE_SIZE / text_size;
+                    cursorPos.x = linePositions.back().x + (textInput.size() * ((g->advance.x >> 6) + static_cast<int>(1.5f * TILE_SIZE / text_size)));
 
                     // Offset X-position slightly to the right to align perfectly after the last glyph
                     cursorPos.x += 1.0f * TILE_SIZE / text_size;  // Fine-tuning offset
@@ -1338,9 +1372,10 @@ void cCanvas::Editor() {
                 d.AddLine(cursorPos1, cursorPos2, IM_COL32_WHITE, 1.0f);
             }
         }
+        else {
+            isTypingText = false;
+        }
     }
-    else
-        isTypingText = false;
 
     // Draw a rectangle around the selected indexes
     if (!selectedIndexes.empty()) DrawSelectionRectangle(selectedIndexes, TILE_SIZE, g_cam.x, g_cam.y, width, IM_COL32_WHITE, 2);
