@@ -596,7 +596,7 @@ void DrawTextOnCanvasFreeType(FT_Face& face, const std::string& text, int mouseX
 
 void applyBrushEffect(const ImVec2& lastMousePos, int x, int y, const ImU32& col) {
     const float brushRadius = brush_size / 2.0f;
-    const int brushRadiusInt = static_cast<int>(brushRadius);
+    const uint8_t brushRadiusInt = static_cast<int>(brushRadius);
 
     // Check if there is a valid previous position
     if (lastMousePos.x >= 0 && lastMousePos.y >= 0) {
@@ -892,8 +892,7 @@ void UpdateCanvasTexture(ID3D11DeviceContext* context, const std::vector<ImU32>&
     D3D11_MAPPED_SUBRESOURCE mappedResource;
     HRESULT hr = context->Map(canvasTexture, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
     if (FAILED(hr)) {
-        printf("Failed to map texture for canvas update. HRESULT: 0x%08X\n", hr);
-        return;
+        printf("Failed to map texture for canvas update. HRESULT: 0x%08X\n", hr); return;
     }
 
     ImU32* dest = static_cast<ImU32*>(mappedResource.pData);
@@ -1103,12 +1102,10 @@ void cCanvas::Editor() {
                 std::unordered_map<uint64_t, ImU32> newTileColors; // Changed to uint32_t
 
                 for (const auto& index : initialSelectedIndexes) {
-                    const int selectX = index % width;
-                    const int selectY = index / width;
+                    const int selectX = index % width, selectY = index / width;
 
                     // Wrap positions within canvas boundaries
-                    const int newX = (selectX + offsetX / TILE_SIZE + width) % width;
-                    const int newY = (selectY + offsetY / TILE_SIZE + height) % height;
+                    const int newX = (selectX + offsetX / TILE_SIZE + width) % width, newY = (selectY + offsetY / TILE_SIZE + height) % height;
 
                     const uint32_t newIndex = newX + newY * width; // Changed to uint32_t
                     newSelectedIndexes.insert(newIndex);
@@ -1116,12 +1113,10 @@ void cCanvas::Editor() {
                 }
 
                 // Clear the original positions
-                for (const auto& index : initialSelectedIndexes)
-                    tiles[g_canvas[g_cidx].selLayerIndex][index] = IM_COL32(0, 0, 0, 0);
+                for (const auto& index : initialSelectedIndexes) tiles[g_canvas[g_cidx].selLayerIndex][index] = IM_COL32(0, 0, 0, 0);
 
                 // Update new positions
-                for (const auto& [newIndex, color] : newTileColors)
-                    tiles[g_canvas[g_cidx].selLayerIndex][newIndex] = color;
+                for (const auto& [newIndex, color] : newTileColors) tiles[g_canvas[g_cidx].selLayerIndex][newIndex] = color;
 
                 selectedIndexes = newSelectedIndexes;
             }
@@ -1131,8 +1126,7 @@ void cCanvas::Editor() {
             if (ImGui::IsMouseDown(0)) {
                 // Draw the preview line
                 const ImVec2 mousePos = ImGui::GetMousePos();
-                const uint16_t endX = static_cast<int>((mousePos.x - g_cam.x) / TILE_SIZE);
-                const uint16_t endY = static_cast<int>((mousePos.y - g_cam.y) / TILE_SIZE);
+                const uint16_t endX = static_cast<int>((mousePos.x - g_cam.x) / TILE_SIZE), endY = static_cast<int>((mousePos.y - g_cam.y) / TILE_SIZE);
 
                 DrawLineOnCanvas(static_cast<int>((mouseStart.x - g_cam.x) / TILE_SIZE), static_cast<int>((mouseStart.y - g_cam.y) / TILE_SIZE), endX, endY, myCols[selColIndex], true);
             }
@@ -1273,9 +1267,8 @@ void cCanvas::Editor() {
 
                 // Handle backspace
                 if (ch == 127 || ch == '\b') {
-                    if (!textInput.empty()) {
+                    if (!textInput.empty())
                         textInput.pop_back();
-                    }
                     else if (lines.size() > 1) {
                         // Move back to the previous line if the current line is empty
                         lines.pop_back();
@@ -1293,14 +1286,12 @@ void cCanvas::Editor() {
             }
 
             // Update the current line content
-            if (!lines.empty()) {
+            if (!lines.empty())
                 lines.back() = textInput;
-            }
 
             // Draw the current text at the mouse position using FreeType
-            for (size_t i = 0; i < lines.size(); ++i) {
+            for (size_t i = 0; i < lines.size(); ++i)
                 DrawTextOnCanvasFreeType(face, lines[i], static_cast<int>(linePositions[i].x), static_cast<int>(linePositions[i].y), myCols[selColIndex], currentFontSize);
-            }
 
             // Update the previous text input and position
             previousTextInput = textInput;
