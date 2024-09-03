@@ -123,9 +123,11 @@ std::string SerializeCanvas(const cCanvas& canvas) {
     oss << canvas.tiles.size() << "\n";
 
     for (size_t i = 0; i < canvas.tiles.size(); ++i) {
-        oss << canvas.tiles[i].size() << "\n";
-        for (uint32_t color : canvas.tiles[i]) {
-            oss << color << " ";
+        std::vector<uint8_t> compressedData = g_util.CompressCanvasDataRLE(canvas.tiles[i]);
+
+        oss << compressedData.size() << "\n";
+        for (uint8_t byte : compressedData) {
+            oss << static_cast<int>(byte) << " ";
         }
         oss << "\n";
         oss << canvas.layerNames[i] << "\n";
@@ -499,18 +501,17 @@ cCanvas DeserializeCanvas(const std::string& data) {
 
     // Deserialize each layer's data
     for (size_t i = 0; i < layerCount; ++i) {
-        size_t layerSize;
-        iss >> layerSize;
-        std::cout << "Layer " << i << " size: " << layerSize << std::endl;
+        size_t compressedSize;
+        iss >> compressedSize;
 
-        // Check if layerSize is reasonable
-        if (layerSize > 1000000) // Arbitrary large value to catch potential errors
-            throw std::runtime_error("Unreasonable layer size detected");
+        std::vector<uint8_t> compressedData(compressedSize);
+        for (size_t j = 0; j < compressedSize; ++j) {
+            int byte;
+            iss >> byte;
+            compressedData[j] = static_cast<uint8_t>(byte);
+        }
 
-        canvas.tiles[i].resize(layerSize);
-
-        for (size_t j = 0; j < layerSize; ++j)
-            iss >> canvas.tiles[i][j];
+        canvas.tiles[i] = g_util.DecompressCanvasDataRLE(compressedData);
 
         iss >> std::ws; // Skip any whitespace
         std::getline(iss, canvas.layerNames[i]);
