@@ -49,8 +49,7 @@ void cCanvas::CreateCanvasTexture(ID3D11Device* device, uint32_t width, uint32_t
 
     HRESULT hr = device->CreateTexture2D(&desc, NULL, &canvasTexture);
     if (FAILED(hr) || !canvasTexture) {
-        printf("Failed to create texture. HRESULT: 0x%08X\n", hr);
-        return;
+        printf("Failed to create texture. HRESULT: 0x%08X\n", hr); return;
     }
 
     D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
@@ -60,8 +59,7 @@ void cCanvas::CreateCanvasTexture(ID3D11Device* device, uint32_t width, uint32_t
 
     hr = device->CreateShaderResourceView(canvasTexture, &srvDesc, &canvasSRV);
     if (FAILED(hr) || !canvasSRV) {
-        printf("Failed to create shader resource view. HRESULT: 0x%08X\n", hr);
-        return;
+        printf("Failed to create shader resource view. HRESULT: 0x%08X\n", hr); return;
     }
 }
 
@@ -90,8 +88,7 @@ void cCanvas::NewLayer(std::string name, const std::vector<ImU32>& initial_data,
     // If initial data is provided, use it to initialize the layer
     if (!initial_data.empty())
         layer0 = initial_data;
-    else
-        for (int i = 0; i < width * height; i++) layer0.push_back(color); // Create a blank canvas
+    else for (int i = 0; i < width * height; i++) layer0.push_back(color); // Create a blank canvas
 
     tiles.push_back(layer0);
     layerVisibility.push_back(true);
@@ -579,11 +576,8 @@ void applyBrushEffect(const ImVec2& lastMousePos, int x, int y, const ImU32& col
         const int lastX = static_cast<int>((lastMousePos.x - g_cam.x) / TILE_SIZE), lastY = static_cast<int>((lastMousePos.y - g_cam.y) / TILE_SIZE);
 
         // Calculate the distance between the previous and current mouse positions
-        const float distX = x - lastX, distY = y - lastY;
-        const float distance = glm::sqrt(distX * distX + distY * distY);
-
-        // Number of steps to interpolate
-        const int steps = static_cast<int>(distance) + 1;
+        const float distX = x - lastX, distY = y - lastY, distance = glm::sqrt(distX * distX + distY * distY);
+        const int steps = static_cast<int>(distance) + 1; // Number of steps to interpolate
 
         for (int i = 0; i <= steps; ++i) {
             const float t = static_cast<float>(i) / steps;
@@ -799,10 +793,8 @@ std::unordered_set<uint64_t> GetTilesWithinPolygon(const std::vector<ImVec2>& po
 
     for (int y = 0; y < height; ++y) {
         for (int x = 0; x < width; ++x) {
-            const ImVec2 topLeft(g_cam.x + x * TILE_SIZE, g_cam.y + y * TILE_SIZE);
-            const ImVec2 topRight = ImVec2(topLeft.x + TILE_SIZE, topLeft.y);
-            const ImVec2 bottomLeft = ImVec2(topLeft.x, topLeft.y + TILE_SIZE);
-            const ImVec2 bottomRight = ImVec2(topLeft.x + TILE_SIZE, topLeft.y + TILE_SIZE);
+            const ImVec2 topLeft(g_cam.x + x * TILE_SIZE, g_cam.y + y * TILE_SIZE), topRight = ImVec2(topLeft.x + TILE_SIZE, topLeft.y);
+            const ImVec2 bottomLeft = ImVec2(topLeft.x, topLeft.y + TILE_SIZE), bottomRight = ImVec2(topLeft.x + TILE_SIZE, topLeft.y + TILE_SIZE);
 
             if (IsPointInPolygon(ImVec2(topLeft.x + TILE_SIZE / 2, topLeft.y + TILE_SIZE / 2), polygon) || // Center check
                 IsLineIntersectingPolygon(polygon, topLeft, topRight) || // Top edge
@@ -932,23 +924,18 @@ void cCanvas::Editor() {
         UpdateZoom(ImGui::GetIO().MouseWheel * glm::max(TILE_SIZE * 0.08f, 1.0f));
     }
 
-    // Assuming `canvasSRV` is the shader resource view for the texture
+    // Set sampler state for canvas texture
     g_app.g_pd3dDeviceContext->PSSetShaderResources(0, 1, &canvasSRV);
-
-    // Assuming `g_pSamplerStatePoint` is the nearest-neighbor sampler state
     g_app.g_pd3dDeviceContext->PSSetSamplers(0, 1, &g_pSamplerStatePoint);
 
     std::vector<ImU32> compositedBuffer;
     CompositeLayersToBuffer(compositedBuffer, g_canvas[g_cidx].tiles, g_canvas[g_cidx].layerVisibility, g_canvas[g_cidx].layerOpacity, g_canvas[g_cidx].width, g_canvas[g_cidx].height);
     UpdateCanvasTexture(g_app.g_pd3dDeviceContext, compositedBuffer, width, height);
 
-    if (canvasSRV)
-        d.AddImage((ImTextureID)canvasSRV, { glm::floor(g_cam.x), glm::floor(g_cam.y) }, ImVec2(glm::floor(g_canvas[g_cidx].width * TILE_SIZE) + glm::floor(g_cam.x), glm::floor(g_canvas[g_cidx].height * TILE_SIZE) + glm::floor(g_cam.y)), ImVec2(0, 0), ImVec2(1, 1), IM_COL32_WHITE);
+    if (canvasSRV) d.AddImage((ImTextureID)canvasSRV, { glm::floor(g_cam.x), glm::floor(g_cam.y) }, ImVec2(glm::floor(g_canvas[g_cidx].width * TILE_SIZE) + glm::floor(g_cam.x), glm::floor(g_canvas[g_cidx].height * TILE_SIZE) + glm::floor(g_cam.y)), ImVec2(0, 0), ImVec2(1, 1), IM_COL32_WHITE);
 
     // Convert the screen coordinates to tile coordinates
-    const uint16_t x = static_cast<int>((ImGui::GetMousePos().x - g_cam.x) / TILE_SIZE),
-                   y = static_cast<int>((ImGui::GetMousePos().y - g_cam.y) / TILE_SIZE);
-
+    const uint16_t x = static_cast<int>((ImGui::GetMousePos().x - g_cam.x) / TILE_SIZE), y = static_cast<int>((ImGui::GetMousePos().y - g_cam.y) / TILE_SIZE);
     const bool clickingInsideCanvas = x >= 0 && x < g_canvas[g_cidx].width && y >= 0 && y < g_canvas[g_cidx].height;
     static ImVec2 mouseStart;
     if (g_util.MousePressed(0) && clickingInsideCanvas) mouseStart = ImGui::GetMousePos();
@@ -1179,8 +1166,7 @@ void cCanvas::Editor() {
             if (ImGui::IsMouseDown(0)) applyBandAidBrushEffect(lastMousePos, x, y);
 
             if (g_util.MouseReleased(0)) {
-                applyBandAidEffect();
-                selectedIndexes.clear();
+                applyBandAidEffect(); selectedIndexes.clear();
             }
 
             break;
@@ -1195,8 +1181,7 @@ void cCanvas::Editor() {
                 freeformPath.push_back(ImGui::GetMousePos());
             }
 
-            if (ImGui::IsMouseDown(0))
-                freeformPath.push_back(ImGui::GetMousePos());
+            if (ImGui::IsMouseDown(0)) freeformPath.push_back(ImGui::GetMousePos());
 
             if (g_util.MouseReleased(0)) {
                 // Finalize the freeform selection
