@@ -489,10 +489,8 @@ void DrawCircleOnCanvas(int startX, int startY, int endX, int endY, ImU32 color,
 }
 
 void DrawRectangleOnCanvas(int x0, int y0, int x1, int y1, ImU32 color, bool preview = false) {
-    const int startX = std::min(x0, x1);
-    const int endX = std::max(x0, x1);
-    const int startY = std::min(y0, y1);
-    const int endY = std::max(y0, y1);
+    const int startX = std::min(x0, x1), endX = std::max(x0, x1);
+    const int startY = std::min(y0, y1), endY = std::max(y0, y1);
 
     for (int x = startX; x <= endX; ++x) {
         for (int y = startY; y <= endY; ++y) {
@@ -514,12 +512,10 @@ void DrawRectangleOnCanvas(int x0, int y0, int x1, int y1, ImU32 color, bool pre
 
 void DrawTextOnCanvasFreeType(FT_Face& face, const std::string& text, int mouseX, int mouseY, ImU32 color, int fontSize) {
     // Canvas dimensions
-    int canvasWidth = g_canvas[g_cidx].width;
-    int canvasHeight = g_canvas[g_cidx].height;
+    int canvasWidth = g_canvas[g_cidx].width, canvasHeight = g_canvas[g_cidx].height;
 
     // Convert mouse position to canvas coordinates considering zoom (TILE_SIZE) and camera offset
-    int startX = static_cast<int>((mouseX - g_cam.x) / TILE_SIZE);
-    int startY = static_cast<int>((mouseY - g_cam.y) / TILE_SIZE);
+    int startX = static_cast<int>((mouseX - g_cam.x) / TILE_SIZE), startY = static_cast<int>((mouseY - g_cam.y) / TILE_SIZE);
 
     // Ensure text starts within the canvas boundaries
     startX = std::max(startX, 0);
@@ -538,9 +534,7 @@ void DrawTextOnCanvasFreeType(FT_Face& face, const std::string& text, int mouseX
         return;
     }
 
-    int x = startX;  // Start drawing at the calculated canvas position
-    int y = startY;  // Start drawing at the calculated canvas position
-
+    int x = startX, y = startY;  // Start drawing at the calculated canvas position
     int baselineY = y + (face->size->metrics.ascender >> 6); // Calculate the baseline
 
     for (size_t i = 0; i < text.size(); ++i) {
@@ -802,7 +796,6 @@ bool DoLinesIntersect(ImVec2 a1, ImVec2 a2, ImVec2 b1, ImVec2 b2) {
     };
 
     const ImVec2 r = ImVec2(a2.x - a1.x, a2.y - a1.y), s = ImVec2(b2.x - b1.x, b2.y - b1.y);
-
     const float rxs = crossProduct(r, s);
     const float t = crossProduct(ImVec2(b1.x - a1.x, b1.y - a1.y), s) / rxs;
     const float u = crossProduct(ImVec2(b1.x - a1.x, b1.y - a1.y), r) / rxs;
@@ -990,13 +983,13 @@ void cCanvas::Editor() {
 
     // Convert the screen coordinates to tile coordinates
     const uint16_t x = static_cast<int>((ImGui::GetMousePos().x - g_cam.x) / TILE_SIZE), y = static_cast<int>((ImGui::GetMousePos().y - g_cam.y) / TILE_SIZE);
-    const bool clickingInsideCanvas = x >= 0 && x < g_canvas[g_cidx].width && y >= 0 && y < g_canvas[g_cidx].height;
+    const bool clickingInsideCanvas = x >= 0 && x < width && y >= 0 && y < height;
     static ImVec2 mouseStart;
     if (g_util.MousePressed(0) && clickingInsideCanvas) mouseStart = ImGui::GetMousePos();
     const bool bCanDraw = !g_util.IsClickingOutsideCanvas(mouseStart.x > 0 && mouseStart.y > 0 ? mouseStart : io.MousePos);
     static ImVec2 lastMousePos = ImVec2(-1, -1);
 
-    if (layerVisibility[selLayerIndex] && layerOpacity[selLayerIndex] && bCanDraw && clickingInsideCanvas && g_util.Hovering(g_cam.x, g_cam.y, width * TILE_SIZE, height * TILE_SIZE) && x >= 0 && x < width && y >= 0 && y < height) {
+    if (layerVisibility[selLayerIndex] && layerOpacity[selLayerIndex] && bCanDraw && clickingInsideCanvas && g_util.Hovering(g_cam.x, g_cam.y, width * TILE_SIZE, height * TILE_SIZE)) {
         switch (paintToolSelected) {
         case TOOL_BRUSH:
             //brush

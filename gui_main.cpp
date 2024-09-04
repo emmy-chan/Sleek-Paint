@@ -758,9 +758,8 @@ void cGUI::Display()
 
     ImGui::SameLine(width * 2 + 4);
 
-    // Display gears button
-    if (ImGui::Button(ICON_FA_COGS, { (float)width, 26 }))
-        ImGui::OpenPopup("Color Options");
+    // Display cogs color options button
+    if (ImGui::Button(ICON_FA_COGS, { (float)width, 26 })) ImGui::OpenPopup("Color Options");
 
     // Popup for additional settings
     if (ImGui::BeginPopup("Color Options")) {
@@ -807,8 +806,7 @@ void cGUI::Display()
             const std::vector<ImU32> main_cols = { IM_COL32(0, 0, 0, 255), IM_COL32(255, 255, 255, 255) };
 
             // Push our two main colors to the array
-            for (auto& c : main_cols)
-                g_canvas[g_cidx].myCols.push_back(c);
+            for (auto& c : main_cols) g_canvas[g_cidx].myCols.push_back(c);
 
             // Create a set to store unique colors
             std::unordered_set<ImU32> uniqueColors;
@@ -852,9 +850,7 @@ void cGUI::Display()
     ImGui::Spacing();
 
     // Calculate the number of buttons that can fit in one row
-    const float buttonSize = 20.0f;
-    const float itemSpacing = ImGui::GetStyle().ItemSpacing.x;
-    const float totalWidth = ImGui::GetContentRegionAvail().x;
+    const float buttonSize = 20.0f, totalWidth = ImGui::GetContentRegionAvail().x, itemSpacing = ImGui::GetStyle().ItemSpacing.x;
     const int buttonsPerRow = static_cast<int>(totalWidth / (buttonSize + itemSpacing));
 
     for (uint16_t i = 2; i < g_canvas[g_cidx].myCols.size(); i++) {
@@ -862,7 +858,6 @@ void cGUI::Display()
 
         // Start a new row if necessary
         if ((i - 2) % buttonsPerRow != 0) ImGui::SameLine();
-
         ImGui::PushStyleColor(ImGuiCol_FrameBg, g_canvas[g_cidx].selColIndex == i ? ImVec4(1.0f, 1.0f, 1.0f, 1.f) : ImVec4(0.05f, 0.05f, 0.05f, 1));
 
         if (ImGui::ColorButton(id.c_str(), ImGui::ColorConvertU32ToFloat4(g_canvas[g_cidx].myCols[i]), NULL, { buttonSize, buttonSize }))
@@ -1030,12 +1025,7 @@ void cGUI::Display()
                 for (uint64_t x = 0; x < g_canvas[g_cidx].width; x++) {
                     const uint64_t index = x + y * g_canvas[g_cidx].width;
                     ImU32& currentColor = g_canvas[g_cidx].tiles[selLayerIndex][index];
-
-                    // Extract the alpha value
-                    int16_t alpha = (currentColor >> IM_COL32_A_SHIFT) & 0xFF;
-
-                    // Modify the alpha value based on the delta
-                    alpha = std::clamp(alpha + delta, 0, 255);
+                    const int alpha = std::clamp(static_cast<int>((currentColor >> IM_COL32_A_SHIFT) & 0xFF) + delta, 0, 255);
 
                     // Reconstruct the color with the new alpha value
                     currentColor = (currentColor & ~IM_COL32_A_MASK) | (alpha << IM_COL32_A_SHIFT);
@@ -1053,9 +1043,8 @@ void cGUI::Display()
         std::string newLayerName = "Layer ";
         int layerCount = 1;
 
-        while (std::find(g_canvas[g_cidx].layerNames.begin(), g_canvas[g_cidx].layerNames.end(), newLayerName + std::to_string(layerCount)) != g_canvas[g_cidx].layerNames.end()) {
+        while (std::find(g_canvas[g_cidx].layerNames.begin(), g_canvas[g_cidx].layerNames.end(), newLayerName + std::to_string(layerCount)) != g_canvas[g_cidx].layerNames.end())
             layerCount++;
-        }
 
         newLayerName += std::to_string(layerCount);
 
@@ -1134,11 +1123,8 @@ void cGUI::Display()
 
     {
         ImVec4 picker_color = ImGui::ColorConvertU32ToFloat4(g_canvas[g_cidx].myCols[g_canvas[g_cidx].selColIndex]);
-
-        if (ImGui::ColorPicker4("##Picker", (float*)&picker_color, ImGuiColorEditFlags_InputRGB | ImGuiColorEditFlags_NoSidePreview | ImGuiColorEditFlags_NoSmallPreview)) {
-            // If color is edited, convert it back to ImU32 and store it
-            g_canvas[g_cidx].myCols[g_canvas[g_cidx].selColIndex] = ImGui::ColorConvertFloat4ToU32(picker_color);
-        }
+        if (ImGui::ColorPicker4("##Picker", (float*)&picker_color, ImGuiColorEditFlags_InputRGB | ImGuiColorEditFlags_NoSidePreview | ImGuiColorEditFlags_NoSmallPreview))
+            g_canvas[g_cidx].myCols[g_canvas[g_cidx].selColIndex] = ImGui::ColorConvertFloat4ToU32(picker_color); // If color is edited, convert it back to ImU32 and store it
     }
 
     ImGui::PopItemWidth();
