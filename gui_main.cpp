@@ -748,49 +748,28 @@ void cGUI::Display()
     // Child window for color buttons with scrollbar
     ImGui::BeginChild("##ColorButtons", ImVec2(0, io.DisplaySize.y * 0.25f), false); // Enable scrollbar
 
-    // Calculate the number of buttons that can fit in one row
-    const float buttonSize = 20.0f;
-    const float itemSpacing = ImGui::GetStyle().ItemSpacing.x;
-    const float totalWidth = ImGui::GetContentRegionAvail().x;
-    const int buttonsPerRow = static_cast<int>(totalWidth / (buttonSize + itemSpacing));
-
-    for (uint16_t i = 2; i < g_canvas[g_cidx].myCols.size(); i++) {
-        const std::string id = "Color " + std::to_string(i + 1);
-
-        // Start a new row if necessary
-        if ((i - 2) % buttonsPerRow != 0)
-            ImGui::SameLine();
-
-        ImGui::PushStyleColor(ImGuiCol_FrameBg, g_canvas[g_cidx].selColIndex == i ? ImVec4(1.0f, 1.0f, 1.0f, 1.f) : ImVec4(0.05f, 0.05f, 0.05f, 1));
-
-        if (ImGui::ColorButton(id.c_str(), ImGui::ColorConvertU32ToFloat4(g_canvas[g_cidx].myCols[i]), NULL, { buttonSize, buttonSize }))
-            g_canvas[g_cidx].selColIndex = i;
-
-        ImGui::PopStyleColor();
-    }
-
-    ImGui::Spacing();
+    uint8_t width = ImGui::GetContentRegionAvail().x * 0.25f;
 
     // Color add button
-    if (ImGui::Button("+", { 26, 26 })) {
+    if (ImGui::Button("+", { (float)width, 26 })) {
         g_canvas[g_cidx].myCols.push_back(IM_COL32(0, 0, 0, 255));
         g_canvas[g_cidx].selColIndex = g_canvas[g_cidx].myCols.size() - 1;
     }
 
-    ImGui::SameLine(28.0f);
+    ImGui::SameLine(width + 2);
 
     // Color delete button
-    if (ImGui::Button("-", { 26, 26 })) {
+    if (ImGui::Button("-", { (float)width, 26 })) {
         g_canvas[g_cidx].myCols.erase(g_canvas[g_cidx].myCols.begin() + g_canvas[g_cidx].selColIndex);
 
         if (g_canvas[g_cidx].selColIndex > 2)
             g_canvas[g_cidx].selColIndex--;
     }
 
-    ImGui::SameLine(56.0f);
+    ImGui::SameLine(width * 2 + 4);
 
     // Display gears button
-    if (ImGui::Button(ICON_FA_COGS, { 26, 26 }))
+    if (ImGui::Button(ICON_FA_COGS, { (float)width, 26 }))
         ImGui::OpenPopup("Color Options");
 
     // Popup for additional settings
@@ -880,6 +859,29 @@ void cGUI::Display()
         }
 
         ImGui::EndPopup();
+    }
+
+    ImGui::Spacing();
+
+    // Calculate the number of buttons that can fit in one row
+    const float buttonSize = 20.0f;
+    const float itemSpacing = ImGui::GetStyle().ItemSpacing.x;
+    const float totalWidth = ImGui::GetContentRegionAvail().x;
+    const int buttonsPerRow = static_cast<int>(totalWidth / (buttonSize + itemSpacing));
+
+    for (uint16_t i = 2; i < g_canvas[g_cidx].myCols.size(); i++) {
+        const std::string id = "Color " + std::to_string(i + 1);
+
+        // Start a new row if necessary
+        if ((i - 2) % buttonsPerRow != 0)
+            ImGui::SameLine();
+
+        ImGui::PushStyleColor(ImGuiCol_FrameBg, g_canvas[g_cidx].selColIndex == i ? ImVec4(1.0f, 1.0f, 1.0f, 1.f) : ImVec4(0.05f, 0.05f, 0.05f, 1));
+
+        if (ImGui::ColorButton(id.c_str(), ImGui::ColorConvertU32ToFloat4(g_canvas[g_cidx].myCols[i]), NULL, { buttonSize, buttonSize }))
+            g_canvas[g_cidx].selColIndex = i;
+
+        ImGui::PopStyleColor();
     }
 
     ImGui::EndChild();
