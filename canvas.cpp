@@ -975,13 +975,15 @@ void cCanvas::Editor() {
         UpdateZoom(ImGui::GetIO().MouseWheel * glm::max(TILE_SIZE * 0.08f, 1.0f));
     }
 
-    // Set sampler state for canvas texture
-    g_app.g_pd3dDeviceContext->PSSetShaderResources(0, 1, &canvasSRV);
-    g_app.g_pd3dDeviceContext->PSSetSamplers(0, 1, &g_pSamplerStatePoint);
+    {
+        // Set sampler state for canvas texture
+        g_app.g_pd3dDeviceContext->PSSetShaderResources(0, 1, &canvasSRV);
+        g_app.g_pd3dDeviceContext->PSSetSamplers(0, 1, &g_pSamplerStatePoint);
 
-    std::vector<ImU32> compositedBuffer;
-    CompositeLayersToBuffer(compositedBuffer, g_canvas[g_cidx].tiles, g_canvas[g_cidx].layerVisibility, g_canvas[g_cidx].layerOpacity, g_canvas[g_cidx].width, g_canvas[g_cidx].height);
-    UpdateCanvasTexture(g_app.g_pd3dDeviceContext, compositedBuffer, width, height);
+        std::vector<ImU32> compositedBuffer;
+        CompositeLayersToBuffer(compositedBuffer, g_canvas[g_cidx].tiles, g_canvas[g_cidx].layerVisibility, g_canvas[g_cidx].layerOpacity, g_canvas[g_cidx].width, g_canvas[g_cidx].height);
+        UpdateCanvasTexture(g_app.g_pd3dDeviceContext, compositedBuffer, width, height);
+    }
 
     // Draw canvas
     d.AddImage((ImTextureID)canvasSRV, { glm::floor(g_cam.x), glm::floor(g_cam.y) }, ImVec2(glm::floor(g_canvas[g_cidx].width * TILE_SIZE) + glm::floor(g_cam.x), glm::floor(g_canvas[g_cidx].height * TILE_SIZE) + glm::floor(g_cam.y)), ImVec2(0, 0), ImVec2(1, 1), IM_COL32_WHITE);
