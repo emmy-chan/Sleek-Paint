@@ -337,9 +337,8 @@ std::vector<uint8_t> cUtils::CompressCanvasDataRLE(const std::vector<ImU32>& inp
     ImU32 previous = input[0];
 
     for (size_t i = 1; i < input.size(); ++i) {
-        if (input[i] == previous && count < 255) {
+        if (input[i] == previous && count < 255)
             ++count;
-        }
         else {
             // Store the count and value in the compressed data
             compressedData.push_back(static_cast<uint8_t>(count));
