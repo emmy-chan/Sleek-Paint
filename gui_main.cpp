@@ -516,12 +516,6 @@ void cGUI::Display()
             if (ImGui::MenuItem(ICON_FA_IMAGE" Canvas Size") && g_canvas.size() > 0)
                 g_app.ui_state = std::make_unique<cUIStateCanvasSize>();
 
-            if (ImGui::MenuItem(ICON_FA_FILE" Load Color Palette") && g_canvas.size() > 0)
-                g_app.ui_state = std::make_unique<cUIStateLoadPalette>();
-
-            if (ImGui::MenuItem(ICON_FA_SAVE" Save Color Palette") && g_canvas.size() > 0)
-                g_app.ui_state = std::make_unique<cUIStateSavePalette>();
-
             if (ImGui::MenuItem(ICON_FA_QUESTION" Help"))
                 g_app.ui_state = std::make_unique<cUIStateHelp>();
 
