@@ -337,7 +337,7 @@ void cUIStateNewProject::Update()
 
             switch (bg_option) {
                 case 0: // Transparent
-                    color = IM_COL32(0, 0, 0, 0);
+                    color = IM_COL32_BLACK_TRANS;
                     break;
                 case 1: // White
                     color = IM_COL32(255, 255, 255, 255);

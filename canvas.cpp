@@ -101,7 +101,7 @@ void cCanvas::Clear() {
 
 void cCanvas::AdaptNewSize(int width, int height) {
     // Create a temporary container for the resized image
-    std::vector<std::vector<ImU32>> newLayers(g_canvas[g_cidx].tiles.size(), std::vector<ImU32>(width * height, IM_COL32(0, 0, 0, 0)));
+    std::vector<std::vector<ImU32>> newLayers(g_canvas[g_cidx].tiles.size(), std::vector<ImU32>(width * height, IM_COL32_BLACK_TRANS));
 
     // Calculate scaling factors
     const float scaleX = static_cast<float>(width) / g_canvas[g_cidx].width, scaleY = static_cast<float>(height) / g_canvas[g_cidx].height;
@@ -306,7 +306,7 @@ void cCanvas::PasteImageFromClipboard() {
     //selectedIndexes.clear();
 
     // Create a new layer for the image data
-    std::vector<ImU32> imageLayer(width * height, IM_COL32(0, 0, 0, 0)); // Initialize with transparent color
+    std::vector<ImU32> imageLayer(width * height, IM_COL32_BLACK_TRANS); // Initialize with transparent color
 
     for (int y = 0; y < imageHeight; y++) {
         for (int x = 0; x < imageWidth; x++) {
@@ -382,7 +382,7 @@ void cCanvas::CopySelection() {
 
 void cCanvas::DeleteSelection() {
     if (selectedIndexes.empty()) return;
-    for (auto& index : selectedIndexes) g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex][index] = IM_COL32(0, 0, 0, 0);
+    for (auto& index : selectedIndexes) g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex][index] = IM_COL32_BLACK_TRANS;
 
     selectedIndexes.clear();
     g_canvas[g_cidx].UpdateCanvasHistory();
@@ -622,7 +622,7 @@ void applyBrushEffect(const ImVec2& lastMousePos, int x, int y, const ImU32& col
                             if (ImGui::GetIO().MouseDown[0])
                                 g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex][finalX + finalY * g_canvas[g_cidx].width] = col;
                             else if (ImGui::GetIO().MouseDown[1])
-                                g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex][finalX + finalY * g_canvas[g_cidx].width] = IM_COL32(0, 0, 0, 0);
+                                g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex][finalX + finalY * g_canvas[g_cidx].width] = IM_COL32_BLACK_TRANS;
                         }
                     }
                 }
@@ -727,7 +727,7 @@ void applyBandAidEffect() {
 
                 if (sampleX >= 0 && sampleX < g_canvas[g_cidx].width && sampleY >= 0 && sampleY < g_canvas[g_cidx].height) {
                     const ImU32 color = g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex][sampleY * g_canvas[g_cidx].width + sampleX];
-                    if (color != IM_COL32(0, 0, 0, 0) && selectedIndexes.find(sampleX + sampleY * g_canvas[g_cidx].width) == selectedIndexes.end())
+                    if (color != IM_COL32_BLACK_TRANS && selectedIndexes.find(sampleX + sampleY * g_canvas[g_cidx].width) == selectedIndexes.end())
                         surroundingColors.push_back(color);
                 }
             }
@@ -842,7 +842,7 @@ std::unordered_set<uint64_t> GetTilesWithinPolygon(const std::vector<ImVec2>& po
 
 void CompositeLayersToBuffer(std::vector<ImU32>& compositedBuffer, const std::vector<std::vector<ImU32>>& tiles, const std::vector<uint8_t>& layerVisibility, const std::vector<uint8_t>& layerOpacity, uint32_t width, uint32_t height) {
     // Initialize the composited buffer with a transparent color
-    compositedBuffer.resize(width * height, IM_COL32(0, 0, 0, 0));
+    compositedBuffer.resize(width * height, IM_COL32_BLACK_TRANS);
 
     // Checkerboard colors
     constexpr ImU32 CHECKER_COLOR1 = IM_COL32(128, 128, 128, 255); // Light gray color
@@ -851,7 +851,7 @@ void CompositeLayersToBuffer(std::vector<ImU32>& compositedBuffer, const std::ve
     // Iterate through each pixel position
     for (uint32_t y = 0; y < height; ++y) {
         for (uint32_t x = 0; x < width; ++x) {
-            ImU32 finalColor = IM_COL32(0, 0, 0, 0); // Start with a transparent color
+            ImU32 finalColor = IM_COL32_BLACK_TRANS; // Start with a transparent color
             uint8_t finalAlpha = 0; // Start with zero opacity
             const size_t pixelIndex = y * width + x; // Compute pixel index
 
@@ -1009,7 +1009,7 @@ void cCanvas::Editor() {
             d.AddRectFilled({ g_cam.x + x * TILE_SIZE, g_cam.y + y * TILE_SIZE }, { g_cam.x + x * TILE_SIZE + TILE_SIZE, g_cam.y + y * TILE_SIZE + TILE_SIZE }, myCols[selColIndex]);
             break;
         case TOOL_ERASER:
-            applyBrushEffect(lastMousePos, x, y, IM_COL32(0, 0, 0, 0));
+            applyBrushEffect(lastMousePos, x, y, IM_COL32_BLACK_TRANS);
             break;
         case TOOL_DROPPER:
             if (io.MouseDown[0])
@@ -1083,9 +1083,8 @@ void cCanvas::Editor() {
                 if (initialSelectedIndexes.empty()) {
                     // Select all tiles if none are selected
                     for (int i = 0; i < width * height; ++i) {
-                        if (tiles[g_canvas[g_cidx].selLayerIndex][i] != IM_COL32(0, 0, 0, 0)) {
+                        if (tiles[g_canvas[g_cidx].selLayerIndex][i] != IM_COL32_BLACK_TRANS)
                             initialSelectedIndexes.insert(i);
-                        }
                     }
                 }
 
@@ -1141,7 +1140,7 @@ void cCanvas::Editor() {
                 }
 
                 // Clear the original positions
-                for (const auto& index : initialSelectedIndexes) tiles[g_canvas[g_cidx].selLayerIndex][index] = IM_COL32(0, 0, 0, 0);
+                for (const auto& index : initialSelectedIndexes) tiles[g_canvas[g_cidx].selLayerIndex][index] = IM_COL32_BLACK_TRANS;
 
                 // Update new positions
                 for (const auto& [newIndex, color] : newTileColors) tiles[g_canvas[g_cidx].selLayerIndex][newIndex] = color;
@@ -1320,7 +1319,7 @@ void cCanvas::Editor() {
                                         int posY = glyph_y + row;
 
                                         if (posX >= 0 && posX < width && posY >= 0 && posY < height) {
-                                            g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex][posY * width + posX] = IM_COL32(0, 0, 0, 0); // Background color or transparent
+                                            g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex][posY * width + posX] = IM_COL32_BLACK_TRANS; // Background color or transparent
                                         }
                                     }
                                 }
