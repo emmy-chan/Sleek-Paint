@@ -13,8 +13,18 @@
 cUtils g_util = cUtils();
 
 bool cUtils::Hovering(const short& iXStart, const short& iYStart, const short& iWidth, const short& iHeight) {
-    const int mouseX = static_cast<int>(ImGui::GetMousePos().x), mouseY = static_cast<int>(ImGui::GetMousePos().y);
-    return (mouseX >= iXStart && mouseX < (iXStart + iWidth) && mouseY >= iYStart && mouseY < (iYStart + iHeight));
+    // Convert mouse position to canvas space based on camera position and zoom
+    const float mouseX = ImGui::GetMousePos().x;
+    const float mouseY = ImGui::GetMousePos().y;
+
+    // Compute canvas space boundaries
+    const float startX = g_cam.x;
+    const float startY = g_cam.y;
+    const float endX = startX + iWidth * TILE_SIZE;
+    const float endY = startY + iHeight * TILE_SIZE;
+
+    // Check if mouse is within the canvas bounds
+    return (mouseX >= startX && mouseX < endX && mouseY >= startY && mouseY < endY);
 }
 
 bool cUtils::Holding(const short& iXStart, const short& iYStart, const short& iWidth, const short& iHeight, uint8_t mouseButton) {
