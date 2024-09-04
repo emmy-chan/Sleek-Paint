@@ -1078,40 +1078,51 @@ void cGUI::Display()
     ImGui::PopStyleVar();
 
     ImGui::Spacing(); ImGui::Separator();
-    if (paintToolSelected == TOOL_BRUSH || paintToolSelected == TOOL_ERASER || paintToolSelected == TOOL_BANDAID) {
-        ImGui::Text("Brush Size:");
-        int temp_brush_size = static_cast<int>(brush_size);
+    switch (paintToolSelected) {
+        case TOOL_BRUSH:
+        case TOOL_ERASER:
+        case TOOL_BANDAID: {
+            ImGui::Text("Brush Size:");
+            int temp_brush_size = static_cast<int>(brush_size);
 
-        if (ImGui::SliderInt("##Brush Size", &temp_brush_size, 1, 10))
-            brush_size = static_cast<uint8_t>(temp_brush_size);
-    }
-    else if (paintToolSelected == TOOL_BUCKET) {
-        ImGui::Text("Bucket Threshold:");
-        int temp = static_cast<int>(bucket_fill_threshold);
+            if (ImGui::SliderInt("##Brush Size", &temp_brush_size, 1, 10))
+                brush_size = static_cast<uint8_t>(temp_brush_size);
+            break;
+        }
+        case TOOL_BUCKET: {
+            ImGui::Text("Bucket Threshold:");
+            int temp = static_cast<int>(bucket_fill_threshold);
 
-        if (ImGui::SliderInt("##Bucket Threshold", &temp, 1, 100))
-            bucket_fill_threshold = static_cast<uint8_t>(temp);
-    }
-    else if (paintToolSelected == TOOL_WAND) {
-        ImGui::Text("Wand Threshold:");
-        int temp = static_cast<int>(magic_wand_threshold);
+            if (ImGui::SliderInt("##Bucket Threshold", &temp, 1, 100))
+                bucket_fill_threshold = static_cast<uint8_t>(temp);
+            break;
+        }
+        case TOOL_WAND: {
+            ImGui::Text("Wand Threshold:");
+            int temp = static_cast<int>(magic_wand_threshold);
 
-        if (ImGui::SliderInt("##Wand Threshold", &temp, 1, 100))
-            magic_wand_threshold = static_cast<uint8_t>(temp);
-    }
-    else if (paintToolSelected == TOOL_LINE) {
-        ImGui::Text("Line Size:");
-        int temp = static_cast<int>(line_size);
+            if (ImGui::SliderInt("##Wand Threshold", &temp, 1, 100))
+                magic_wand_threshold = static_cast<uint8_t>(temp);
+            break;
+        }
+        case TOOL_LINE: {
+            ImGui::Text("Line Size:");
+            int temp = static_cast<int>(line_size);
 
-        if (ImGui::SliderInt("##Line Size", &temp, 1, 10))
-            line_size = static_cast<uint8_t>(temp);
-    }
-    else if (paintToolSelected == TOOL_TEXT) {
-        ImGui::Text("Text Size:");
-        int temp = static_cast<int>(text_size);
+            if (ImGui::SliderInt("##Line Size", &temp, 1, 10))
+                line_size = static_cast<uint8_t>(temp);
+            break;
+        }
+        case TOOL_TEXT: {
+            ImGui::Text("Text Size:");
+            int temp = static_cast<int>(text_size);
 
-        if (ImGui::SliderInt("##Text Size", &temp, 8, 100))
-            text_size = static_cast<uint8_t>(temp);
+            if (ImGui::SliderInt("##Text Size", &temp, 8, 100))
+                text_size = static_cast<uint8_t>(temp);
+            break;
+        }
+        default:
+            break;
     }
 
     ImGui::End();
