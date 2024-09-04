@@ -10,6 +10,7 @@
 #include "utils.h"
 #include <unordered_set>
 #include "imgui_internal.h"
+#include <iostream>
 
 // Function to get the texture ID for the current selection
 void* GetToolTexture(int tool) {
@@ -949,8 +950,51 @@ void cGUI::Display()
         const char* eyeIcon = g_canvas[g_cidx].layerVisibility[i] ? ICON_FA_EYE : ICON_FA_EYE_SLASH;
         const std::string label = std::string(eyeIcon) + "##" + std::to_string(i); // Append unique identifier
 
-        if (ImGui::Button(label.c_str(), { 24, 22 }))
+        if (ImGui::Button(label.c_str(), { 24, 22 })) {
+            // Toggle visibility
             g_canvas[g_cidx].layerVisibility[i] = !g_canvas[g_cidx].layerVisibility[i];
+
+            if (!g_canvas[g_cidx].layerVisibility[i]) {
+                // If the layer is not visible, compress it and store its index and data
+                if (i < g_canvas[g_cidx].tiles.size()) {
+                    // Ensure the index is valid
+                    CompressedLayer cl;
+                    cl.data = g_util.CompressCanvasDataRLE(g_canvas[g_cidx].tiles[i]);
+                    cl.originalIndex = i;
+
+                    // Push the compressed data into compressedTiles
+                    g_canvas[g_cidx].compressedTiles.push_back(std::move(cl));
+
+                    // Clear the original tile data to free memory
+                    std::vector<ImU32>().swap(g_canvas[g_cidx].tiles[i]);
+
+                    printf("Compressed layer %d\n", i);
+                }
+                else {
+                    // Handle error: index out of bounds
+                    std::cerr << "Error: Invalid layer index for compression: " << i << std::endl;
+                }
+            }
+            else {
+                // If the layer becomes visible, decompress and restore it
+                auto it = std::find_if(g_canvas[g_cidx].compressedTiles.begin(), g_canvas[g_cidx].compressedTiles.end(),
+                    [i](const CompressedLayer& cl) { return cl.originalIndex == i; });
+
+                if (it != g_canvas[g_cidx].compressedTiles.end()) {
+                    // Decompress and restore to the original index
+                    g_canvas[g_cidx].tiles[it->originalIndex] = g_util.DecompressCanvasDataRLE(it->data);
+
+                    // Remove the decompressed layer from compressedTiles
+                    g_canvas[g_cidx].compressedTiles.erase(it);
+
+                    printf("Uncompressed and restored layer %d\n", i);
+                }
+                else {
+                    // Handle error: compressed data not found
+                    std::cerr << "Error: No compressed data found for layer index: " << i << std::endl;
+                }
+            }
+        }
 
         // Add Rename button
         ImGui::SameLine(ImGui::GetContentRegionMax().x - 96);
@@ -972,19 +1016,54 @@ void cGUI::Display()
         // Update the layer's opacity with the scaled value
         g_canvas[g_cidx].layerOpacity[g_canvas[g_cidx].selLayerIndex] = scaledVal;
 
-        for (uint64_t y = 0; y < g_canvas[g_cidx].height; y++) {
-            for (uint64_t x = 0; x < g_canvas[g_cidx].width; x++) {
-                const uint64_t index = x + y * g_canvas[g_cidx].width;
-                ImU32& currentColor = g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex][index];
+        if (scaledVal == 0) {
+            // If opacity is set to 0, compress and clear the layer
+            size_t selLayerIndex = g_canvas[g_cidx].selLayerIndex;
+            if (selLayerIndex < g_canvas[g_cidx].tiles.size()) {
+                CompressedLayer cl;
+                cl.data = g_util.CompressCanvasDataRLE(g_canvas[g_cidx].tiles[selLayerIndex]);
+                cl.originalIndex = selLayerIndex;
 
-                // Extract the alpha value
-                int16_t alpha = (currentColor >> IM_COL32_A_SHIFT) & 0xFF;
+                // Store compressed data
+                g_canvas[g_cidx].compressedTiles.push_back(std::move(cl));
 
-                // Modify the alpha value based on the delta
-                alpha = std::clamp(alpha + delta, 0, 255);
+                // Clear the original tile data to free memory
+                std::vector<ImU32>().swap(g_canvas[g_cidx].tiles[selLayerIndex]);
 
-                // Reconstruct the color with the new alpha value
-                currentColor = (currentColor & ~IM_COL32_A_MASK) | (alpha << IM_COL32_A_SHIFT);
+                printf("Compressed and cleared layer %zu due to opacity set to 0\n", selLayerIndex);
+            }
+        }
+        else {
+            // If opacity is not 0, ensure the layer is decompressed
+            size_t selLayerIndex = g_canvas[g_cidx].selLayerIndex;
+            auto it = std::find_if(g_canvas[g_cidx].compressedTiles.begin(), g_canvas[g_cidx].compressedTiles.end(),
+                [selLayerIndex](const CompressedLayer& cl) { return cl.originalIndex == selLayerIndex; });
+
+            if (it != g_canvas[g_cidx].compressedTiles.end()) {
+                // Decompress and restore to the original index
+                g_canvas[g_cidx].tiles[it->originalIndex] = g_util.DecompressCanvasDataRLE(it->data);
+
+                // Remove the decompressed layer from compressedTiles
+                g_canvas[g_cidx].compressedTiles.erase(it);
+
+                printf("Uncompressed and restored layer %zu due to opacity change from 0\n", selLayerIndex);
+            }
+
+            // Adjust the alpha for each pixel if opacity is not zero
+            for (uint64_t y = 0; y < g_canvas[g_cidx].height; y++) {
+                for (uint64_t x = 0; x < g_canvas[g_cidx].width; x++) {
+                    const uint64_t index = x + y * g_canvas[g_cidx].width;
+                    ImU32& currentColor = g_canvas[g_cidx].tiles[selLayerIndex][index];
+
+                    // Extract the alpha value
+                    int16_t alpha = (currentColor >> IM_COL32_A_SHIFT) & 0xFF;
+
+                    // Modify the alpha value based on the delta
+                    alpha = std::clamp(alpha + delta, 0, 255);
+
+                    // Reconstruct the color with the new alpha value
+                    currentColor = (currentColor & ~IM_COL32_A_MASK) | (alpha << IM_COL32_A_SHIFT);
+                }
             }
         }
     }

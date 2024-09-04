@@ -852,7 +852,7 @@ void CompositeLayersToBuffer(std::vector<ImU32>& compositedBuffer, const std::ve
 
             // Iterate from bottom to top layer
             for (size_t layer = 0; layer < tiles.size(); ++layer) {
-                if (!layerVisibility[layer]) continue; // Skip invisible layers
+                if (!layerVisibility[layer] || !layerOpacity[layer]) continue; // Skip invisible layers
 
                 const ImU32 color = tiles[layer][y * width + x];
                 const uint8_t layerAlpha = layerOpacity[layer]; // Layer-specific opacity

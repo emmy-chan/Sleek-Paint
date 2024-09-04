@@ -44,6 +44,11 @@ enum eTools {
 	TOOL_FREEFORM_SELECT
 };
 
+struct CompressedLayer {
+	std::vector<uint8_t> data;
+	size_t originalIndex;
+};
+
 class cCanvas
 {
 public:
@@ -56,6 +61,7 @@ public:
 	uint16_t selColIndex = 0;
 	uint8_t selLayerIndex = 0;
 	std::vector<std::vector<ImU32>> tiles;
+	std::vector<CompressedLayer> compressedTiles; // 2D vector to store compressed layers when hidden
 	std::vector<uint8_t> layerVisibility;
 	std::vector<std::string> layerNames;
 	std::vector<uint8_t> layerOpacity;
