@@ -41,9 +41,8 @@ void cGUI::Display()
                 g_app.ui_state = std::make_unique<cUIStateSaveProject>();
 
             if (ImGui::MenuItem(ICON_FA_SIGN_OUT" Exit")) {
-                if (g_canvas.size() > 0) {
-                    // warn user about quitting with shit open
-                }
+                if (g_canvas.size() > 0)
+                    g_app.ui_state = std::make_unique<cUIStateSaveWarning>();
                 else
                     exit(EXIT_SUCCESS);
             }
@@ -104,10 +103,8 @@ void cGUI::Display()
 
                 // Apply pixelation to the selected blocks
                 for (const auto& index : selectedIndexes) {
-                    const uint64_t x = index % g_canvas[g_cidx].width;
-                    const uint64_t y = index / g_canvas[g_cidx].width;
-                    const uint64_t blockX = x / blockSize * blockSize;
-                    const uint64_t blockY = y / blockSize * blockSize;
+                    const uint64_t x = index % g_canvas[g_cidx].width, y = index / g_canvas[g_cidx].width;
+                    const uint64_t blockX = x / blockSize * blockSize, blockY = y / blockSize * blockSize;
 
                     // Compute the average color of the block
                     uint64_t redSum = 0, greenSum = 0, blueSum = 0, alphaSum = 0;
@@ -129,10 +126,8 @@ void cGUI::Display()
 
                     if (pixelCount > 0) {
                         const ImU32 avgColor = IM_COL32(
-                            redSum / pixelCount,
-                            greenSum / pixelCount,
-                            blueSum / pixelCount,
-                            alphaSum / pixelCount
+                            redSum / pixelCount, greenSum / pixelCount,
+                            blueSum / pixelCount, alphaSum / pixelCount
                         );
 
                         // Assign the average color to the entire block
@@ -240,8 +235,7 @@ void cGUI::Display()
                     }
 
                     // Calculate the vertical center position
-                    const int boundingBoxHeight = maxY - minY + 1;
-                    const int canvasCenterY = g_canvas[g_cidx].height / 2;
+                    const int boundingBoxHeight = maxY - minY + 1, canvasCenterY = g_canvas[g_cidx].height / 2;
                     const int offsetY = canvasCenterY - boundingBoxHeight / 2 - minY;
 
                     // Create a copy of the current tiles
@@ -309,9 +303,8 @@ void cGUI::Display()
                     std::vector<ImU32> newTiles = g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex];
 
                     // Clear previous selection area
-                    for (const auto& index : selectedIndexes) {
+                    for (const auto& index : selectedIndexes)
                         newTiles[index] = 0; // Assuming 0 is the transparent or default state
-                    }
 
                     // Rotate the selected tiles 90 degrees within their bounding box
                     for (const auto& index : selectedIndexes) {
@@ -498,8 +491,7 @@ void cGUI::Display()
                     for (uint64_t y = 0; y < g_canvas[g_cidx].height; y++) {
                         for (uint64_t x = 0; x < g_canvas[g_cidx].width; x++) {
                             const uint64_t index = x + y * g_canvas[g_cidx].width;
-                            g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex][index] = 
-                                g_util.AdjustSaturation(g_util.AdjustContrast(originalColors[index], contrastFactor), saturationFactor);
+                            g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex][index] = g_util.AdjustSaturation(g_util.AdjustContrast(originalColors[index], contrastFactor), saturationFactor);
                         }
                     }
                 }
@@ -538,10 +530,8 @@ void cGUI::Display()
                 if (!open) {
                     //If we didn't do anything in this canvas
                     //let's just delete it without asking
-                    if (g_canvas[g_cidx].previousCanvases.size() > 1) {
-                        //Maybe make this constructor take in the old value and return to our old scene / project index once we do something there?
+                    if (g_canvas[g_cidx].previousCanvases.size() > 1)
                         g_app.ui_state = std::make_unique<cUIStateSaveWarning>();
-                    }
                     else {
                         g_canvas[g_cidx].DestroyCanvas();
                         if (!g_canvas.empty()) g_canvas[g_cidx].CreateCanvasTexture(g_app.g_pd3dDevice, g_canvas[g_cidx].width, g_canvas[g_cidx].height);
@@ -830,14 +820,12 @@ void cGUI::Display()
                     const ImU32 currentColor = g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex][index];
 
                     // Check the alpha value
-                    if (((currentColor >> IM_COL32_A_SHIFT) & 0xFF) != 0)
-                        uniqueColors.insert(currentColor);
+                    if (((currentColor >> IM_COL32_A_SHIFT) & 0xFF) != 0) uniqueColors.insert(currentColor);
                 }
             }
 
             // Push unique colors to the myCols vector
-            for (const auto& color : uniqueColors)
-                g_canvas[g_cidx].myCols.push_back(color);
+            for (const auto& color : uniqueColors) g_canvas[g_cidx].myCols.push_back(color);
 
             // Make sure colors are not duplicates, starting from the third element
             for (int i = 2; i < g_canvas[g_cidx].myCols.size() - 1; i++) {
@@ -873,8 +861,7 @@ void cGUI::Display()
         const std::string id = "Color " + std::to_string(i + 1);
 
         // Start a new row if necessary
-        if ((i - 2) % buttonsPerRow != 0)
-            ImGui::SameLine();
+        if ((i - 2) % buttonsPerRow != 0) ImGui::SameLine();
 
         ImGui::PushStyleColor(ImGuiCol_FrameBg, g_canvas[g_cidx].selColIndex == i ? ImVec4(1.0f, 1.0f, 1.0f, 1.f) : ImVec4(0.05f, 0.05f, 0.05f, 1));
 
@@ -894,10 +881,7 @@ void cGUI::Display()
         const bool isSelected = (g_canvas[g_cidx].selLayerIndex == i);
 
         // Set the text color based on the selection state
-        if (isSelected)
-            ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 1.0f, 1.0f, 1.0f)); // Full brightness for selected
-        else
-            ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.7f, 0.7f, 0.7f, 1.0f)); // Dimmed brightness for non-selected
+        ImGui::PushStyleColor(ImGuiCol_Text, isSelected ? ImVec4(1.0f, 1.0f, 1.0f, 1.0f) : ImVec4(0.7f, 0.7f, 0.7f, 1.0f));
 
         if (ImGui::Selectable(g_canvas[g_cidx].layerNames[i].c_str(), isSelected, 0, ImVec2(79, 0)))
             g_canvas[g_cidx].selLayerIndex = i;
@@ -914,9 +898,8 @@ void cGUI::Display()
                 std::swap(g_canvas[g_cidx].layerNames[i], g_canvas[g_cidx].layerNames[i - 1]);
                 std::swap(g_canvas[g_cidx].layerOpacity[i], g_canvas[g_cidx].layerOpacity[i - 1]);
 
-                if (g_canvas[g_cidx].selLayerIndex == i) {
+                if (g_canvas[g_cidx].selLayerIndex == i)
                     g_canvas[g_cidx].selLayerIndex = i - 1;
-                }
                 else if (g_canvas[g_cidx].selLayerIndex == i - 1)
                     g_canvas[g_cidx].selLayerIndex = i;
             }
@@ -933,9 +916,8 @@ void cGUI::Display()
                 std::swap(g_canvas[g_cidx].layerNames[i], g_canvas[g_cidx].layerNames[i + 1]);
                 std::swap(g_canvas[g_cidx].layerOpacity[i], g_canvas[g_cidx].layerOpacity[i + 1]);
 
-                if (g_canvas[g_cidx].selLayerIndex == i) {
+                if (g_canvas[g_cidx].selLayerIndex == i)
                     g_canvas[g_cidx].selLayerIndex = i + 1;
-                }
                 else if (g_canvas[g_cidx].selLayerIndex == i + 1)
                     g_canvas[g_cidx].selLayerIndex = i;
             }
@@ -966,10 +948,8 @@ void cGUI::Display()
 
                     printf("Compressed layer %d\n", i);
                 }
-                else {
-                    // Handle error: index out of bounds
-                    std::cerr << "Error: Invalid layer index for compression: " << i << std::endl;
-                }
+                else
+                    std::cerr << "Error: Invalid layer index for compression: " << i << std::endl; // Handle error: index out of bounds
             }
             else {
                 // If the layer becomes visible, decompress and restore it
