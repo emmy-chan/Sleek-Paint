@@ -844,18 +844,23 @@ void CompositeLayersToBuffer(std::vector<ImU32>& compositedBuffer, const std::ve
     // Initialize the composited buffer with a transparent color
     compositedBuffer.resize(width * height, IM_COL32(0, 0, 0, 0));
 
+    // Checkerboard colors
+    constexpr ImU32 CHECKER_COLOR1 = IM_COL32(128, 128, 128, 255); // Light gray color
+    constexpr ImU32 CHECKER_COLOR2 = IM_COL32(192, 192, 192, 255); // Dark gray color
+
     // Iterate through each pixel position
     for (uint32_t y = 0; y < height; ++y) {
         for (uint32_t x = 0; x < width; ++x) {
             ImU32 finalColor = IM_COL32(0, 0, 0, 0); // Start with a transparent color
             uint8_t finalAlpha = 0; // Start with zero opacity
+            const size_t pixelIndex = y * width + x; // Compute pixel index
 
             // Iterate from bottom to top layer
             for (size_t layer = 0; layer < tiles.size(); ++layer) {
                 if (!layerVisibility[layer] || layerOpacity[layer] == 0) continue; // Skip invisible layers
 
-                const ImU32 color = tiles[layer][y * width + x];
-                const uint8_t layerAlpha = layerOpacity[layer]; // Layer-specific opacity
+                const ImU32 color = tiles[layer][pixelIndex];
+                const uint8_t layerAlpha = layerOpacity[layer];
                 const uint8_t pixelAlpha = (color >> IM_COL32_A_SHIFT) & 0xFF;
 
                 if (pixelAlpha > 0) {
@@ -864,13 +869,14 @@ void CompositeLayersToBuffer(std::vector<ImU32>& compositedBuffer, const std::ve
                     const uint8_t existingAlpha = finalAlpha;
                     finalAlpha = blendedAlpha + ((existingAlpha * (255 - blendedAlpha)) / 255);
 
-                    // Blend the color components
-                    const uint8_t r = (uint8_t)(((color >> IM_COL32_R_SHIFT) & 0xFF) * blendedAlpha / 255 +
-                        ((finalColor >> IM_COL32_R_SHIFT) & 0xFF) * existingAlpha * (255 - blendedAlpha) / (255 * 255));
-                    const uint8_t g = (uint8_t)(((color >> IM_COL32_G_SHIFT) & 0xFF) * blendedAlpha / 255 +
-                        ((finalColor >> IM_COL32_G_SHIFT) & 0xFF) * existingAlpha * (255 - blendedAlpha) / (255 * 255));
-                    const uint8_t b = (uint8_t)(((color >> IM_COL32_B_SHIFT) & 0xFF) * blendedAlpha / 255 +
-                        ((finalColor >> IM_COL32_B_SHIFT) & 0xFF) * existingAlpha * (255 - blendedAlpha) / (255 * 255));
+                    // Blend the color components more efficiently
+                    const uint8_t finalR = (color >> IM_COL32_R_SHIFT) & 0xFF;
+                    const uint8_t finalG = (color >> IM_COL32_G_SHIFT) & 0xFF;
+                    const uint8_t finalB = (color >> IM_COL32_B_SHIFT) & 0xFF;
+
+                    const uint8_t r = (uint8_t)((finalR * blendedAlpha + ((finalColor >> IM_COL32_R_SHIFT) & 0xFF) * existingAlpha * (255 - blendedAlpha) / 255) / 255);
+                    const uint8_t g = (uint8_t)((finalG * blendedAlpha + ((finalColor >> IM_COL32_G_SHIFT) & 0xFF) * existingAlpha * (255 - blendedAlpha) / 255) / 255);
+                    const uint8_t b = (uint8_t)((finalB * blendedAlpha + ((finalColor >> IM_COL32_B_SHIFT) & 0xFF) * existingAlpha * (255 - blendedAlpha) / 255) / 255);
 
                     finalColor = IM_COL32(r, g, b, finalAlpha);
                 }
@@ -879,21 +885,17 @@ void CompositeLayersToBuffer(std::vector<ImU32>& compositedBuffer, const std::ve
             // Blend with the checkerboard pattern based on remaining transparency
             if (finalAlpha < 255) {
                 const bool isCheckerTile1 = (x % 2 == y % 2);
-                constexpr ImU32 CHECKER_COLOR1 = IM_COL32(128, 128, 128, 255); // Light gray color
-                constexpr ImU32 CHECKER_COLOR2 = IM_COL32(192, 192, 192, 255); // Dark gray color
-                ImU32 checkerColor = isCheckerTile1 ? CHECKER_COLOR1 : CHECKER_COLOR2;
+                const ImU32 checkerColor = isCheckerTile1 ? CHECKER_COLOR1 : CHECKER_COLOR2;
 
-                // Extract checkerboard color components
                 const uint8_t checkerR = (checkerColor >> IM_COL32_R_SHIFT) & 0xFF;
                 const uint8_t checkerG = (checkerColor >> IM_COL32_G_SHIFT) & 0xFF;
                 const uint8_t checkerB = (checkerColor >> IM_COL32_B_SHIFT) & 0xFF;
 
-                // Extract composited color components
                 const uint8_t finalR = (finalColor >> IM_COL32_R_SHIFT) & 0xFF;
                 const uint8_t finalG = (finalColor >> IM_COL32_G_SHIFT) & 0xFF;
                 const uint8_t finalB = (finalColor >> IM_COL32_B_SHIFT) & 0xFF;
 
-                // Blend composited color with checkerboard
+                // Blend composited color with checkerboard more efficiently
                 const uint8_t outR = (finalR * finalAlpha + checkerR * (255 - finalAlpha)) / 255;
                 const uint8_t outG = (finalG * finalAlpha + checkerG * (255 - finalAlpha)) / 255;
                 const uint8_t outB = (finalB * finalAlpha + checkerB * (255 - finalAlpha)) / 255;
@@ -902,7 +904,7 @@ void CompositeLayersToBuffer(std::vector<ImU32>& compositedBuffer, const std::ve
             }
 
             // Set the final color to the composited buffer
-            compositedBuffer[y * width + x] = finalColor;
+            compositedBuffer[pixelIndex] = finalColor;
         }
     }
 }
