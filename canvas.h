@@ -16,7 +16,7 @@ inline ID3D11SamplerState* g_pSamplerStatePoint = nullptr;
 inline std::unordered_set<uint64_t> selectedIndexes;
 inline std::unordered_map<uint64_t, ImU32> copiedTiles; // Store copied tiles and their colors
 inline std::vector<ImVec2> freeformPath;
-inline uint16_t TILE_SIZE = 16;
+inline uint8_t TILE_SIZE = 16;
 inline uint8_t paintToolSelected = 0;
 inline uint8_t brush_size = 1;
 inline uint8_t line_size = 1;
