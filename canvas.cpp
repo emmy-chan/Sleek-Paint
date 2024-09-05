@@ -363,10 +363,14 @@ void cCanvas::PasteSelection() {
         // Ensure the coordinates are within the canvas boundaries
         if (selectX >= 0 && selectX < g_canvas[g_cidx].width && selectY >= 0 && selectY < g_canvas[g_cidx].height) {
             const uint16_t newIndex = selectX + selectY * g_canvas[g_cidx].width;
-            g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex][newIndex] = tile.second;
+
+            // Decompress the color data before pasting
+            const ImU32 color = g_util.DecompressColorRLE(tile.second);
+            g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex][newIndex] = color;
             newSelectedIndexes.insert(newIndex);
         }
     }
+
     selectedIndexes = newSelectedIndexes;
 
     g_canvas[g_cidx].UpdateCanvasHistory();
@@ -376,8 +380,10 @@ void cCanvas::CopySelection() {
     copiedTiles.clear();
     if (selectedIndexes.empty()) return;
 
-    for (const auto& index : selectedIndexes)
-        copiedTiles[index] = g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex][index];
+    for (const auto& index : selectedIndexes) {
+        const ImU32 color = g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex][index];
+        copiedTiles[index] = g_util.CompressColorRLE(color);
+    }
 }
 
 void cCanvas::DeleteSelection() {

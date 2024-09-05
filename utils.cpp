@@ -391,3 +391,26 @@ std::vector<ImU32> cUtils::DecompressCanvasDataRLE(const std::vector<uint8_t>& i
 
     return decompressedData;
 }
+
+std::vector<uint8_t> cUtils::CompressColorRLE(ImU32 color) {
+    std::vector<uint8_t> compressedData;
+
+    compressedData.push_back(static_cast<uint8_t>((color >> IM_COL32_R_SHIFT) & 0xFF));
+    compressedData.push_back(static_cast<uint8_t>((color >> IM_COL32_G_SHIFT) & 0xFF));
+    compressedData.push_back(static_cast<uint8_t>((color >> IM_COL32_B_SHIFT) & 0xFF));
+    compressedData.push_back(static_cast<uint8_t>((color >> IM_COL32_A_SHIFT) & 0xFF));
+
+    return compressedData;
+}
+
+// Decompress a single ImU32 using Run-Length Encoding (RLE)
+ImU32 cUtils::DecompressColorRLE(const std::vector<uint8_t>& compressedData) {
+    if (compressedData.size() != 4) return 0; // Invalid data size for RGBA
+
+    uint8_t r = compressedData[0];
+    uint8_t g = compressedData[1];
+    uint8_t b = compressedData[2];
+    uint8_t a = compressedData[3];
+
+    return IM_COL32(r, g, b, a);
+}

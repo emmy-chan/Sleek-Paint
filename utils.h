@@ -29,6 +29,8 @@ public:
 	void LoadImageFileToCanvas(const std::string& filepath, const std::string& filename);
 	std::vector<uint8_t> CompressCanvasDataRLE(const std::vector<ImU32>& input);
 	std::vector<ImU32> DecompressCanvasDataRLE(const std::vector<uint8_t>& input);
+	std::vector<uint8_t> CompressColorRLE(ImU32 color);
+	ImU32 DecompressColorRLE(const std::vector<uint8_t>& compressedData);
 	//bool InitializeInputState(void);
 	//void UpdateInputState();
 	//int m_mouse_x;
