@@ -517,7 +517,7 @@ void cGUI::Display()
         ImGui::SetCursorPosX(197);
         if (ImGui::BeginTabBar("ProjectTabs", ImGuiTabBarFlags_Reorderable | ImGuiTabBarFlags_AutoSelectNewTabs))
         {
-            for (uint16_t i = 0; i < g_canvas.size(); i++) {
+            for (int i = g_canvas.size() - 1; i >= 0; i--) {
                 bool open = true;
 
                 if (open && ImGui::BeginTabItem(g_canvas[i].name.c_str(), &open, ImGuiTabBarFlags_Reorderable | ImGuiTabBarFlags_FittingPolicyResizeDown))
@@ -528,13 +528,14 @@ void cGUI::Display()
                 }
 
                 if (!open) {
-                    //If we didn't do anything in this canvas
-                    //let's just delete it without asking
-                    if (g_canvas[g_cidx].previousCanvases.size() > 1)
+                    // If we didn't do anything in this canvas, let's just delete it without asking
+                    if (g_canvas[i].previousCanvases.size() > 1) {
                         g_app.ui_state = std::make_unique<cUIStateSaveWarning>();
+                    }
                     else {
-                        g_canvas[g_cidx].DestroyCanvas();
-                        if (!g_canvas.empty()) g_canvas[g_cidx].CreateCanvasTexture(g_app.g_pd3dDevice, g_canvas[g_cidx].width, g_canvas[g_cidx].height);
+                        g_cidx = i;
+                        g_canvas[i].DestroyCanvas();
+                        if (!g_canvas.empty()) g_canvas[i].CreateCanvasTexture(g_app.g_pd3dDevice, g_canvas[g_cidx].width, g_canvas[g_cidx].height);
                     }
                 }
             }

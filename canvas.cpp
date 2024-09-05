@@ -185,9 +185,7 @@ void cCanvas::DestroyCanvas() {
     g_canvas[g_cidx].myCols.shrink_to_fit();
     g_canvas.erase(g_canvas.begin() + g_cidx);
     g_canvas.shrink_to_fit();
-
-    // Prevent our canvas index from going out of bounds
-    if (g_cidx == g_canvas.size()) g_cidx--;
+    if (g_cidx == g_canvas.size()) g_cidx--; // Prevent our canvas index from going out of bounds
 }
 
 // Function to calculate the bounding box of the selected indexes
