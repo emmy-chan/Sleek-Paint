@@ -596,13 +596,17 @@ void cGUI::Display()
         // Check if the texture is valid before using it
         if (buttonTexture) {
             // Create a button with the current tool texture, resized to 16x16
-            if (ImGui::ImageButton(buttonTexture, ImVec2(16, 16)))
-                ImGui::OpenPopup("Select Tool Popup"); // Open the popup when the button is clicked
+            if (ImGui::ImageButton(buttonTexture, ImVec2(16, 16))) {
+                ImGui::OpenPopup("Select Tool Popup");
+                paintToolSelected = TOOL_SELECT;
+            }
         }
         else {
             // Render a placeholder button or handle the case when no texture is selected
-            if (ImGui::ImageButton(g_assets.selection_texture, ImVec2(16, 16)))
-                ImGui::OpenPopup("Select Tool Popup"); // Open the popup when the button is clicked
+            if (ImGui::ImageButton(g_assets.selection_texture, ImVec2(16, 16))) {
+                ImGui::OpenPopup("Select Tool Popup");
+                paintToolSelected = TOOL_SELECT;
+            }
         }
         ImGui::PopStyleColor();
 
@@ -672,8 +676,10 @@ void cGUI::Display()
             (paintToolSelected == TOOL_SQUARE || paintToolSelected == TOOL_ELIPSE) ? panelActiveColor : panelColor);
 
         // Display the current shape icon
-        if (ImGui::Button((const char*)shapeIcon, ImVec2(25, 25)))
+        if (ImGui::Button((const char*)shapeIcon, ImVec2(25, 25))) {
             ImGui::OpenPopup("Shape Tool Popup");
+            paintToolSelected = TOOL_SQUARE;
+        }
 
         if (ImGui::IsItemHovered()) ImGui::SetTooltip("Shape Tools");
         ImGui::PopStyleColor();
