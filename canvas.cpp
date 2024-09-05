@@ -851,6 +851,14 @@ void CompositeLayersToBuffer(std::vector<ImU32>& compositedBuffer, const std::ve
     constexpr uint8_t checker2G = (IM_COL32(192, 192, 192, 255) >> IM_COL32_G_SHIFT) & 0xFF;
     constexpr uint8_t checker2B = (IM_COL32(192, 192, 192, 255) >> IM_COL32_B_SHIFT) & 0xFF;
 
+    // Precompute visible layers with non-zero opacity
+    std::vector<size_t> visibleLayers;
+    for (size_t layer = 0; layer < tiles.size(); ++layer) {
+        if (layerVisibility[layer] && layerOpacity[layer] > 0) {
+            visibleLayers.push_back(layer);
+        }
+    }
+
     // Iterate through each pixel position
     for (uint32_t y = 0; y < height; ++y) {
         for (uint32_t x = 0; x < width; ++x) {
@@ -859,9 +867,7 @@ void CompositeLayersToBuffer(std::vector<ImU32>& compositedBuffer, const std::ve
             const size_t pixelIndex = y * width + x; // Compute pixel index
 
             // Iterate from bottom to top layer
-            for (size_t layer = 0; layer < tiles.size(); ++layer) {
-                if (!layerVisibility[layer] || layerOpacity[layer] == 0) continue; // Skip invisible layers
-
+            for (size_t layer : visibleLayers) {
                 const ImU32 color = tiles[layer][pixelIndex];
                 const uint8_t layerAlpha = layerOpacity[layer];
                 const uint8_t pixelAlpha = (color >> IM_COL32_A_SHIFT) & 0xFF;
@@ -870,16 +876,23 @@ void CompositeLayersToBuffer(std::vector<ImU32>& compositedBuffer, const std::ve
                     // Calculate the blended alpha with the layer's opacity
                     const uint8_t blendedAlpha = (pixelAlpha * layerAlpha) / 255;
                     const uint8_t existingAlpha = finalAlpha;
+
+                    // Efficient alpha blending calculation
                     finalAlpha = blendedAlpha + ((existingAlpha * (255 - blendedAlpha)) / 255);
 
                     // Blend the color components more efficiently
-                    const uint8_t finalR = (color >> IM_COL32_R_SHIFT) & 0xFF;
-                    const uint8_t finalG = (color >> IM_COL32_G_SHIFT) & 0xFF;
-                    const uint8_t finalB = (color >> IM_COL32_B_SHIFT) & 0xFF;
+                    const uint8_t colorR = (color >> IM_COL32_R_SHIFT) & 0xFF;
+                    const uint8_t colorG = (color >> IM_COL32_G_SHIFT) & 0xFF;
+                    const uint8_t colorB = (color >> IM_COL32_B_SHIFT) & 0xFF;
 
-                    const uint8_t r = (uint8_t)((finalR * blendedAlpha + ((finalColor >> IM_COL32_R_SHIFT) & 0xFF) * existingAlpha * (255 - blendedAlpha) / 255) / 255);
-                    const uint8_t g = (uint8_t)((finalG * blendedAlpha + ((finalColor >> IM_COL32_G_SHIFT) & 0xFF) * existingAlpha * (255 - blendedAlpha) / 255) / 255);
-                    const uint8_t b = (uint8_t)((finalB * blendedAlpha + ((finalColor >> IM_COL32_B_SHIFT) & 0xFF) * existingAlpha * (255 - blendedAlpha) / 255) / 255);
+                    const uint8_t finalR = (finalColor >> IM_COL32_R_SHIFT) & 0xFF;
+                    const uint8_t finalG = (finalColor >> IM_COL32_G_SHIFT) & 0xFF;
+                    const uint8_t finalB = (finalColor >> IM_COL32_B_SHIFT) & 0xFF;
+
+                    // Optimized blend formula for color
+                    const uint8_t r = (colorR * blendedAlpha + finalR * existingAlpha * (255 - blendedAlpha) / 255) / 255;
+                    const uint8_t g = (colorG * blendedAlpha + finalG * existingAlpha * (255 - blendedAlpha) / 255) / 255;
+                    const uint8_t b = (colorB * blendedAlpha + finalB * existingAlpha * (255 - blendedAlpha) / 255) / 255;
 
                     finalColor = IM_COL32(r, g, b, finalAlpha);
                 }
@@ -896,7 +909,7 @@ void CompositeLayersToBuffer(std::vector<ImU32>& compositedBuffer, const std::ve
                 const uint8_t finalG = (finalColor >> IM_COL32_G_SHIFT) & 0xFF;
                 const uint8_t finalB = (finalColor >> IM_COL32_B_SHIFT) & 0xFF;
 
-                // Blend composited color with checkerboard
+                // Optimized blending of composited color with checkerboard
                 const uint8_t outR = (finalR * finalAlpha + checkerR * (255 - finalAlpha)) / 255;
                 const uint8_t outG = (finalG * finalAlpha + checkerG * (255 - finalAlpha)) / 255;
                 const uint8_t outB = (finalB * finalAlpha + checkerB * (255 - finalAlpha)) / 255;
