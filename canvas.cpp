@@ -826,8 +826,8 @@ void CompositeLayersToBuffer(std::vector<ImU32>& compositedBuffer, const std::ve
     if (compositedBuffer.size() != width * height)
         compositedBuffer.resize(width * height, IM_COL32_BLACK_TRANS);
 
-    constexpr ImU32 checker1 = IM_COL32(128, 128, 128, 255);
-    constexpr ImU32 checker2 = IM_COL32(192, 192, 192, 255);
+    constexpr ImU32 checker1 = IM_COL32(128, 128, 128, 255); // Dark gray
+    constexpr ImU32 checker2 = IM_COL32(192, 192, 192, 255); // Light gray
 
     const __m256i alphaMask = _mm256_set1_epi32(0xFF000000);
     const __m256i redMask = _mm256_set1_epi32(0x00FF0000);
@@ -848,64 +848,87 @@ void CompositeLayersToBuffer(std::vector<ImU32>& compositedBuffer, const std::ve
         precomputedLayerAlphas[layer] = _mm256_set1_epi32(layerOpacity[layer]);
     }
 
+    // Initialize composited buffer with 1-pixel checkerboard pattern
+    for (uint32_t y = 0; y < height; ++y) {
+        for (uint32_t x = 0; x < width; ++x) {
+            const size_t pixelIndex = y * width + x;
+            // Use a 1-pixel checkerboard pattern
+            compositedBuffer[pixelIndex] = ((x + y) % 2 == 0) ? checker1 : checker2;
+        }
+    }
+
+    // Blend the layers
     for (uint32_t y = 0; y < height; ++y) {
         for (uint32_t x = 0; x < width; x += 8) { // Process 8 pixels at a time
             const size_t pixelIndex = y * width + x;
 
-            __m256i finalR = _mm256_setzero_si256();
-            __m256i finalG = _mm256_setzero_si256();
-            __m256i finalB = _mm256_setzero_si256();
-            __m256i finalAlpha = _mm256_setzero_si256();
+            // Start with checkerboard values to blend with
+            __m256i baseColor = _mm256_loadu_si256(reinterpret_cast<const __m256i*>(&compositedBuffer[pixelIndex]));
+
+            // Extract RGB from the base checkerboard colors
+            __m256i baseR = _mm256_srli_epi32(_mm256_and_si256(baseColor, redMask), 16);
+            __m256i baseG = _mm256_srli_epi32(_mm256_and_si256(baseColor, greenMask), 8);
+            __m256i baseB = _mm256_and_si256(baseColor, blueMask);
+
+            __m256i finalR = baseR;
+            __m256i finalG = baseG;
+            __m256i finalB = baseB;
+            __m256i finalAlpha = _mm256_set1_epi32(255); // Checkerboard is fully opaque
+
+            bool pixelBlended = false; // Track if any layer has been blended
 
             for (size_t layer : visibleLayers) {
                 __m256i color = _mm256_loadu_si256(reinterpret_cast<const __m256i*>(&tiles[layer][pixelIndex]));
 
                 // Extract RGBA components
-                __m256i r = _mm256_and_si256(color, redMask);
-                __m256i g = _mm256_and_si256(color, greenMask);
+                __m256i r = _mm256_srli_epi32(_mm256_and_si256(color, redMask), 16);
+                __m256i g = _mm256_srli_epi32(_mm256_and_si256(color, greenMask), 8);
                 __m256i b = _mm256_and_si256(color, blueMask);
-                __m256i alpha = _mm256_and_si256(color, alphaMask);
+                __m256i alpha = _mm256_srli_epi32(_mm256_and_si256(color, alphaMask), 24); // Alpha is now in the lower byte
 
-                // Shift color components to their correct positions
-                r = _mm256_srli_epi32(r, 16);
-                g = _mm256_srli_epi32(g, 8);
-                alpha = _mm256_srli_epi32(alpha, 24);  // Alpha is now in the lower byte
+                // Skip fully transparent pixels
+                __m256i isNonTransparent = _mm256_cmpgt_epi32(alpha, _mm256_setzero_si256());
+                if (!_mm256_testz_si256(isNonTransparent, isNonTransparent)) {
+                    pixelBlended = true;
 
-                // Precomputed layer alpha multiplier
-                __m256i layerAlpha = precomputedLayerAlphas[layer];
+                    // Precomputed layer alpha multiplier
+                    __m256i layerAlpha = precomputedLayerAlphas[layer];
 
-                // Scale the alpha channel by layer opacity
-                __m256i blendedAlpha = _mm256_mullo_epi32(alpha, layerAlpha);
-                blendedAlpha = _mm256_srli_epi32(blendedAlpha, 8);  // Scale down
+                    // Scale the alpha channel by layer opacity
+                    __m256i blendedAlpha = _mm256_mullo_epi32(alpha, layerAlpha);
+                    blendedAlpha = _mm256_srli_epi32(blendedAlpha, 8);  // Scale down to [0, 255]
 
-                // Calculate remaining alpha for existing colors
-                __m256i remainingAlpha = _mm256_sub_epi32(_mm256_set1_epi32(255), blendedAlpha);
+                    // Calculate remaining alpha for existing colors
+                    __m256i remainingAlpha = _mm256_sub_epi32(_mm256_set1_epi32(255), blendedAlpha);
 
-                // Blend the color components with the final color
-                finalR = _mm256_add_epi32(_mm256_mullo_epi32(r, blendedAlpha), _mm256_mullo_epi32(finalR, remainingAlpha));
-                finalG = _mm256_add_epi32(_mm256_mullo_epi32(g, blendedAlpha), _mm256_mullo_epi32(finalG, remainingAlpha));
-                finalB = _mm256_add_epi32(_mm256_mullo_epi32(b, blendedAlpha), _mm256_mullo_epi32(finalB, remainingAlpha));
+                    // Blend the color components with the final color
+                    finalR = _mm256_add_epi32(_mm256_mullo_epi32(r, blendedAlpha), _mm256_mullo_epi32(finalR, remainingAlpha));
+                    finalG = _mm256_add_epi32(_mm256_mullo_epi32(g, blendedAlpha), _mm256_mullo_epi32(finalG, remainingAlpha));
+                    finalB = _mm256_add_epi32(_mm256_mullo_epi32(b, blendedAlpha), _mm256_mullo_epi32(finalB, remainingAlpha));
 
-                // Blend the alpha channel
-                finalAlpha = _mm256_add_epi32(finalAlpha, blendedAlpha);
+                    // Track the final alpha (fully opaque for now, this can be adjusted for more complex alpha blending)
+                    finalAlpha = _mm256_add_epi32(finalAlpha, blendedAlpha);
+                }
             }
 
-            // Normalize the color channels
-            finalR = _mm256_srli_epi32(finalR, 8);
-            finalG = _mm256_srli_epi32(finalG, 8);
-            finalB = _mm256_srli_epi32(finalB, 8);
+            if (pixelBlended) {
+                // Normalize the color channels
+                finalR = _mm256_srli_epi32(finalR, 8);
+                finalG = _mm256_srli_epi32(finalG, 8);
+                finalB = _mm256_srli_epi32(finalB, 8);
 
-            // Reassemble final color
-            finalR = _mm256_slli_epi32(finalR, 16);
-            finalG = _mm256_slli_epi32(finalG, 8);
-            finalAlpha = _mm256_slli_epi32(finalAlpha, 24);
+                // Reassemble final color
+                finalR = _mm256_slli_epi32(finalR, 16);
+                finalG = _mm256_slli_epi32(finalG, 8);
+                finalAlpha = _mm256_slli_epi32(finalAlpha, 24);
 
-            __m256i finalColor = _mm256_or_si256(finalR, finalG);
-            finalColor = _mm256_or_si256(finalColor, finalB);
-            finalColor = _mm256_or_si256(finalColor, finalAlpha);
+                __m256i finalColor = _mm256_or_si256(finalR, finalG);
+                finalColor = _mm256_or_si256(finalColor, finalB);
+                finalColor = _mm256_or_si256(finalColor, finalAlpha);
 
-            // Store the final pixel result
-            _mm256_storeu_si256(reinterpret_cast<__m256i*>(&compositedBuffer[pixelIndex]), finalColor);
+                // Store the final pixel result
+                _mm256_storeu_si256(reinterpret_cast<__m256i*>(&compositedBuffer[pixelIndex]), finalColor);
+            }
         }
     }
 }
