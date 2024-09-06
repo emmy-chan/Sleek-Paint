@@ -300,31 +300,16 @@ void cCanvas::PasteImageFromClipboard() {
 
     printf("Pasting image of width %d and height %d onto canvas of width %d and height %d.\n", imageWidth, imageHeight, width, height);
 
-    // Clear any existing selection before pasting
-    //selectedIndexes.clear();
-
     // Create a new layer for the image data
     std::vector<ImU32> imageLayer(width * height, IM_COL32_BLACK_TRANS); // Initialize with transparent color
 
+    // Instead of manually copying pixel by pixel, we can use std::copy
     for (int y = 0; y < imageHeight; y++) {
-        for (int x = 0; x < imageWidth; x++) {
-            const int imageIndex = x + y * imageWidth;
-            const int canvasIndex = x + y * width; // Paste from top-left corner
+        int imageStartIndex = y * imageWidth;
+        int canvasStartIndex = y * width;
 
-            if (canvasIndex < imageLayer.size() && imageIndex < imageData.size()) {
-                imageLayer[canvasIndex] = imageData[imageIndex];
-
-                // Add the index to the selected indexes if the pixel is not transparent
-                //if (((imageData[imageIndex] >> 24) & 0xFF) > 0) // Check if pixel is not fully transparent
-                //    selectedIndexes.insert(canvasIndex);
-
-                // Debugging output for verification
-                //printf("Pasting pixel from image (%d, %d) to canvas (%d, %d) - Color: 0x%X\n", x, y, x, y, imageData[imageIndex]);
-            }
-            //else {
-                //printf("Warning: Index out of bounds while pasting image. CanvasIndex: %d, ImageIndex: %d\n", canvasIndex, imageIndex);
-            //}
-        }
+        // Copy each row of image data to the corresponding location in the canvas
+        std::copy(imageData.begin() + imageStartIndex, imageData.begin() + imageStartIndex + imageWidth, imageLayer.begin() + canvasStartIndex);
     }
 
     // Add the new layer with the image data
@@ -839,7 +824,8 @@ std::unordered_set<uint64_t> GetTilesWithinPolygon(const std::vector<ImVec2>& po
 
 void CompositeLayersToBuffer(std::vector<ImU32>& compositedBuffer, const std::vector<std::vector<ImU32>>& tiles, const std::vector<uint8_t>& layerVisibility, const std::vector<uint8_t>& layerOpacity, uint32_t width, uint32_t height) {
     // Initialize the composited buffer with a transparent color
-    compositedBuffer.resize(width * height, IM_COL32_BLACK_TRANS);
+    if (compositedBuffer.size() != width * height)
+        compositedBuffer.resize(width * height, IM_COL32_BLACK_TRANS);
 
     // Checkerboard colors
     constexpr uint8_t checker1R = (IM_COL32(128, 128, 128, 255) >> IM_COL32_R_SHIFT) & 0xFF;
