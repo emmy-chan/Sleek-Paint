@@ -918,11 +918,18 @@ void UpdateCanvasTexture(ID3D11DeviceContext* context, const std::vector<ImU32>&
     ImU32* dest = static_cast<ImU32*>(mappedResource.pData);
     const size_t rowPitch = mappedResource.RowPitch / sizeof(ImU32);
 
-    for (uint32_t y = 0; y < height; ++y)
-        memcpy(dest + y * rowPitch, compositedBuffer.data() + y * width, width * sizeof(ImU32));
+    // Check if rowPitch matches the buffer's row size (width) to copy all at once
+    if (rowPitch == width)
+        memcpy(dest, compositedBuffer.data(), width * height * sizeof(ImU32)); // If rowPitch and width match, perform a single memory copy for the entire buffer
+    else {
+        // Otherwise, fall back to row-by-row copy
+        for (uint32_t y = 0; y < height; ++y)
+            memcpy(dest + y * rowPitch, compositedBuffer.data() + y * width, width * sizeof(ImU32));
+    }
 
     context->Unmap(canvasTexture, 0);
 }
+
 
 void cCanvas::Editor() {
     if (g_canvas.empty() || g_canvas[g_cidx].tiles.empty() || g_canvas[g_cidx].layerVisibility.empty()) return;
