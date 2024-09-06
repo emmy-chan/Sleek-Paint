@@ -956,7 +956,7 @@ void cCanvas::Editor() {
         g_app.g_pd3dDeviceContext->PSSetShaderResources(0, 1, &canvasSRV);
         g_app.g_pd3dDeviceContext->PSSetSamplers(0, 1, &g_pSamplerStatePoint);
 
-        std::vector<ImU32> compositedBuffer;
+        static std::vector<ImU32> compositedBuffer;
         CompositeLayersToBuffer(compositedBuffer, g_canvas[g_cidx].tiles, g_canvas[g_cidx].layerVisibility, g_canvas[g_cidx].layerOpacity, g_canvas[g_cidx].width, g_canvas[g_cidx].height);
         UpdateCanvasTexture(g_app.g_pd3dDeviceContext, compositedBuffer, width, height);
     }
