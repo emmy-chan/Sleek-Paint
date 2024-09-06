@@ -824,12 +824,17 @@ std::unordered_set<uint64_t> GetTilesWithinPolygon(const std::vector<ImVec2>& po
 }
 
 void CompositeLayersToBuffer(std::vector<ImU32>& compositedBuffer, const std::vector<std::vector<ImU32>>& tiles, const std::vector<uint8_t>& layerVisibility, const std::vector<uint8_t>& layerOpacity, uint32_t width, uint32_t height) {
-    // Initialize the composited buffer with the checkerboard pattern
-    constexpr ImU32 checker1 = IM_COL32(128, 128, 128, 255); // Dark gray
-    constexpr ImU32 checker2 = IM_COL32(192, 192, 192, 255); // Light gray
-
+    // Initialize the composited buffer with a transparent color
     if (compositedBuffer.size() != width * height)
         compositedBuffer.resize(width * height, IM_COL32_BLACK_TRANS);
+
+    // Checkerboard colors
+    constexpr uint8_t checker1R = (IM_COL32(128, 128, 128, 255) >> IM_COL32_R_SHIFT) & 0xFF;
+    constexpr uint8_t checker1G = (IM_COL32(128, 128, 128, 255) >> IM_COL32_G_SHIFT) & 0xFF;
+    constexpr uint8_t checker1B = (IM_COL32(128, 128, 128, 255) >> IM_COL32_B_SHIFT) & 0xFF;
+    constexpr uint8_t checker2R = (IM_COL32(192, 192, 192, 255) >> IM_COL32_R_SHIFT) & 0xFF;
+    constexpr uint8_t checker2G = (IM_COL32(192, 192, 192, 255) >> IM_COL32_G_SHIFT) & 0xFF;
+    constexpr uint8_t checker2B = (IM_COL32(192, 192, 192, 255) >> IM_COL32_B_SHIFT) & 0xFF;
 
     // Precompute visible layers with non-zero opacity
     std::vector<size_t> visibleLayers;
@@ -842,16 +847,12 @@ void CompositeLayersToBuffer(std::vector<ImU32>& compositedBuffer, const std::ve
     // Iterate through each pixel position
     for (uint32_t y = 0; y < height; ++y) {
         for (uint32_t x = 0; x < width; ++x) {
-            const size_t pixelIndex = y * width + x;
-
-            // Determine checkerboard color for this pixel
-            ImU32 checkerColor = ((x + y) % 2 == 0) ? checker1 : checker2;
-            ImU32 finalColor = checkerColor; // Start with checkerboard as the base color
+            ImU32 finalColor = IM_COL32_BLACK_TRANS; // Start with a transparent color
             uint8_t finalAlpha = 0; // Start with zero opacity
+            const size_t pixelIndex = y * width + x; // Compute pixel index
 
-            // Iterate backwards from the topmost layer to the bottom
-            for (auto it = visibleLayers.rbegin(); it != visibleLayers.rend(); ++it) {
-                size_t layer = *it;
+            // Iterate from bottom to top layer
+            for (size_t layer : visibleLayers) {
                 const ImU32 color = tiles[layer][pixelIndex];
                 const uint8_t layerAlpha = layerOpacity[layer];
                 const uint8_t pixelAlpha = (color >> IM_COL32_A_SHIFT) & 0xFF;
@@ -864,7 +865,7 @@ void CompositeLayersToBuffer(std::vector<ImU32>& compositedBuffer, const std::ve
                     // Efficient alpha blending calculation
                     finalAlpha = blendedAlpha + ((existingAlpha * (255 - blendedAlpha)) / 255);
 
-                    // Blend the color components
+                    // Blend the color components more efficiently
                     const uint8_t colorR = (color >> IM_COL32_R_SHIFT) & 0xFF;
                     const uint8_t colorG = (color >> IM_COL32_G_SHIFT) & 0xFF;
                     const uint8_t colorB = (color >> IM_COL32_B_SHIFT) & 0xFF;
@@ -879,17 +880,14 @@ void CompositeLayersToBuffer(std::vector<ImU32>& compositedBuffer, const std::ve
                     const uint8_t b = (colorB * blendedAlpha + finalB * existingAlpha * (255 - blendedAlpha) / 255) / 255;
 
                     finalColor = IM_COL32(r, g, b, finalAlpha);
-
-                    // If the current pixel is fully opaque, stop further blending
-                    if (finalAlpha == 255)
-                        break; // No need to process more layers, the pixel is fully opaque
                 }
             }
 
-            // If the final alpha is still 0 (completely transparent), revert to the checkerboard
-            if (finalAlpha == 0) {
-                finalColor = checkerColor;
-            }
+            // If the final alpha is still 0 (completely transparent), apply the checkerboard pattern
+            if (finalAlpha == 0)
+                finalColor = ((x + y) % 2 == 0)
+                ? IM_COL32(checker1R, checker1G, checker1B, 255)  // Dark gray
+                : IM_COL32(checker2R, checker2G, checker2B, 255); // Light gray
 
             // Update the composited buffer with the final color for the pixel
             compositedBuffer[pixelIndex] = finalColor;
