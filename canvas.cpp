@@ -1027,7 +1027,7 @@ void cCanvas::Editor() {
     const bool bCanDraw = !g_util.IsClickingOutsideCanvas(mouseStart.x > 0 && mouseStart.y > 0 ? mouseStart : io.MousePos);
     static ImVec2 lastMousePos = ImVec2(-1, -1);
 
-    if (layerVisibility[selLayerIndex] && layerOpacity[selLayerIndex] && bCanDraw && clickingInsideCanvas && g_util.Hovering(g_cam.x, g_cam.y, width * TILE_SIZE, height * TILE_SIZE)) {
+    if (layerVisibility[selLayerIndex] && layerOpacity[selLayerIndex] && bCanDraw && clickingInsideCanvas && g_util.Hovering(g_cam.x, g_cam.y, width * TILE_SIZE, height * TILE_SIZE) && !ImGui::IsAnyItemFocused() && !ImGui::IsAnyItemHovered()) {
         switch (paintToolSelected) {
         case TOOL_BRUSH:
             //brush
