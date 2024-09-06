@@ -829,10 +829,10 @@ void CompositeLayersToBuffer(std::vector<ImU32>& compositedBuffer, const std::ve
     constexpr ImU32 checker1 = IM_COL32(128, 128, 128, 255);
     constexpr ImU32 checker2 = IM_COL32(192, 192, 192, 255);
 
-    const __m128i alphaMask = _mm_set1_epi32(0xFF000000);
-    const __m128i redMask = _mm_set1_epi32(0x00FF0000);
-    const __m128i greenMask = _mm_set1_epi32(0x0000FF00);
-    const __m128i blueMask = _mm_set1_epi32(0x000000FF);
+    const __m256i alphaMask = _mm256_set1_epi32(0xFF000000);
+    const __m256i redMask = _mm256_set1_epi32(0x00FF0000);
+    const __m256i greenMask = _mm256_set1_epi32(0x0000FF00);
+    const __m256i blueMask = _mm256_set1_epi32(0x000000FF);
 
     // Precompute visible layers with non-zero opacity
     std::vector<size_t> visibleLayers;
@@ -843,69 +843,69 @@ void CompositeLayersToBuffer(std::vector<ImU32>& compositedBuffer, const std::ve
     }
 
     // Precompute layer alpha to avoid redundant calculations
-    std::vector<__m128i> precomputedLayerAlphas(tiles.size());
+    std::vector<__m256i> precomputedLayerAlphas(tiles.size());
     for (size_t layer : visibleLayers) {
-        precomputedLayerAlphas[layer] = _mm_set1_epi32(layerOpacity[layer]);
+        precomputedLayerAlphas[layer] = _mm256_set1_epi32(layerOpacity[layer]);
     }
 
     for (uint32_t y = 0; y < height; ++y) {
-        for (uint32_t x = 0; x < width; x += 4) {
+        for (uint32_t x = 0; x < width; x += 8) { // Process 8 pixels at a time
             const size_t pixelIndex = y * width + x;
 
-            __m128i finalR = _mm_setzero_si128();
-            __m128i finalG = _mm_setzero_si128();
-            __m128i finalB = _mm_setzero_si128();
-            __m128i finalAlpha = _mm_setzero_si128();
+            __m256i finalR = _mm256_setzero_si256();
+            __m256i finalG = _mm256_setzero_si256();
+            __m256i finalB = _mm256_setzero_si256();
+            __m256i finalAlpha = _mm256_setzero_si256();
 
             for (size_t layer : visibleLayers) {
-                __m128i color = _mm_loadu_si128(reinterpret_cast<const __m128i*>(&tiles[layer][pixelIndex]));
+                __m256i color = _mm256_loadu_si256(reinterpret_cast<const __m256i*>(&tiles[layer][pixelIndex]));
 
                 // Extract RGBA components
-                __m128i r = _mm_and_si128(color, redMask);
-                __m128i g = _mm_and_si128(color, greenMask);
-                __m128i b = _mm_and_si128(color, blueMask);
-                __m128i alpha = _mm_and_si128(color, alphaMask);
+                __m256i r = _mm256_and_si256(color, redMask);
+                __m256i g = _mm256_and_si256(color, greenMask);
+                __m256i b = _mm256_and_si256(color, blueMask);
+                __m256i alpha = _mm256_and_si256(color, alphaMask);
 
                 // Shift color components to their correct positions
-                r = _mm_srli_epi32(r, 16);
-                g = _mm_srli_epi32(g, 8);
-                alpha = _mm_srli_epi32(alpha, 24);  // Alpha is now in the lower byte
+                r = _mm256_srli_epi32(r, 16);
+                g = _mm256_srli_epi32(g, 8);
+                alpha = _mm256_srli_epi32(alpha, 24);  // Alpha is now in the lower byte
 
                 // Precomputed layer alpha multiplier
-                __m128i layerAlpha = precomputedLayerAlphas[layer];
+                __m256i layerAlpha = precomputedLayerAlphas[layer];
 
                 // Scale the alpha channel by layer opacity
-                __m128i blendedAlpha = _mm_mullo_epi16(alpha, layerAlpha);
-                blendedAlpha = _mm_srli_epi32(blendedAlpha, 8);  // Scale down
+                __m256i blendedAlpha = _mm256_mullo_epi32(alpha, layerAlpha);
+                blendedAlpha = _mm256_srli_epi32(blendedAlpha, 8);  // Scale down
 
                 // Calculate remaining alpha for existing colors
-                __m128i remainingAlpha = _mm_sub_epi32(_mm_set1_epi32(255), blendedAlpha);
+                __m256i remainingAlpha = _mm256_sub_epi32(_mm256_set1_epi32(255), blendedAlpha);
 
                 // Blend the color components with the final color
-                finalR = _mm_add_epi32(_mm_mullo_epi16(r, blendedAlpha), _mm_mullo_epi16(finalR, remainingAlpha));
-                finalG = _mm_add_epi32(_mm_mullo_epi16(g, blendedAlpha), _mm_mullo_epi16(finalG, remainingAlpha));
-                finalB = _mm_add_epi32(_mm_mullo_epi16(b, blendedAlpha), _mm_mullo_epi16(finalB, remainingAlpha));
+                finalR = _mm256_add_epi32(_mm256_mullo_epi32(r, blendedAlpha), _mm256_mullo_epi32(finalR, remainingAlpha));
+                finalG = _mm256_add_epi32(_mm256_mullo_epi32(g, blendedAlpha), _mm256_mullo_epi32(finalG, remainingAlpha));
+                finalB = _mm256_add_epi32(_mm256_mullo_epi32(b, blendedAlpha), _mm256_mullo_epi32(finalB, remainingAlpha));
 
                 // Blend the alpha channel
-                finalAlpha = _mm_add_epi32(finalAlpha, blendedAlpha);
+                finalAlpha = _mm256_add_epi32(finalAlpha, blendedAlpha);
             }
 
             // Normalize the color channels
-            finalR = _mm_srli_epi32(finalR, 8);
-            finalG = _mm_srli_epi32(finalG, 8);
-            finalB = _mm_srli_epi32(finalB, 8);
+            finalR = _mm256_srli_epi32(finalR, 8);
+            finalG = _mm256_srli_epi32(finalG, 8);
+            finalB = _mm256_srli_epi32(finalB, 8);
 
             // Reassemble final color
-            finalR = _mm_slli_epi32(finalR, 16);
-            finalG = _mm_slli_epi32(finalG, 8);
-            finalAlpha = _mm_slli_epi32(finalAlpha, 24);
+            finalR = _mm256_slli_epi32(finalR, 16);
+            finalG = _mm256_slli_epi32(finalG, 8);
+            finalAlpha = _mm256_slli_epi32(finalAlpha, 24);
 
-            __m128i finalColor = _mm_or_si128(finalR, finalG);
-            finalColor = _mm_or_si128(finalColor, finalB);
-            finalColor = _mm_or_si128(finalColor, finalAlpha);
+            __m256i finalColor = _mm256_or_si256(finalR, finalG);
+            finalColor = _mm256_or_si256(finalColor, finalB);
+            finalColor = _mm256_or_si256(finalColor, finalAlpha);
 
             // Store the final pixel result
-            _mm_storeu_si128(reinterpret_cast<__m128i*>(&compositedBuffer[pixelIndex]), finalColor);
+            _mm256_storeu_si256(reinterpret_cast<__m256i*>(&compositedBuffer[pixelIndex]), finalColor);
         }
     }
 }
