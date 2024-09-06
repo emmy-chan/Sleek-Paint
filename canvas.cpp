@@ -824,11 +824,10 @@ std::unordered_set<uint64_t> GetTilesWithinPolygon(const std::vector<ImVec2>& po
 }
 
 void CompositeLayersToBuffer(std::vector<ImU32>& compositedBuffer, const std::vector<std::vector<ImU32>>& tiles, const std::vector<uint8_t>& layerVisibility, const std::vector<uint8_t>& layerOpacity, uint32_t width, uint32_t height) {
-    // Initialize the composited buffer with a transparent color
     if (compositedBuffer.size() != width * height)
         compositedBuffer.resize(width * height, IM_COL32_BLACK_TRANS);
 
-    // Checkerboard colors
+    // Checkerboard colors (can be cached outside the function if used frequently)
     constexpr uint8_t checker1R = (IM_COL32(128, 128, 128, 255) >> IM_COL32_R_SHIFT) & 0xFF;
     constexpr uint8_t checker1G = (IM_COL32(128, 128, 128, 255) >> IM_COL32_G_SHIFT) & 0xFF;
     constexpr uint8_t checker1B = (IM_COL32(128, 128, 128, 255) >> IM_COL32_B_SHIFT) & 0xFF;
@@ -836,7 +835,7 @@ void CompositeLayersToBuffer(std::vector<ImU32>& compositedBuffer, const std::ve
     constexpr uint8_t checker2G = (IM_COL32(192, 192, 192, 255) >> IM_COL32_G_SHIFT) & 0xFF;
     constexpr uint8_t checker2B = (IM_COL32(192, 192, 192, 255) >> IM_COL32_B_SHIFT) & 0xFF;
 
-    // Precompute visible layers with non-zero opacity
+    // Cache visible layers with non-zero opacity
     std::vector<size_t> visibleLayers;
     for (size_t layer = 0; layer < tiles.size(); ++layer) {
         if (layerVisibility[layer] && layerOpacity[layer] > 0) {
@@ -844,28 +843,23 @@ void CompositeLayersToBuffer(std::vector<ImU32>& compositedBuffer, const std::ve
         }
     }
 
-    // Iterate through each pixel position
+    // Iterate over all pixels
     for (uint32_t y = 0; y < height; ++y) {
         for (uint32_t x = 0; x < width; ++x) {
-            ImU32 finalColor = IM_COL32_BLACK_TRANS; // Start with a transparent color
-            uint8_t finalAlpha = 0; // Start with zero opacity
-            const size_t pixelIndex = y * width + x; // Compute pixel index
+            ImU32 finalColor = IM_COL32_BLACK_TRANS;
+            uint8_t finalAlpha = 0;
+            const size_t pixelIndex = y * width + x;
 
-            // Iterate from bottom to top layer
             for (size_t layer : visibleLayers) {
                 const ImU32 color = tiles[layer][pixelIndex];
                 const uint8_t layerAlpha = layerOpacity[layer];
                 const uint8_t pixelAlpha = (color >> IM_COL32_A_SHIFT) & 0xFF;
 
                 if (pixelAlpha > 0) {
-                    // Calculate the blended alpha with the layer's opacity
                     const uint8_t blendedAlpha = (pixelAlpha * layerAlpha) / 255;
-                    const uint8_t existingAlpha = finalAlpha;
+                    finalAlpha = blendedAlpha + ((finalAlpha * (255 - blendedAlpha)) / 255);
 
-                    // Efficient alpha blending calculation
-                    finalAlpha = blendedAlpha + ((existingAlpha * (255 - blendedAlpha)) / 255);
-
-                    // Blend the color components more efficiently
+                    // Blend color channels more efficiently
                     const uint8_t colorR = (color >> IM_COL32_R_SHIFT) & 0xFF;
                     const uint8_t colorG = (color >> IM_COL32_G_SHIFT) & 0xFF;
                     const uint8_t colorB = (color >> IM_COL32_B_SHIFT) & 0xFF;
@@ -874,22 +868,23 @@ void CompositeLayersToBuffer(std::vector<ImU32>& compositedBuffer, const std::ve
                     const uint8_t finalG = (finalColor >> IM_COL32_G_SHIFT) & 0xFF;
                     const uint8_t finalB = (finalColor >> IM_COL32_B_SHIFT) & 0xFF;
 
-                    // Optimized blend formula for color
-                    const uint8_t r = (colorR * blendedAlpha + finalR * existingAlpha * (255 - blendedAlpha) / 255) / 255;
-                    const uint8_t g = (colorG * blendedAlpha + finalG * existingAlpha * (255 - blendedAlpha) / 255) / 255;
-                    const uint8_t b = (colorB * blendedAlpha + finalB * existingAlpha * (255 - blendedAlpha) / 255) / 255;
-
-                    finalColor = IM_COL32(r, g, b, finalAlpha);
+                    // Optimized blend formula
+                    finalColor = IM_COL32(
+                        (colorR * blendedAlpha + finalR * finalAlpha * (255 - blendedAlpha) / 255) / 255,
+                        (colorG * blendedAlpha + finalG * finalAlpha * (255 - blendedAlpha) / 255) / 255,
+                        (colorB * blendedAlpha + finalB * finalAlpha * (255 - blendedAlpha) / 255) / 255,
+                        finalAlpha
+                    );
                 }
             }
 
-            // If the final alpha is still 0 (completely transparent), apply the checkerboard pattern
-            if (finalAlpha == 0)
+            // Apply checkerboard pattern if fully transparent
+            if (finalAlpha == 0) {
                 finalColor = ((x + y) % 2 == 0)
-                ? IM_COL32(checker1R, checker1G, checker1B, 255)  // Dark gray
-                : IM_COL32(checker2R, checker2G, checker2B, 255); // Light gray
+                    ? IM_COL32(checker1R, checker1G, checker1B, 255)
+                    : IM_COL32(checker2R, checker2G, checker2B, 255);
+            }
 
-            // Update the composited buffer with the final color for the pixel
             compositedBuffer[pixelIndex] = finalColor;
         }
     }
