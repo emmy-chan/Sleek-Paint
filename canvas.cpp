@@ -129,6 +129,7 @@ void cCanvas::AdaptNewSize(int width, int height) {
     g_canvas[g_cidx].tiles = std::move(newLayers);
     g_canvas[g_cidx].width = width;
     g_canvas[g_cidx].height = height;
+    g_canvas[g_cidx].CreateCanvasTexture(g_app.g_pd3dDevice, g_canvas[g_cidx].width, g_canvas[g_cidx].height);
 }
 
 // Function to update the canvas history

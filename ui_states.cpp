@@ -414,9 +414,6 @@ void cUIStateCanvasSize::Update()
             // Adapt canvas size
             g_canvas[g_cidx].AdaptNewSize((int)wInput, (int)hInput);
 
-            // Re-initialize preview texture
-            if (!g_canvas.empty()) g_canvas[g_cidx].CreateCanvasTexture(g_app.g_pd3dDevice, g_canvas[g_cidx].width, g_canvas[g_cidx].height);
-
             // Reset our UI State
             g_app.ui_state.reset();
         }
