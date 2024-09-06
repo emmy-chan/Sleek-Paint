@@ -827,65 +827,54 @@ void CompositeLayersToBuffer(std::vector<ImU32>& compositedBuffer, const std::ve
     if (compositedBuffer.size() != width * height)
         compositedBuffer.resize(width * height, IM_COL32_BLACK_TRANS);
 
-    // Checkerboard colors (can be cached outside the function if used frequently)
-    constexpr uint8_t checker1R = (IM_COL32(128, 128, 128, 255) >> IM_COL32_R_SHIFT) & 0xFF;
-    constexpr uint8_t checker1G = (IM_COL32(128, 128, 128, 255) >> IM_COL32_G_SHIFT) & 0xFF;
-    constexpr uint8_t checker1B = (IM_COL32(128, 128, 128, 255) >> IM_COL32_B_SHIFT) & 0xFF;
-    constexpr uint8_t checker2R = (IM_COL32(192, 192, 192, 255) >> IM_COL32_R_SHIFT) & 0xFF;
-    constexpr uint8_t checker2G = (IM_COL32(192, 192, 192, 255) >> IM_COL32_G_SHIFT) & 0xFF;
-    constexpr uint8_t checker2B = (IM_COL32(192, 192, 192, 255) >> IM_COL32_B_SHIFT) & 0xFF;
+    // Checkerboard colors
+    constexpr ImU32 checker1 = IM_COL32(128, 128, 128, 255);
+    constexpr ImU32 checker2 = IM_COL32(192, 192, 192, 255);
 
     // Cache visible layers with non-zero opacity
     std::vector<size_t> visibleLayers;
+    visibleLayers.reserve(tiles.size());
     for (size_t layer = 0; layer < tiles.size(); ++layer) {
-        if (layerVisibility[layer] && layerOpacity[layer] > 0) {
+        if (layerVisibility[layer] && layerOpacity[layer] > 0)
             visibleLayers.push_back(layer);
-        }
     }
 
     // Iterate over all pixels
     for (uint32_t y = 0; y < height; ++y) {
         for (uint32_t x = 0; x < width; ++x) {
-            ImU32 finalColor = IM_COL32_BLACK_TRANS;
-            uint8_t finalAlpha = 0;
+            uint8_t finalAlpha = 0, finalR = 0, finalG = 0, finalB = 0;
             const size_t pixelIndex = y * width + x;
 
             for (size_t layer : visibleLayers) {
                 const ImU32 color = tiles[layer][pixelIndex];
-                const uint8_t layerAlpha = layerOpacity[layer];
                 const uint8_t pixelAlpha = (color >> IM_COL32_A_SHIFT) & 0xFF;
+                if (pixelAlpha == 0) continue;
 
-                if (pixelAlpha > 0) {
-                    const uint8_t blendedAlpha = (pixelAlpha * layerAlpha) / 255;
-                    finalAlpha = blendedAlpha + ((finalAlpha * (255 - blendedAlpha)) / 255);
+                const uint8_t layerAlpha = layerOpacity[layer];
+                const uint8_t blendedAlpha = (pixelAlpha * layerAlpha) / 255;
 
-                    // Blend color channels more efficiently
+                if (blendedAlpha > 0) {
                     const uint8_t colorR = (color >> IM_COL32_R_SHIFT) & 0xFF;
                     const uint8_t colorG = (color >> IM_COL32_G_SHIFT) & 0xFF;
                     const uint8_t colorB = (color >> IM_COL32_B_SHIFT) & 0xFF;
 
-                    const uint8_t finalR = (finalColor >> IM_COL32_R_SHIFT) & 0xFF;
-                    const uint8_t finalG = (finalColor >> IM_COL32_G_SHIFT) & 0xFF;
-                    const uint8_t finalB = (finalColor >> IM_COL32_B_SHIFT) & 0xFF;
+                    // Pre-multiply the color with the blended alpha
+                    const uint16_t blendR = colorR * blendedAlpha;
+                    const uint16_t blendG = colorG * blendedAlpha;
+                    const uint16_t blendB = colorB * blendedAlpha;
 
-                    // Optimized blend formula
-                    finalColor = IM_COL32(
-                        (colorR * blendedAlpha + finalR * finalAlpha * (255 - blendedAlpha) / 255) / 255,
-                        (colorG * blendedAlpha + finalG * finalAlpha * (255 - blendedAlpha) / 255) / 255,
-                        (colorB * blendedAlpha + finalB * finalAlpha * (255 - blendedAlpha) / 255) / 255,
-                        finalAlpha
-                    );
+                    // Optimized alpha blending
+                    finalR = (blendR + finalR * (255 - blendedAlpha)) / 255;
+                    finalG = (blendG + finalG * (255 - blendedAlpha)) / 255;
+                    finalB = (blendB + finalB * (255 - blendedAlpha)) / 255;
+                    finalAlpha = blendedAlpha + ((finalAlpha * (255 - blendedAlpha)) / 255);
                 }
             }
 
             // Apply checkerboard pattern if fully transparent
-            if (finalAlpha == 0) {
-                finalColor = ((x + y) % 2 == 0)
-                    ? IM_COL32(checker1R, checker1G, checker1B, 255)
-                    : IM_COL32(checker2R, checker2G, checker2B, 255);
-            }
-
-            compositedBuffer[pixelIndex] = finalColor;
+            compositedBuffer[pixelIndex] = (finalAlpha == 0)
+                ? (((x + y) % 2 == 0) ? checker1 : checker2)
+                : IM_COL32(finalR, finalG, finalB, finalAlpha);
         }
     }
 }
