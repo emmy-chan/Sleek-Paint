@@ -826,12 +826,9 @@ void CompositeLayersToBuffer(std::vector<ImU32>& compositedBuffer, const std::ve
     if (compositedBuffer.size() != width * height)
         compositedBuffer.resize(width * height, IM_COL32_BLACK_TRANS);
 
-    // Checkerboard colors
     constexpr ImU32 checker1 = IM_COL32(128, 128, 128, 255);
     constexpr ImU32 checker2 = IM_COL32(192, 192, 192, 255);
 
-    const __m128i checkerboard1 = _mm_set1_epi32(checker1);
-    const __m128i checkerboard2 = _mm_set1_epi32(checker2);
     const __m128i alphaMask = _mm_set1_epi32(0xFF000000);
     const __m128i redMask = _mm_set1_epi32(0x00FF0000);
     const __m128i greenMask = _mm_set1_epi32(0x0000FF00);
@@ -845,19 +842,22 @@ void CompositeLayersToBuffer(std::vector<ImU32>& compositedBuffer, const std::ve
         }
     }
 
+    // Precompute layer alpha to avoid redundant calculations
+    std::vector<__m128i> precomputedLayerAlphas(tiles.size());
+    for (size_t layer : visibleLayers) {
+        precomputedLayerAlphas[layer] = _mm_set1_epi32(layerOpacity[layer]);
+    }
+
     for (uint32_t y = 0; y < height; ++y) {
         for (uint32_t x = 0; x < width; x += 4) {
             const size_t pixelIndex = y * width + x;
 
-            // Initialize final color and alpha
             __m128i finalR = _mm_setzero_si128();
             __m128i finalG = _mm_setzero_si128();
             __m128i finalB = _mm_setzero_si128();
-            __m128i finalAlpha = _mm_setzero_si128();  // Start with zero opacity
+            __m128i finalAlpha = _mm_setzero_si128();
 
-            // Process each layer
             for (size_t layer : visibleLayers) {
-                // Load four pixels from the current layer
                 __m128i color = _mm_loadu_si128(reinterpret_cast<const __m128i*>(&tiles[layer][pixelIndex]));
 
                 // Extract RGBA components
@@ -866,25 +866,27 @@ void CompositeLayersToBuffer(std::vector<ImU32>& compositedBuffer, const std::ve
                 __m128i b = _mm_and_si128(color, blueMask);
                 __m128i alpha = _mm_and_si128(color, alphaMask);
 
-                // Shift colors to the correct positions
-                r = _mm_srli_epi32(r, 16);   // Red in lower byte
-                g = _mm_srli_epi32(g, 8);    // Green in lower byte
-                alpha = _mm_srli_epi32(alpha, 24);  // Alpha in lower byte
+                // Shift color components to their correct positions
+                r = _mm_srli_epi32(r, 16);
+                g = _mm_srli_epi32(g, 8);
+                alpha = _mm_srli_epi32(alpha, 24);  // Alpha is now in the lower byte
 
-                // Scale alpha based on layer opacity
-                __m128i layerAlpha = _mm_set1_epi32(layerOpacity[layer]);
+                // Precomputed layer alpha multiplier
+                __m128i layerAlpha = precomputedLayerAlphas[layer];
+
+                // Scale the alpha channel by layer opacity
                 __m128i blendedAlpha = _mm_mullo_epi16(alpha, layerAlpha);
-                blendedAlpha = _mm_srli_epi32(blendedAlpha, 8);  // Scale alpha back down
+                blendedAlpha = _mm_srli_epi32(blendedAlpha, 8);  // Scale down
 
-                // Calculate the remaining alpha (1 - alpha) for the existing final color
+                // Calculate remaining alpha for existing colors
                 __m128i remainingAlpha = _mm_sub_epi32(_mm_set1_epi32(255), blendedAlpha);
 
-                // Blend the color components with the existing final colors
+                // Blend the color components with the final color
                 finalR = _mm_add_epi32(_mm_mullo_epi16(r, blendedAlpha), _mm_mullo_epi16(finalR, remainingAlpha));
                 finalG = _mm_add_epi32(_mm_mullo_epi16(g, blendedAlpha), _mm_mullo_epi16(finalG, remainingAlpha));
                 finalB = _mm_add_epi32(_mm_mullo_epi16(b, blendedAlpha), _mm_mullo_epi16(finalB, remainingAlpha));
 
-                // Update final alpha
+                // Blend the alpha channel
                 finalAlpha = _mm_add_epi32(finalAlpha, blendedAlpha);
             }
 
@@ -902,7 +904,7 @@ void CompositeLayersToBuffer(std::vector<ImU32>& compositedBuffer, const std::ve
             finalColor = _mm_or_si128(finalColor, finalB);
             finalColor = _mm_or_si128(finalColor, finalAlpha);
 
-            // Store final pixel result back to composited buffer
+            // Store the final pixel result
             _mm_storeu_si128(reinterpret_cast<__m128i*>(&compositedBuffer[pixelIndex]), finalColor);
         }
     }
