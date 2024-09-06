@@ -823,17 +823,19 @@ std::unordered_set<uint64_t> GetTilesWithinPolygon(const std::vector<ImVec2>& po
 }
 
 void CompositeLayersToBuffer(std::vector<ImU32>& compositedBuffer, const std::vector<std::vector<ImU32>>& tiles, const std::vector<uint8_t>& layerVisibility, const std::vector<uint8_t>& layerOpacity, uint32_t width, uint32_t height) {
-    // Initialize the composited buffer with a transparent color
     if (compositedBuffer.size() != width * height)
         compositedBuffer.resize(width * height, IM_COL32_BLACK_TRANS);
 
     // Checkerboard colors
-    constexpr uint8_t checker1R = (IM_COL32(128, 128, 128, 255) >> IM_COL32_R_SHIFT) & 0xFF;
-    constexpr uint8_t checker1G = (IM_COL32(128, 128, 128, 255) >> IM_COL32_G_SHIFT) & 0xFF;
-    constexpr uint8_t checker1B = (IM_COL32(128, 128, 128, 255) >> IM_COL32_B_SHIFT) & 0xFF;
-    constexpr uint8_t checker2R = (IM_COL32(192, 192, 192, 255) >> IM_COL32_R_SHIFT) & 0xFF;
-    constexpr uint8_t checker2G = (IM_COL32(192, 192, 192, 255) >> IM_COL32_G_SHIFT) & 0xFF;
-    constexpr uint8_t checker2B = (IM_COL32(192, 192, 192, 255) >> IM_COL32_B_SHIFT) & 0xFF;
+    constexpr ImU32 checker1 = IM_COL32(128, 128, 128, 255);
+    constexpr ImU32 checker2 = IM_COL32(192, 192, 192, 255);
+
+    const __m128i checkerboard1 = _mm_set1_epi32(checker1);
+    const __m128i checkerboard2 = _mm_set1_epi32(checker2);
+    const __m128i alphaMask = _mm_set1_epi32(0xFF000000);
+    const __m128i redMask = _mm_set1_epi32(0x00FF0000);
+    const __m128i greenMask = _mm_set1_epi32(0x0000FF00);
+    const __m128i blueMask = _mm_set1_epi32(0x000000FF);
 
     // Precompute visible layers with non-zero opacity
     std::vector<size_t> visibleLayers;
@@ -843,66 +845,65 @@ void CompositeLayersToBuffer(std::vector<ImU32>& compositedBuffer, const std::ve
         }
     }
 
-    // Iterate through each pixel position
     for (uint32_t y = 0; y < height; ++y) {
-        for (uint32_t x = 0; x < width; ++x) {
-            ImU32 finalColor = IM_COL32_BLACK_TRANS; // Start with a transparent color
-            uint8_t finalAlpha = 0; // Start with zero opacity
-            const size_t pixelIndex = y * width + x; // Compute pixel index
+        for (uint32_t x = 0; x < width; x += 4) {
+            const size_t pixelIndex = y * width + x;
 
-            // Iterate from bottom to top layer
+            // Initialize final color and alpha
+            __m128i finalR = _mm_setzero_si128();
+            __m128i finalG = _mm_setzero_si128();
+            __m128i finalB = _mm_setzero_si128();
+            __m128i finalAlpha = _mm_setzero_si128();  // Start with zero opacity
+
+            // Process each layer
             for (size_t layer : visibleLayers) {
-                const ImU32 color = tiles[layer][pixelIndex];
-                const uint8_t layerAlpha = layerOpacity[layer];
-                const uint8_t pixelAlpha = (color >> IM_COL32_A_SHIFT) & 0xFF;
+                // Load four pixels from the current layer
+                __m128i color = _mm_loadu_si128(reinterpret_cast<const __m128i*>(&tiles[layer][pixelIndex]));
 
-                if (pixelAlpha > 0) {
-                    // Calculate the blended alpha with the layer's opacity
-                    const uint8_t blendedAlpha = (pixelAlpha * layerAlpha) / 255;
-                    const uint8_t existingAlpha = finalAlpha;
+                // Extract RGBA components
+                __m128i r = _mm_and_si128(color, redMask);
+                __m128i g = _mm_and_si128(color, greenMask);
+                __m128i b = _mm_and_si128(color, blueMask);
+                __m128i alpha = _mm_and_si128(color, alphaMask);
 
-                    // Efficient alpha blending calculation
-                    finalAlpha = blendedAlpha + ((existingAlpha * (255 - blendedAlpha)) / 255);
+                // Shift colors to the correct positions
+                r = _mm_srli_epi32(r, 16);   // Red in lower byte
+                g = _mm_srli_epi32(g, 8);    // Green in lower byte
+                alpha = _mm_srli_epi32(alpha, 24);  // Alpha in lower byte
 
-                    // Blend the color components more efficiently
-                    const uint8_t colorR = (color >> IM_COL32_R_SHIFT) & 0xFF;
-                    const uint8_t colorG = (color >> IM_COL32_G_SHIFT) & 0xFF;
-                    const uint8_t colorB = (color >> IM_COL32_B_SHIFT) & 0xFF;
+                // Scale alpha based on layer opacity
+                __m128i layerAlpha = _mm_set1_epi32(layerOpacity[layer]);
+                __m128i blendedAlpha = _mm_mullo_epi16(alpha, layerAlpha);
+                blendedAlpha = _mm_srli_epi32(blendedAlpha, 8);  // Scale alpha back down
 
-                    const uint8_t finalR = (finalColor >> IM_COL32_R_SHIFT) & 0xFF;
-                    const uint8_t finalG = (finalColor >> IM_COL32_G_SHIFT) & 0xFF;
-                    const uint8_t finalB = (finalColor >> IM_COL32_B_SHIFT) & 0xFF;
+                // Calculate the remaining alpha (1 - alpha) for the existing final color
+                __m128i remainingAlpha = _mm_sub_epi32(_mm_set1_epi32(255), blendedAlpha);
 
-                    // Optimized blend formula for color
-                    const uint8_t r = (colorR * blendedAlpha + finalR * existingAlpha * (255 - blendedAlpha) / 255) / 255;
-                    const uint8_t g = (colorG * blendedAlpha + finalG * existingAlpha * (255 - blendedAlpha) / 255) / 255;
-                    const uint8_t b = (colorB * blendedAlpha + finalB * existingAlpha * (255 - blendedAlpha) / 255) / 255;
+                // Blend the color components with the existing final colors
+                finalR = _mm_add_epi32(_mm_mullo_epi16(r, blendedAlpha), _mm_mullo_epi16(finalR, remainingAlpha));
+                finalG = _mm_add_epi32(_mm_mullo_epi16(g, blendedAlpha), _mm_mullo_epi16(finalG, remainingAlpha));
+                finalB = _mm_add_epi32(_mm_mullo_epi16(b, blendedAlpha), _mm_mullo_epi16(finalB, remainingAlpha));
 
-                    finalColor = IM_COL32(r, g, b, finalAlpha);
-                }
+                // Update final alpha
+                finalAlpha = _mm_add_epi32(finalAlpha, blendedAlpha);
             }
 
-            // Blend with the checkerboard pattern based on remaining transparency
-            if (finalAlpha < 255) {
-                const bool isCheckerTile1 = (x % 2 == y % 2);
-                const uint8_t checkerR = isCheckerTile1 ? checker1R : checker2R;
-                const uint8_t checkerG = isCheckerTile1 ? checker1G : checker2G;
-                const uint8_t checkerB = isCheckerTile1 ? checker1B : checker2B;
+            // Normalize the color channels
+            finalR = _mm_srli_epi32(finalR, 8);
+            finalG = _mm_srli_epi32(finalG, 8);
+            finalB = _mm_srli_epi32(finalB, 8);
 
-                const uint8_t finalR = (finalColor >> IM_COL32_R_SHIFT) & 0xFF;
-                const uint8_t finalG = (finalColor >> IM_COL32_G_SHIFT) & 0xFF;
-                const uint8_t finalB = (finalColor >> IM_COL32_B_SHIFT) & 0xFF;
+            // Reassemble final color
+            finalR = _mm_slli_epi32(finalR, 16);
+            finalG = _mm_slli_epi32(finalG, 8);
+            finalAlpha = _mm_slli_epi32(finalAlpha, 24);
 
-                // Optimized blending of composited color with checkerboard
-                const uint8_t outR = (finalR * finalAlpha + checkerR * (255 - finalAlpha)) / 255;
-                const uint8_t outG = (finalG * finalAlpha + checkerG * (255 - finalAlpha)) / 255;
-                const uint8_t outB = (finalB * finalAlpha + checkerB * (255 - finalAlpha)) / 255;
+            __m128i finalColor = _mm_or_si128(finalR, finalG);
+            finalColor = _mm_or_si128(finalColor, finalB);
+            finalColor = _mm_or_si128(finalColor, finalAlpha);
 
-                finalColor = IM_COL32(outR, outG, outB, 255); // Result is opaque
-            }
-
-            // Set the final color to the composited buffer
-            compositedBuffer[pixelIndex] = finalColor;
+            // Store final pixel result back to composited buffer
+            _mm_storeu_si128(reinterpret_cast<__m128i*>(&compositedBuffer[pixelIndex]), finalColor);
         }
     }
 }
