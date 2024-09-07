@@ -838,8 +838,8 @@ void CompositeLayersToBuffer(std::vector<ImU32>& compositedBuffer, const std::ve
 
     // Iterate over all pixels
     #pragma omp parallel for
-    for (uint32_t y = 0; y < height; ++y) {
-        for (uint32_t x = 0; x < width; ++x) {
+    for (int32_t y = 0; y < height; ++y) {
+        for (int32_t x = 0; x < width; ++x) {
             uint8_t finalAlpha = 0, finalR = 0, finalG = 0, finalB = 0;
             const size_t pixelIndex = y * width + x;
 
