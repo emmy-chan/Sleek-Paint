@@ -209,28 +209,24 @@ ImU32 cUtils::ApplyFloydSteinbergDithering(ImU32 color, uint64_t x, uint64_t y) 
 
 ImU32 cUtils::BlendColor(ImU32 baseColor, uint8_t glyphAlpha) {
     // Extract base color components
-    uint8_t baseR = (baseColor >> IM_COL32_R_SHIFT) & 0xFF;
-    uint8_t baseG = (baseColor >> IM_COL32_G_SHIFT) & 0xFF;
-    uint8_t baseB = (baseColor >> IM_COL32_B_SHIFT) & 0xFF;
-    uint8_t baseA = (baseColor >> IM_COL32_A_SHIFT) & 0xFF;
+    const uint8_t baseR = (baseColor >> IM_COL32_R_SHIFT) & 0xFF;
+    const uint8_t baseG = (baseColor >> IM_COL32_G_SHIFT) & 0xFF;
+    const uint8_t baseB = (baseColor >> IM_COL32_B_SHIFT) & 0xFF;
+    const uint8_t baseA = (baseColor >> IM_COL32_A_SHIFT) & 0xFF;
 
     // If glyph is fully opaque, return the color as is
-    if (glyphAlpha == 255) {
-        return baseColor;
-    }
+    if (glyphAlpha == 255) return baseColor;
 
     // If glyph is fully transparent, do not blend
-    if (glyphAlpha == 0) {
-        return baseColor;
-    }
+    if (glyphAlpha == 0) return baseColor;
 
     // Calculate the blended alpha
-    uint8_t finalAlpha = (glyphAlpha * baseA) / 255;
+    const uint8_t finalAlpha = (glyphAlpha * baseA) / 255;
 
     // Calculate the blended color components
-    uint8_t blendedR = (glyphAlpha * ((baseColor >> IM_COL32_R_SHIFT) & 0xFF) + (255 - glyphAlpha) * baseR) / 255;
-    uint8_t blendedG = (glyphAlpha * ((baseColor >> IM_COL32_G_SHIFT) & 0xFF) + (255 - glyphAlpha) * baseG) / 255;
-    uint8_t blendedB = (glyphAlpha * ((baseColor >> IM_COL32_B_SHIFT) & 0xFF) + (255 - glyphAlpha) * baseB) / 255;
+    const uint8_t blendedR = (glyphAlpha * ((baseColor >> IM_COL32_R_SHIFT) & 0xFF) + (255 - glyphAlpha) * baseR) / 255;
+    const uint8_t blendedG = (glyphAlpha * ((baseColor >> IM_COL32_G_SHIFT) & 0xFF) + (255 - glyphAlpha) * baseG) / 255;
+    const uint8_t blendedB = (glyphAlpha * ((baseColor >> IM_COL32_B_SHIFT) & 0xFF) + (255 - glyphAlpha) * baseB) / 255;
 
     return IM_COL32(blendedR, blendedG, blendedB, finalAlpha);
 }
@@ -250,7 +246,6 @@ void cUtils::FloodFill(const int& x, const int& y, bool paint) {
     stack.push({ x, y });
 
     if (!paint) selectedIndexes.clear();
-
     std::set<uint32_t> visited; // Use uint32_t for larger canvas sizes
 
     while (!stack.empty()) {
@@ -379,13 +374,13 @@ std::vector<ImU32> cUtils::DecompressCanvasDataRLE(const std::vector<uint8_t>& i
     if (input.empty() || input.size() % 5 != 0) return decompressedData; // Each entry has 5 bytes: count and RGBA
 
     for (size_t i = 0; i < input.size(); i += 5) {
-        uint8_t count = input[i];
-        uint8_t r = input[i + 1];
-        uint8_t g = input[i + 2];
-        uint8_t b = input[i + 3];
-        uint8_t a = input[i + 4];
+        const uint8_t count = input[i];
+        const uint8_t r = input[i + 1];
+        const uint8_t g = input[i + 2];
+        const uint8_t b = input[i + 3];
+        const uint8_t a = input[i + 4];
 
-        ImU32 color = IM_COL32(r, g, b, a);
+        const ImU32 color = IM_COL32(r, g, b, a);
         decompressedData.insert(decompressedData.end(), count, color);
     }
 
@@ -407,10 +402,10 @@ std::vector<uint8_t> cUtils::CompressColorRLE(ImU32 color) {
 ImU32 cUtils::DecompressColorRLE(const std::vector<uint8_t>& compressedData) {
     if (compressedData.size() != 4) return 0; // Invalid data size for RGBA
 
-    uint8_t r = compressedData[0];
-    uint8_t g = compressedData[1];
-    uint8_t b = compressedData[2];
-    uint8_t a = compressedData[3];
+    const uint8_t r = compressedData[0];
+    const uint8_t g = compressedData[1];
+    const uint8_t b = compressedData[2];
+    const uint8_t a = compressedData[3];
 
     return IM_COL32(r, g, b, a);
 }
