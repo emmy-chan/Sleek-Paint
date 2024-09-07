@@ -409,3 +409,51 @@ ImU32 cUtils::DecompressColorRLE(const std::vector<uint8_t>& compressedData) {
 
     return IM_COL32(r, g, b, a);
 }
+
+std::vector<uint8_t> cUtils::CompressCanvasDataZlib(const std::vector<uint8_t>& data) {
+    uLong sourceLen = data.size();
+    uLong destLen = compressBound(sourceLen);
+    std::vector<uint8_t> compressedData(destLen);
+
+    int result = compress(compressedData.data(), &destLen, data.data(), sourceLen);
+
+    if (result != Z_OK) {
+        printf("Error: zlib compression failed with code %d\n", result);
+        return {};
+    }
+
+    compressedData.resize(destLen); // Resize to actual compressed size
+    return compressedData;
+}
+
+std::vector<uint8_t> cUtils::DecompressCanvasDataZlib(const std::vector<uint8_t>& compressedData, size_t originalSize) {
+    std::vector<uint8_t> decompressedData(originalSize);
+    uLong destLen = originalSize;
+
+    int result = uncompress(decompressedData.data(), &destLen, compressedData.data(), compressedData.size());
+
+    if (result != Z_OK) {
+        printf("Error: zlib decompression failed with code %d\n", result);
+        return {};
+    }
+
+    return decompressedData;
+}
+
+std::vector<uint8_t> cUtils::ConvertLayerToByteArray(const std::vector<ImU32>& layer) {
+    std::vector<uint8_t> byteArray(layer.size() * sizeof(ImU32));
+
+    // Copy the contents of the ImU32 vector to the byte array
+    std::memcpy(byteArray.data(), layer.data(), layer.size() * sizeof(ImU32));
+
+    return byteArray;
+}
+
+std::vector<ImU32> cUtils::ConvertByteArrayToLayer(const std::vector<uint8_t>& byteArray) {
+    std::vector<ImU32> layer(byteArray.size() / sizeof(ImU32));
+
+    // Copy the byte array data back into the ImU32 vector
+    std::memcpy(layer.data(), byteArray.data(), byteArray.size());
+
+    return layer;
+}

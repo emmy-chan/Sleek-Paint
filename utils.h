@@ -5,6 +5,7 @@
 #include <string>
 
 #include "glm.hpp"
+#include <zlib.h>
 
 class cUtils {
 public:
@@ -31,6 +32,10 @@ public:
 	std::vector<ImU32> DecompressCanvasDataRLE(const std::vector<uint8_t>& input);
 	std::vector<uint8_t> CompressColorRLE(ImU32 color);
 	ImU32 DecompressColorRLE(const std::vector<uint8_t>& compressedData);
+	std::vector<uint8_t> CompressCanvasDataZlib(const std::vector<uint8_t>& data);
+	std::vector<uint8_t> DecompressCanvasDataZlib(const std::vector<uint8_t>& compressedData, size_t originalSize);
+	std::vector<uint8_t> ConvertLayerToByteArray(const std::vector<ImU32>& layer);
+	std::vector<ImU32> ConvertByteArrayToLayer(const std::vector<uint8_t>& byteArray);
 	//bool InitializeInputState(void);
 	//void UpdateInputState();
 	//int m_mouse_x;

@@ -910,16 +910,16 @@ void cCanvas::Editor() {
                 // Undo operation
                 if (g_canvas[g_cidx].canvas_idx > 0) {
                     g_canvas[g_cidx].canvas_idx--;
-                    auto decompressedData = g_util.DecompressCanvasDataRLE(g_canvas[g_cidx].previousCanvases[g_canvas[g_cidx].canvas_idx]);
-                    g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex] = decompressedData;
+                    auto decompressedByteArray = g_util.DecompressCanvasDataZlib(g_canvas[g_cidx].previousCanvases[g_canvas[g_cidx].canvas_idx], tiles[g_canvas[g_cidx].selLayerIndex].size() * sizeof(ImU32));
+                    g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex] = g_util.ConvertByteArrayToLayer(decompressedByteArray);
                 }
             }
             else if (GetAsyncKeyState(VK_CONTROL) && key_state.key_pressed('Y') & 1) {
                 // Redo operation
                 if (g_canvas[g_cidx].canvas_idx < g_canvas[g_cidx].previousCanvases.size() - 1) {
                     g_canvas[g_cidx].canvas_idx++;
-                    auto decompressedData = g_util.DecompressCanvasDataRLE(g_canvas[g_cidx].previousCanvases[g_canvas[g_cidx].canvas_idx]);
-                    g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex] = decompressedData;
+                    auto decompressedByteArray = g_util.DecompressCanvasDataZlib(g_canvas[g_cidx].previousCanvases[g_canvas[g_cidx].canvas_idx], tiles[g_canvas[g_cidx].selLayerIndex].size() * sizeof(ImU32));
+                    g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex] = g_util.ConvertByteArrayToLayer(decompressedByteArray);
                 }
             }
             else if (GetAsyncKeyState(VK_DELETE)) // Delete our selection area

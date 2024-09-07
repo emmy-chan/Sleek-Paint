@@ -118,18 +118,33 @@ void SaveCanvasToImage(const char* name, const char* format) {
 
 std::string SerializeCanvas(const cCanvas& canvas) {
     std::ostringstream oss;
+
+    // Serialize canvas name and dimensions
     oss << canvas.name << "\n";
     oss << canvas.width << " " << canvas.height << "\n";
-    oss << canvas.tiles.size() << "\n";
+    oss << canvas.tiles.size() << "\n";  // Number of layers
 
+    // Serialize each layer
     for (size_t i = 0; i < canvas.tiles.size(); ++i) {
-        std::vector<uint8_t> compressedData = g_util.CompressCanvasDataRLE(canvas.tiles[i]);
+        // Get the original size of the layer before compression
+        size_t originalSize = canvas.tiles[i].size();  // Number of ImU32 elements
 
+        // Compress the current layer using zlib
+        std::vector<uint8_t> compressedData = g_util.CompressCanvasDataZlib(g_util.ConvertLayerToByteArray(canvas.tiles[i]));
+
+        // Serialize the original size of the uncompressed data
+        oss << originalSize << "\n";
+
+        // Serialize the size of the compressed data
         oss << compressedData.size() << "\n";
+
+        // Serialize the compressed data
         for (uint8_t byte : compressedData) {
-            oss << static_cast<int>(byte) << " ";
+            oss << static_cast<int>(byte) << " ";  // Store as int to avoid confusion with ASCII
         }
         oss << "\n";
+
+        // Serialize the layer's metadata (name, visibility, opacity)
         oss << canvas.layerNames[i] << "\n";
         oss << canvas.layerVisibility[i] << "\n";
         oss << canvas.layerOpacity[i] << "\n";
@@ -474,23 +489,19 @@ cCanvas DeserializeCanvas(const std::string& data) {
     int width, height;
     size_t layerCount;
 
-    // Deserialize canvas name
+    // Deserialize canvas name and dimensions
     std::getline(iss, canvasName);
-    std::cout << "Canvas name: " << canvasName << std::endl;
-
-    // Deserialize canvas dimensions
     iss >> width >> height;
-    std::cout << "Canvas dimensions: " << width << "x" << height << std::endl;
 
     // Create canvas object
     cCanvas canvas(canvasName, width, height);
 
-    // Deserialize number of layers
+    // Deserialize the number of layers
     iss >> layerCount;
-    std::cout << "Number of layers: " << layerCount << std::endl;
-    if (layerCount > 1000) // Arbitrary large value to catch potential errors
+    if (layerCount > 1000)  // Arbitrary check for an unreasonably large number of layers
         throw std::runtime_error("Unreasonable number of layers detected");
 
+    // Resize canvas properties to hold layer data
     canvas.tiles.resize(layerCount);
     canvas.layerNames.resize(layerCount);
     canvas.layerVisibility.resize(layerCount);
@@ -498,9 +509,15 @@ cCanvas DeserializeCanvas(const std::string& data) {
 
     // Deserialize each layer's data
     for (size_t i = 0; i < layerCount; ++i) {
+        // Read the original uncompressed size
+        size_t originalSize;
+        iss >> originalSize;
+
+        // Read the compressed size
         size_t compressedSize;
         iss >> compressedSize;
 
+        // Deserialize compressed data
         std::vector<uint8_t> compressedData(compressedSize);
         for (size_t j = 0; j < compressedSize; ++j) {
             int byte;
@@ -508,9 +525,13 @@ cCanvas DeserializeCanvas(const std::string& data) {
             compressedData[j] = static_cast<uint8_t>(byte);
         }
 
-        canvas.tiles[i] = g_util.DecompressCanvasDataRLE(compressedData);
+        // Decompress the data using zlib with the original uncompressed size
+        canvas.tiles[i] = g_util.ConvertByteArrayToLayer(
+            g_util.DecompressCanvasDataZlib(compressedData, originalSize * sizeof(ImU32))  // originalSize * sizeof(ImU32)
+        );
 
-        iss >> std::ws; // Skip any whitespace
+        // Deserialize the layer's metadata (name, visibility, opacity)
+        iss >> std::ws;  // Skip any whitespace
         std::getline(iss, canvas.layerNames[i]);
         iss >> canvas.layerVisibility[i];
         iss >> canvas.layerOpacity[i];
