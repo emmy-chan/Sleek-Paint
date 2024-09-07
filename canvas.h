@@ -47,7 +47,6 @@ enum eTools {
 struct CompressedLayer {
 	std::vector<uint8_t> data;  // Compressed data
 	size_t originalIndex;       // Index of the original layer
-	size_t originalSize;        // Number of ImU32 elements in the original layer (before compression)
 };
 
 class cCanvas
