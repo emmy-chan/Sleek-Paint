@@ -848,23 +848,23 @@ void CompositeLayersToBuffer(std::vector<ImU32>& compositedBuffer, const std::ve
                 if (pixelAlpha == 0) continue;
 
                 const uint8_t layerAlpha = layerOpacity[layer];
-                const uint8_t blendedAlpha = (pixelAlpha * layerAlpha) / 255;
+                const uint8_t blendedAlpha = (pixelAlpha * layerAlpha) >> 8; // Approximate alpha blending using bit shift
 
                 if (blendedAlpha > 0) {
                     const uint8_t colorR = (color >> IM_COL32_R_SHIFT) & 0xFF;
                     const uint8_t colorG = (color >> IM_COL32_G_SHIFT) & 0xFF;
                     const uint8_t colorB = (color >> IM_COL32_B_SHIFT) & 0xFF;
 
-                    // Pre-multiply the color with the blended alpha
-                    const uint16_t blendR = colorR * blendedAlpha;
-                    const uint16_t blendG = colorG * blendedAlpha;
-                    const uint16_t blendB = colorB * blendedAlpha;
+                    // Pre-multiply the color with the blended alpha using bit shifting
+                    const uint16_t blendR = (colorR * blendedAlpha) >> 8;
+                    const uint16_t blendG = (colorG * blendedAlpha) >> 8;
+                    const uint16_t blendB = (colorB * blendedAlpha) >> 8;
 
-                    // Optimized alpha blending
-                    finalR = (blendR + finalR * (255 - blendedAlpha)) / 255;
-                    finalG = (blendG + finalG * (255 - blendedAlpha)) / 255;
-                    finalB = (blendB + finalB * (255 - blendedAlpha)) / 255;
-                    finalAlpha = blendedAlpha + ((finalAlpha * (255 - blendedAlpha)) / 255);
+                    // Optimized alpha blending using bit shifting for division approximation
+                    finalR = (blendR + ((finalR * (255 - blendedAlpha)) >> 8));
+                    finalG = (blendG + ((finalG * (255 - blendedAlpha)) >> 8));
+                    finalB = (blendB + ((finalB * (255 - blendedAlpha)) >> 8));
+                    finalAlpha = blendedAlpha + ((finalAlpha * (255 - blendedAlpha)) >> 8);
                 }
             }
 
