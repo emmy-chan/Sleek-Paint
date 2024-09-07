@@ -890,7 +890,8 @@ void UpdateCanvasTexture(ID3D11DeviceContext* context, const std::vector<ImU32>&
     if (rowPitch == width) // Check if rowPitch matches the buffer's row size (width) to copy all at once
         memcpy(dest, compositedBuffer.data(), width * height * sizeof(ImU32)); // If rowPitch and width match, perform a single memory copy for the entire buffer
     else {
-        for (uint32_t y = 0; y < height; ++y) // Otherwise, fall back to row-by-row copy
+        #pragma omp parallel for
+        for (int y = 0; y < height; ++y) // Otherwise, fall back to row-by-row copy
             memcpy(dest + y * rowPitch, compositedBuffer.data() + y * width, width * sizeof(ImU32));
     }
 
