@@ -190,7 +190,7 @@ void cCanvas::DestroyCanvas() {
 }
 
 // Function to calculate the bounding box of the selected indexes
-ImVec2 GetTilePos(uint16_t index, float tileSize, float camX, float camY, int width) {
+ImVec2 GetTilePos(int64_t index, float tileSize, float camX, float camY, int width) {
     return { camX + float(index % width) * tileSize, camY + float(index / width) * tileSize };
 }
 
@@ -356,7 +356,6 @@ void cCanvas::PasteSelection() {
     }
 
     selectedIndexes = newSelectedIndexes;
-
     g_canvas[g_cidx].UpdateCanvasHistory();
 }
 
@@ -539,8 +538,7 @@ void DrawTextOnCanvasFreeType(FT_Face& face, const std::string& text, int mouseX
         FT_GlyphSlot g = face->glyph;
 
         // Calculate the glyph position
-        int glyph_x = x + g->bitmap_left;
-        int glyph_y = baselineY - g->bitmap_top;
+        int glyph_x = x + g->bitmap_left, glyph_y = baselineY - g->bitmap_top;
 
         // Ensure the glyph is within the canvas bounds
         if (glyph_x < 0 || glyph_y < 0 || glyph_x + g->bitmap.width > canvasWidth || glyph_y + g->bitmap.rows > canvasHeight) {
@@ -551,13 +549,12 @@ void DrawTextOnCanvasFreeType(FT_Face& face, const std::string& text, int mouseX
         // Render glyph within canvas bounds
         for (int row = 0; row < g->bitmap.rows; ++row) {
             for (int col = 0; col < g->bitmap.width; ++col) {
-                int posX = glyph_x + col;
-                int posY = glyph_y + row;
+                int posX = glyph_x + col, posY = glyph_y + row;
 
                 if (posX >= 0 && posX < canvasWidth && posY >= 0 && posY < canvasHeight) {
-                    uint8_t alpha = g->bitmap.buffer[row * g->bitmap.width + col];
+                    const uint8_t alpha = g->bitmap.buffer[row * g->bitmap.width + col];
                     if (alpha > 0) {
-                        ImU32 blendedColor = g_util.BlendColor(color, alpha);
+                        const ImU32 blendedColor = g_util.BlendColor(color, alpha);
                         g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex][posY * canvasWidth + posX] = blendedColor;
                     }
                 }
@@ -889,12 +886,10 @@ void UpdateCanvasTexture(ID3D11DeviceContext* context, const std::vector<ImU32>&
     ImU32* dest = static_cast<ImU32*>(mappedResource.pData);
     const size_t rowPitch = mappedResource.RowPitch / sizeof(ImU32);
 
-    // Check if rowPitch matches the buffer's row size (width) to copy all at once
-    if (rowPitch == width)
+    if (rowPitch == width) // Check if rowPitch matches the buffer's row size (width) to copy all at once
         memcpy(dest, compositedBuffer.data(), width * height * sizeof(ImU32)); // If rowPitch and width match, perform a single memory copy for the entire buffer
     else {
-        // Otherwise, fall back to row-by-row copy
-        for (uint32_t y = 0; y < height; ++y)
+        for (uint32_t y = 0; y < height; ++y) // Otherwise, fall back to row-by-row copy
             memcpy(dest + y * rowPitch, compositedBuffer.data() + y * width, width * sizeof(ImU32));
     }
 
@@ -1128,13 +1123,8 @@ void cCanvas::Editor() {
 
             break;
         case TOOL_LINE:
-            if (ImGui::IsMouseDown(0)) {
-                // Draw the preview line
-                const ImVec2 mousePos = ImGui::GetMousePos();
-                const uint16_t endX = static_cast<int>((mousePos.x - g_cam.x) / TILE_SIZE), endY = static_cast<int>((mousePos.y - g_cam.y) / TILE_SIZE);
-
-                DrawLineOnCanvas(static_cast<int>((mouseStart.x - g_cam.x) / TILE_SIZE), static_cast<int>((mouseStart.y - g_cam.y) / TILE_SIZE), endX, endY, myCols[selColIndex], true);
-            }
+            if (ImGui::IsMouseDown(0))
+                DrawLineOnCanvas(static_cast<int>((mouseStart.x - g_cam.x) / TILE_SIZE), static_cast<int>((mouseStart.y - g_cam.y) / TILE_SIZE), x, y, myCols[selColIndex], true);
             else
                 d.AddRectFilled({ g_cam.x + x * TILE_SIZE, g_cam.y + y * TILE_SIZE }, { g_cam.x + x * TILE_SIZE + TILE_SIZE, g_cam.y + y * TILE_SIZE + TILE_SIZE }, myCols[selColIndex]);
 
@@ -1148,13 +1138,8 @@ void cCanvas::Editor() {
 
             break;
         case TOOL_SQUARE:
-            if (ImGui::IsMouseDown(0)) {
-                // Draw the preview rectangle
-                const ImVec2 mousePos = ImGui::GetMousePos();
-                const uint16_t endX = static_cast<int>((mousePos.x - g_cam.x) / TILE_SIZE), endY = static_cast<int>((mousePos.y - g_cam.y) / TILE_SIZE);
-
-                DrawRectangleOnCanvas(static_cast<int>((mouseStart.x - g_cam.x) / TILE_SIZE), static_cast<int>((mouseStart.y - g_cam.y) / TILE_SIZE), endX, endY, myCols[selColIndex], true);
-            }
+            if (ImGui::IsMouseDown(0))
+                DrawRectangleOnCanvas(static_cast<int>((mouseStart.x - g_cam.x) / TILE_SIZE), static_cast<int>((mouseStart.y - g_cam.y) / TILE_SIZE), x, y, myCols[selColIndex], true); // Draw the preview rectangle
             else
                 d.AddRectFilled({ g_cam.x + x * TILE_SIZE, g_cam.y + y * TILE_SIZE }, { g_cam.x + x * TILE_SIZE + TILE_SIZE, g_cam.y + y * TILE_SIZE + TILE_SIZE }, myCols[selColIndex]);
 
@@ -1165,12 +1150,8 @@ void cCanvas::Editor() {
 
             break;
         case TOOL_ELIPSE:
-            if (ImGui::IsMouseDown(0)) {
-                const ImVec2 mousePos = ImGui::GetMousePos();
-                const uint16_t endX = static_cast<int>((mousePos.x - g_cam.x) / TILE_SIZE), endY = static_cast<int>((mousePos.y - g_cam.y) / TILE_SIZE);
-
-                DrawCircleOnCanvas(static_cast<int>((mouseStart.x - g_cam.x) / TILE_SIZE), static_cast<int>((mouseStart.y - g_cam.y) / TILE_SIZE), endX, endY, myCols[selColIndex], true); // Draw the preview ellipse
-            }
+            if (ImGui::IsMouseDown(0))
+                DrawCircleOnCanvas(static_cast<int>((mouseStart.x - g_cam.x) / TILE_SIZE), static_cast<int>((mouseStart.y - g_cam.y) / TILE_SIZE), x, y, myCols[selColIndex], true); // Draw the preview ellipse
             else
                 d.AddRectFilled({ g_cam.x + x * TILE_SIZE, g_cam.y + y * TILE_SIZE }, { g_cam.x + x * TILE_SIZE + TILE_SIZE, g_cam.y + y * TILE_SIZE + TILE_SIZE }, myCols[selColIndex]);
 
