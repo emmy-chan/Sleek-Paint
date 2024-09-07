@@ -561,7 +561,7 @@ void cGUI::Display()
         ImGui::Begin("##ScrollH", NULL, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove);
         ImGui::SetWindowSize({ ImGui::GetWindowWidth() - 20, 20});
         ImGui::PushItemWidth(ImGui::GetWindowWidth());
-        ImGui::SliderFloat("##ScrollHorizontal", &g_cam.x, glm::abs((g_canvas[g_cidx].width * (TILE_SIZE * 1.685f))), -glm::abs((g_canvas[g_cidx].width * TILE_SIZE) / 2), "");
+        ImGui::SliderFloat("##ScrollHorizontal", &g_cam.x, glm::abs((g_canvas[g_cidx].width * (TILE_SIZE * 1.685f))), -glm::abs((g_canvas[g_cidx].width * TILE_SIZE)), "");
         ImGui::End();
 
         ImGui::SetNextWindowPos({ io.DisplaySize.x - 60, 24 });
