@@ -159,19 +159,14 @@ void cCanvas::UpdateCanvasHistory() {
 
     // Only add the current state to history if it's different from the last saved state
     if (previousCanvases.empty() || (!tiles[g_canvas[g_cidx].selLayerIndex].empty() && !previousCanvases.empty() &&
-        !g_util.IsTilesEqual(tiles[g_canvas[g_cidx].selLayerIndex], g_util.DecompressCanvasDataRLE(previousCanvases.back().compressedData)))) {
+        !g_util.IsTilesEqual(tiles[g_canvas[g_cidx].selLayerIndex], g_util.DecompressCanvasDataRLE(previousCanvases.back())))) {
 
         // Compress current canvas data
         auto compressedData = g_util.CompressCanvasDataZlib(g_util.ConvertLayerToByteArray(tiles[g_canvas[g_cidx].selLayerIndex]));
         size_t originalSize = tiles[g_canvas[g_cidx].selLayerIndex].size() * sizeof(ImU32);
 
-        // Create a new CanvasState
-        CanvasState newState;
-        newState.compressedData = compressedData; // Store compressed data
-        newState.originalSize = originalSize;     // Store original size of the canvas
-
         // Add the new state to history
-        previousCanvases.push_back(newState);
+        previousCanvases.push_back(compressedData);
         canvas_idx = previousCanvases.size() - 1;
 
         printf("Canvas state created with RLE compression.\n");
@@ -920,8 +915,8 @@ void cCanvas::Editor() {
                 // Undo operation
                 if (g_canvas[g_cidx].canvas_idx > 0) {
                     g_canvas[g_cidx].canvas_idx--;
-                    const CanvasState& canvasState = g_canvas[g_cidx].previousCanvases[g_canvas[g_cidx].canvas_idx];
-                    auto decompressedByteArray = g_util.DecompressCanvasDataZlib(canvasState.compressedData, canvasState.originalSize);
+                    const auto& canvasState = g_canvas[g_cidx].previousCanvases[g_canvas[g_cidx].canvas_idx];
+                    const auto decompressedByteArray = g_util.DecompressCanvasDataZlib(canvasState, tiles[selLayerIndex].size() * sizeof(ImU32));
                     g_canvas[g_cidx].tiles[selLayerIndex] = g_util.ConvertByteArrayToLayer(decompressedByteArray);
                 }
             }
@@ -929,8 +924,8 @@ void cCanvas::Editor() {
                 // Redo operation
                 if (g_canvas[g_cidx].canvas_idx < g_canvas[g_cidx].previousCanvases.size() - 1) {
                     g_canvas[g_cidx].canvas_idx++;
-                    const CanvasState& canvasState = g_canvas[g_cidx].previousCanvases[g_canvas[g_cidx].canvas_idx];
-                    auto decompressedByteArray = g_util.DecompressCanvasDataZlib(canvasState.compressedData, canvasState.originalSize);
+                    const auto& canvasState = g_canvas[g_cidx].previousCanvases[g_canvas[g_cidx].canvas_idx];
+                    const auto decompressedByteArray = g_util.DecompressCanvasDataZlib(canvasState, tiles[selLayerIndex].size() * sizeof(ImU32));
                     g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex] = g_util.ConvertByteArrayToLayer(decompressedByteArray);
                 }
             }
