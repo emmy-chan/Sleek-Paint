@@ -54,14 +54,16 @@ void cGUI::Display()
             if (ImGui::MenuItem(ICON_FA_UNDO" Undo") && g_canvas.size() > 0) {
                 if (g_canvas[g_cidx].canvas_idx > 0) {
                     g_canvas[g_cidx].canvas_idx--;
-                    auto decompressedByteArray = g_util.DecompressCanvasDataZlib(g_canvas[g_cidx].previousCanvases[g_canvas[g_cidx].canvas_idx], g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex].size() * sizeof(ImU32));
+                    const CanvasState& canvasState = g_canvas[g_cidx].previousCanvases[g_canvas[g_cidx].canvas_idx];
+                    auto decompressedByteArray = g_util.DecompressCanvasDataZlib(canvasState.compressedData, canvasState.originalSize);
                     g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex] = g_util.ConvertByteArrayToLayer(decompressedByteArray);
                 }
             }
             if (ImGui::MenuItem(ICON_FA_REDO" Redo") && g_canvas.size() > 0) {
                 if (g_canvas[g_cidx].canvas_idx < g_canvas[g_cidx].previousCanvases.size() - 1) {
                     g_canvas[g_cidx].canvas_idx++;
-                    auto decompressedByteArray = g_util.DecompressCanvasDataZlib(g_canvas[g_cidx].previousCanvases[g_canvas[g_cidx].canvas_idx], g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex].size() * sizeof(ImU32));
+                    const CanvasState& canvasState = g_canvas[g_cidx].previousCanvases[g_canvas[g_cidx].canvas_idx];
+                    auto decompressedByteArray = g_util.DecompressCanvasDataZlib(canvasState.compressedData, canvasState.originalSize);
                     g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex] = g_util.ConvertByteArrayToLayer(decompressedByteArray);
                 }
             }

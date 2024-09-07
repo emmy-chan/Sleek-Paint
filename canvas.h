@@ -49,13 +49,18 @@ struct CompressedLayer {
 	size_t originalIndex;       // Index of the original layer
 };
 
+struct CanvasState {
+	std::vector<uint8_t> compressedData; // Compressed canvas data
+	size_t originalSize;                 // Original uncompressed size of the data
+};
+
 class cCanvas
 {
 public:
 	cCanvas(const std::string& new_name, uint16_t new_width = 0, uint16_t new_height = 0, const ImU32& color = IM_COL32(0, 0, 0, 0), const std::vector<ImU32>&initial_data = {}) { name = new_name; LoadColorPalette("palettes/default.pal"); Initialize(initial_data, new_width, new_height, color); }; //Set our idx to new scene idx!
 	std::string name;
 	uint8_t canvas_idx = 1;
-	std::vector<std::vector<uint8_t>> previousCanvases;
+	std::vector<CanvasState> previousCanvases;
 	std::vector<ImU32> myCols;
 	uint16_t selColIndex = 0;
 	uint8_t selLayerIndex = 0;
