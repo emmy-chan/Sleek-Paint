@@ -264,6 +264,16 @@ int main(int, char**)
         canvasSRV = nullptr;
     }
 
+    if (face) {
+        FT_Done_Face(face);
+        face = nullptr;
+    }
+
+    if (ft) {
+        FT_Done_FreeType(ft);
+        ft = nullptr;
+    }
+
     ImGui_ImplDX11_Shutdown();
     ImGui_ImplWin32_Shutdown();
     ImGui::DestroyContext();
