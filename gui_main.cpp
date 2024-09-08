@@ -757,7 +757,7 @@ void cGUI::Display()
     ImGui::SameLine(width * 2 + 4);
 
     // Display cogs color options button
-    if (ImGui::Button(ICON_FA_COGS, { (float)width, 26 })) ImGui::OpenPopup("Color Options");
+    if (ImGui::Button(ICON_FA_BARS, { (float)width, 26 })) ImGui::OpenPopup("Color Options");
 
     // Popup for additional settings
     if (ImGui::BeginPopup("Color Options")) {
