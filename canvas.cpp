@@ -153,9 +153,8 @@ void cCanvas::UpdateCanvasHistory() {
     }
 
     // Check if there are previous states and the current state index is valid
-    if (previousCanvases.size() > 1 && previousCanvases.size() > canvas_idx) {
+    if (previousCanvases.size() > 1 && previousCanvases.size() > canvas_idx)
         previousCanvases.resize(canvas_idx + 1);
-    }
 
     // Only add the current state to history if it's different from the last saved state
     if (previousCanvases.empty() || (!tiles[g_canvas[g_cidx].selLayerIndex].empty() && !previousCanvases.empty() &&
@@ -171,9 +170,8 @@ void cCanvas::UpdateCanvasHistory() {
 
         printf("Canvas state created with RLE compression.\n");
     }
-    else {
+    else
         printf("No changes detected; canvas state not updated.\n");
-    }
 }
 
 void cCanvas::LoadColorPalette(std::string input) {
@@ -1138,11 +1136,8 @@ void cCanvas::Editor() {
                 d.AddRectFilled({ g_cam.x + x * TILE_SIZE, g_cam.y + y * TILE_SIZE }, { g_cam.x + x * TILE_SIZE + TILE_SIZE, g_cam.y + y * TILE_SIZE + TILE_SIZE }, myCols[selColIndex]);
 
             if (g_util.MouseReleased(0)) {
-                // Convert the screen coordinates to tile coordinates
-                const uint16_t startX = static_cast<int>((mouseStart.x - g_cam.x) / TILE_SIZE), startY = static_cast<int>((mouseStart.y - g_cam.y) / TILE_SIZE);
-
-                // Draw the line on the canvas
-                DrawLineOnCanvas(startX, startY, x, y, myCols[selColIndex]);
+                const uint16_t startX = static_cast<int>((mouseStart.x - g_cam.x) / TILE_SIZE), startY = static_cast<int>((mouseStart.y - g_cam.y) / TILE_SIZE); // Convert the screen coordinates to tile coordinates
+                DrawLineOnCanvas(startX, startY, x, y, myCols[selColIndex]); // Draw the line on the canvas
             }
 
             break;
@@ -1276,19 +1271,16 @@ void cCanvas::Editor() {
                                 cursorPos.x -= glyphWidth + 1.5f * TILE_SIZE / text_size;  // Add extra spacing to align correctly
 
                                 // Clear the last character's area on the canvas
-                                int glyph_x = static_cast<int>(cursorPos.x);
-                                int glyph_y = static_cast<int>(cursorPos.y - (face->size->metrics.ascender >> 6));
+                                int glyph_x = static_cast<int>(cursorPos.x), glyph_y = static_cast<int>(cursorPos.y - (face->size->metrics.ascender >> 6));
                                 int glyph_height = (face->size->metrics.height >> 6);
 
                                 // Erase the previous character from the canvas
                                 for (int row = 0; row < glyph_height; ++row) {
                                     for (int col = 0; col < glyphWidth; ++col) {
-                                        int posX = glyph_x + col;
-                                        int posY = glyph_y + row;
+                                        int posX = glyph_x + col, posY = glyph_y + row;
 
-                                        if (posX >= 0 && posX < width && posY >= 0 && posY < height) {
+                                        if (posX >= 0 && posX < width && posY >= 0 && posY < height)
                                             g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex][posY * width + posX] = IM_COL32_BLACK_TRANS; // Background color or transparent
-                                        }
                                     }
                                 }
                             }
@@ -1315,8 +1307,7 @@ void cCanvas::Editor() {
             }
 
             // Update the current line content
-            if (!lines.empty())
-                lines.back() = textInput;
+            if (!lines.empty()) lines.back() = textInput;
 
             // Draw the current text at the mouse position using FreeType
             for (size_t i = 0; i < lines.size(); ++i)

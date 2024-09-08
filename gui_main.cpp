@@ -12,16 +12,6 @@
 #include "imgui_internal.h"
 #include <iostream>
 
-// Function to get the texture ID for the current selection
-void* GetToolTexture(int tool) {
-    switch (tool) {
-        case 4: return (void*)g_assets.selection_texture;
-        case TOOL_FREEFORM_SELECT: return (void*)g_assets.freeform_selection_texture;
-        case TOOL_WAND: return (void*)g_assets.wand_texture;
-        default: return g_assets.selection_texture; // No texture if no tool is selected
-    }
-}
-
 void cGUI::Display()
 {
     auto& io = ImGui::GetIO();
@@ -588,7 +578,7 @@ void cGUI::Display()
         ImGui::PushStyleVar(ImGuiStyleVar_ButtonTextAlign, { 0.7f, 1.f });
 
         // Determine the texture based on the current tool selection
-        void* buttonTexture = GetToolTexture(paintToolSelected);
+        void* buttonTexture = g_util.GetToolTexture(paintToolSelected);
 
         ImGui::PushStyleColor(ImGuiCol_Button,
             paintToolSelected == 4 ||
