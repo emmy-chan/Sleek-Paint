@@ -5,6 +5,8 @@
 #include <string>
 
 #include "glm.hpp"
+#include "assets.h"
+#include "canvas.h"
 #include <zlib.h>
 
 class cUtils {
