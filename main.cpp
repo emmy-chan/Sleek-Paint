@@ -169,11 +169,12 @@ int main(int, char**)
     config.OversampleH = 1; config.OversampleV = 1;
 
     // Chinese / Japanese fonts
-    io.Fonts->AddFontFromFileTTF("c:\\Windows\\Fonts\\msyh.ttc", 18.f, &config, io.Fonts->GetGlyphRangesChineseSimplifiedCommon());
-    config.MergeMode = true;
+    //io.Fonts->AddFontFromFileTTF("c:\\Windows\\Fonts\\msyh.ttc", 18.f, &config, io.Fonts->GetGlyphRangesChineseSimplifiedCommon());
+    //config.MergeMode = true;
 
     // Store default font
-    io.Fonts->AddFontFromMemoryTTF(const_cast<std::uint8_t*>(Custom), sizeof(Custom), 18.f, &config, io.Fonts->GetGlyphRangesDefault());
+    //io.Fonts->AddFontFromMemoryTTF(const_cast<std::uint8_t*>(Custom), sizeof(Custom), 18.f, &config, io.Fonts->GetGlyphRangesDefault());
+    //io.Fonts->AddFontFromFileTTF("MonoLisa-Regular.ttf", 18.0f, &config, io.Fonts->GetGlyphRangesDefault());
 
     // Load icons!
     {
