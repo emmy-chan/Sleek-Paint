@@ -90,16 +90,13 @@ void cGUI::Display()
 
             if (ImGui::MenuItem(ICON_FA_TH " Apply Selection Pixelate") && g_canvas.size() > 0) {
                 // Define the pixelation block size
-                const uint8_t blockSize = 8;
+                const uint8_t blockSize = glm::min(int(selectedIndexes.size() * 0.1f), 8);
 
                 // Apply pixelation to the selected blocks
                 for (const auto& index : selectedIndexes) {
                     const uint64_t x = index % g_canvas[g_cidx].width, y = index / g_canvas[g_cidx].width;
                     const uint64_t blockX = x / blockSize * blockSize, blockY = y / blockSize * blockSize;
-
-                    // Compute the average color of the block
-                    uint64_t redSum = 0, greenSum = 0, blueSum = 0, alphaSum = 0;
-                    uint64_t pixelCount = 0;
+                    uint64_t redSum = 0, greenSum = 0, blueSum = 0, alphaSum = 0, pixelCount = 0; // Compute the average color of the block
 
                     for (uint64_t by = 0; by < blockSize && (blockY + by) < g_canvas[g_cidx].height; ++by) {
                         for (uint64_t bx = 0; bx < blockSize && (blockX + bx) < g_canvas[g_cidx].width; ++bx) {
@@ -199,7 +196,6 @@ void cGUI::Display()
 
                     // Update the selectedIndexes
                     selectedIndexes.swap(newSelectedIndexes);
-
                     g_canvas[g_cidx].UpdateCanvasHistory();
                 }
             }
@@ -385,7 +381,6 @@ void cGUI::Display()
 
                     // Update the selectedIndexes
                     selectedIndexes.swap(newSelectedIndexes);
-
                     g_canvas[g_cidx].UpdateCanvasHistory();
                 }
             }
@@ -409,9 +404,9 @@ void cGUI::Display()
                         const ImU32 currentColor = g_util.XorColor(g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex][i], key);
                         tempColors[permutedIndex] = currentColor;
                     }
-                    // Copy the encrypted colors back to the canvas
+                    
                     for (uint64_t i = 0; i < size; i++)
-                        g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex][i] = tempColors[i];
+                        g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex][i] = tempColors[i]; // Copy the encrypted colors back to the canvas
 
                     g_canvas[g_cidx].UpdateCanvasHistory();
                 }
@@ -520,9 +515,8 @@ void cGUI::Display()
 
                 if (!open) {
                     // If we didn't do anything in this canvas, let's just delete it without asking
-                    if (g_canvas[i].previousCanvases.size() > 1) {
+                    if (g_canvas[i].previousCanvases.size() > 1)
                         g_app.ui_state = std::make_unique<cUIStateSaveWarning>();
-                    }
                     else {
                         g_cidx = i;
                         g_canvas[i].DestroyCanvas();
@@ -569,9 +563,7 @@ void cGUI::Display()
         ImGui::SetNextWindowPos({ io.DisplaySize.x - 40, 23 });
         ImGui::SetNextWindowSize({ 40, io.DisplaySize.y - 22 });
         
-        const ImVec4 panelColor = { 0.2f, 0.2f, 0.215f, 1.f };
-        const ImVec4 panelActiveColor = { 0.f, 0.46f, 0.78f, 1.f };
-
+        const ImVec4 panelColor = { 0.2f, 0.2f, 0.215f, 1.f }, panelActiveColor = { 0.f, 0.46f, 0.78f, 1.f };
         ImGui::Begin("##Tools", NULL, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove);
 
         ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, { 4.5f, 4.5f });
@@ -749,9 +741,7 @@ void cGUI::Display()
     // Color delete button
     if (ImGui::Button("-", { (float)width, 26 })) {
         g_canvas[g_cidx].myCols.erase(g_canvas[g_cidx].myCols.begin() + g_canvas[g_cidx].selColIndex);
-
-        if (g_canvas[g_cidx].selColIndex > 2)
-            g_canvas[g_cidx].selColIndex--;
+        if (g_canvas[g_cidx].selColIndex > 2) g_canvas[g_cidx].selColIndex--;
     }
 
     ImGui::SameLine(width * 2 + 4);
