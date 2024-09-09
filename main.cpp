@@ -168,12 +168,13 @@ int main(int, char**)
     ImFontConfig config;
     config.OversampleH = 1; config.OversampleV = 1;
 
-    // Chinese / Japanese fonts
-    io.Fonts->AddFontFromFileTTF("c:\\Windows\\Fonts\\msyh.ttc", 18.f, &config, io.Fonts->GetGlyphRangesChineseSimplifiedCommon());
+    // Store default font
+    io.Fonts->AddFontFromMemoryTTF(const_cast<std::uint8_t*>(Custom), sizeof(Custom), 18.0f, &config, io.Fonts->GetGlyphRangesDefault());
+    //io.Fonts->AddFontFromFileTTF("c:\\Windows\\Fonts\\Tahoma.ttf", 18.0f, &config, io.Fonts->GetGlyphRangesDefault());
     config.MergeMode = true;
 
-    // Store default font
-    io.Fonts->AddFontFromMemoryTTF(const_cast<std::uint8_t*>(Custom), sizeof(Custom), 18.f, &config, io.Fonts->GetGlyphRangesDefault());
+    // Chinese / Japanese fonts
+    io.Fonts->AddFontFromFileTTF("c:\\Windows\\Fonts\\msyh.ttc", 18.0f, &config, io.Fonts->GetGlyphRangesChineseSimplifiedCommon());
 
     // Load icons!
     {
