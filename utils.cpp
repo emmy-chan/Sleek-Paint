@@ -457,3 +457,11 @@ std::vector<ImU32> cUtils::ConvertByteArrayToLayer(const std::vector<uint8_t>& b
 
     return layer;
 }
+
+float cUtils::RandomFloat(float min, float max) {
+    static std::random_device rd;   // Seed for random number generation
+    static std::mt19937 generator(rd()); // Mersenne Twister random number generator
+    std::uniform_real_distribution<float> distribution(min, max); // Uniform distribution
+
+    return distribution(generator); // Return the random float between min and max
+}

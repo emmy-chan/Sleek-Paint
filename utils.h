@@ -4,7 +4,9 @@
 #include <vector>
 #include <string>
 
-#include "glm.hpp"
+#include "ext.hpp"
+#include "gtx/norm.hpp" // glm::length2 (length sqr)
+#include "gtx/easing.hpp" // easing functions for smooth stuff
 #include "assets.h"
 #include "canvas.h"
 #include <zlib.h>
@@ -48,6 +50,7 @@ public:
 	std::vector<uint8_t> DecompressCanvasDataZlib(const std::vector<uint8_t>& compressedData, size_t originalSize);
 	std::vector<uint8_t> ConvertLayerToByteArray(const std::vector<ImU32>& layer);
 	std::vector<ImU32> ConvertByteArrayToLayer(const std::vector<uint8_t>& byteArray);
+	float RandomFloat(float min, float max);
 	//bool InitializeInputState(void);
 	//void UpdateInputState();
 	//int m_mouse_x;
