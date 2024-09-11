@@ -1365,7 +1365,7 @@ void cCanvas::Editor() {
     }
 
     // Draw a rectangle around the selected indexes
-    if (!selectedIndexes.empty()) DrawSelectionRectangle(selectedIndexes, TILE_SIZE, g_cam.x, g_cam.y, width, IM_COL32_WHITE, 2);
+    DrawSelectionRectangle(selectedIndexes, TILE_SIZE, g_cam.x, g_cam.y, width, IM_COL32_WHITE, 2);
 
     // Add canvas to history for undo-redo feature
     if (!g_canvas.empty())
