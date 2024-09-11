@@ -804,8 +804,8 @@ bool IsLineIntersectingPolygon(const std::vector<ImVec2>& polygon, ImVec2 p1, Im
     return DoLinesIntersect(p1, p2, polygon.back(), polygon.front());
 }
 
-std::unordered_set<uint64_t> GetTilesWithinPolygon(const std::vector<ImVec2>& polygon, int width, int height) {
-    std::unordered_set<uint64_t> selectedTiles;
+std::unordered_set<int> GetTilesWithinPolygon(const std::vector<ImVec2>& polygon, int width, int height) {
+    std::unordered_set<int> selectedTiles;
 
     // Calculate the bounding box of the polygon to limit the tile checks
     float minX = polygon[0].x, maxX = polygon[0].x;
@@ -1229,7 +1229,7 @@ void cCanvas::Editor() {
                 // Finalize the freeform selection
                 if (!freeformPath.empty()) {
                     // Convert the path to a polygon and select tiles within it
-                    std::unordered_set<uint64_t> selectedTiles = GetTilesWithinPolygon(freeformPath, g_canvas[g_cidx].width, g_canvas[g_cidx].height);
+                    std::unordered_set<int> selectedTiles = GetTilesWithinPolygon(freeformPath, g_canvas[g_cidx].width, g_canvas[g_cidx].height);
                     selectedIndexes.insert(selectedTiles.begin(), selectedTiles.end());
                 }
 
