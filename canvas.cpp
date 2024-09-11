@@ -878,7 +878,7 @@ void CompositeLayersToBuffer(std::vector<ImU32>& compositedBuffer, const std::ve
             const size_t pixelIndex = y * width + x;
 
             for (size_t layer : visibleLayers) {
-                const ImU32 color = tiles[layer][pixelIndex];
+                const ImU32& color = tiles[layer][pixelIndex];
                 const uint8_t pixelAlpha = (color >> IM_COL32_A_SHIFT) & 0xFF;
                 if (pixelAlpha == 0) continue;
 
