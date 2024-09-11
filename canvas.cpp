@@ -807,16 +807,43 @@ bool IsLineIntersectingPolygon(const std::vector<ImVec2>& polygon, ImVec2 p1, Im
 std::unordered_set<uint64_t> GetTilesWithinPolygon(const std::vector<ImVec2>& polygon, int width, int height) {
     std::unordered_set<uint64_t> selectedTiles;
 
-    for (int y = 0; y < height; ++y) {
-        for (int x = 0; x < width; ++x) {
-            const ImVec2 topLeft(g_cam.x + x * TILE_SIZE, g_cam.y + y * TILE_SIZE), topRight = ImVec2(topLeft.x + TILE_SIZE, topLeft.y);
-            const ImVec2 bottomLeft = ImVec2(topLeft.x, topLeft.y + TILE_SIZE), bottomRight = ImVec2(topLeft.x + TILE_SIZE, topLeft.y + TILE_SIZE);
+    // Calculate the bounding box of the polygon to limit the tile checks
+    float minX = polygon[0].x, maxX = polygon[0].x;
+    float minY = polygon[0].y, maxY = polygon[0].y;
 
-            if (IsPointInPolygon(ImVec2(topLeft.x + TILE_SIZE / 2, topLeft.y + TILE_SIZE / 2), polygon) || // Center check
-                IsLineIntersectingPolygon(polygon, topLeft, topRight) || // Top edge
-                IsLineIntersectingPolygon(polygon, topRight, bottomRight) || // Right edge
-                IsLineIntersectingPolygon(polygon, bottomRight, bottomLeft) || // Bottom edge
-                IsLineIntersectingPolygon(polygon, bottomLeft, topLeft)) { // Left edge
+    for (const auto& point : polygon) {
+        if (point.x < minX) minX = point.x;
+        if (point.x > maxX) maxX = point.x;
+        if (point.y < minY) minY = point.y;
+        if (point.y > maxY) maxY = point.y;
+    }
+
+    // Convert bounding box coordinates to tile indices
+    const int startX = std::max(0, int((minX - g_cam.x) / TILE_SIZE));
+    const int startY = std::max(0, int((minY - g_cam.y) / TILE_SIZE));
+    const int endX = std::min(width - 1, int((maxX - g_cam.x) / TILE_SIZE));
+    const int endY = std::min(height - 1, int((maxY - g_cam.y) / TILE_SIZE));
+
+    for (int y = startY; y <= endY; ++y) {
+        for (int x = startX; x <= endX; ++x) {
+            const ImVec2 topLeft(g_cam.x + x * TILE_SIZE, g_cam.y + y * TILE_SIZE);
+            const ImVec2 center(topLeft.x + TILE_SIZE / 2, topLeft.y + TILE_SIZE / 2);
+            const ImVec2 topRight(topLeft.x + TILE_SIZE, topLeft.y);
+            const ImVec2 bottomLeft(topLeft.x, topLeft.y + TILE_SIZE);
+            const ImVec2 bottomRight(topLeft.x + TILE_SIZE, topLeft.y + TILE_SIZE);
+
+            // Check if the tile's center point is inside the polygon
+            if (IsPointInPolygon(center, polygon)) {
+                const uint64_t index = x + y * width;
+                selectedTiles.insert(index);
+                continue; // No need to check edges if the center is inside
+            }
+
+            // Check if any of the tile's edges intersect with the polygon
+            if (IsLineIntersectingPolygon(polygon, topLeft, topRight) ||  // Top edge
+                IsLineIntersectingPolygon(polygon, topRight, bottomRight) ||  // Right edge
+                IsLineIntersectingPolygon(polygon, bottomRight, bottomLeft) ||  // Bottom edge
+                IsLineIntersectingPolygon(polygon, bottomLeft, topLeft)) {  // Left edge
                 const uint64_t index = x + y * width;
                 selectedTiles.insert(index);
             }
