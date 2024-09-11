@@ -200,41 +200,44 @@ ImVec2 GetTilePos(int64_t index, float tileSize, float camX, float camY, int wid
 void DrawSelectionRectangle(const std::unordered_set<uint64_t>& indexes, float tileSize, float camX, float camY, int width, ImU32 col, uint8_t thickness) {
     if (indexes.empty()) return;
 
+    ImDrawList* drawList = ImGui::GetBackgroundDrawList();
+
     std::unordered_map<uint64_t, ImVec2> tilePositions;
+    tilePositions.reserve(indexes.size());  // Reserve space in advance to avoid resizing
+
     for (uint64_t index : indexes)
         tilePositions[index] = GetTilePos(index, tileSize, camX, camY, width);
 
     auto isBorderTile = [&](uint64_t index, int dx, int dy) {
-        const uint64_t neighborIndex = index + dx + dy * width;
-        return indexes.find(neighborIndex) == indexes.end();
+        return indexes.find(index + dx + dy * width) == indexes.end();
     };
 
-    std::vector<ImVec2> borderPoints;
+    std::vector<std::pair<ImVec2, ImVec2>> borderLines;  // Store border line pairs
 
     for (const auto& [index, pos] : tilePositions) {
-        if (isBorderTile(index, -1, 0)) {
-            borderPoints.push_back(pos); // Left border
-            borderPoints.push_back(ImVec2(pos.x, pos.y + tileSize));
+        ImVec2 topLeft = pos;
+        ImVec2 bottomRight = ImVec2(pos.x + tileSize, pos.y + tileSize);
+
+        // Add lines based on neighboring tiles
+        if (isBorderTile(index, -1, 0)) {  // Left border
+            borderLines.emplace_back(topLeft, ImVec2(topLeft.x, bottomRight.y));
         }
-        if (isBorderTile(index, 1, 0)) {
-            borderPoints.push_back(ImVec2(pos.x + tileSize, pos.y)); // Right border
-            borderPoints.push_back(ImVec2(pos.x + tileSize, pos.y + tileSize));
+        if (isBorderTile(index, 1, 0)) {  // Right border
+            borderLines.emplace_back(ImVec2(bottomRight.x, topLeft.y), bottomRight);
         }
-        if (isBorderTile(index, 0, -1)) {
-            borderPoints.push_back(pos); // Top border
-            borderPoints.push_back(ImVec2(pos.x + tileSize, pos.y));
+        if (isBorderTile(index, 0, -1)) {  // Top border
+            borderLines.emplace_back(topLeft, ImVec2(bottomRight.x, topLeft.y));
         }
-        if (isBorderTile(index, 0, 1)) {
-            borderPoints.push_back(ImVec2(pos.x, pos.y + tileSize)); // Bottom border
-            borderPoints.push_back(ImVec2(pos.x + tileSize, pos.y + tileSize));
+        if (isBorderTile(index, 0, 1)) {  // Bottom border
+            borderLines.emplace_back(ImVec2(topLeft.x, bottomRight.y), bottomRight);
         }
     }
 
-    for (size_t i = 0; i < borderPoints.size(); i += 2)
-        ImGui::GetBackgroundDrawList()->AddLine(borderPoints[i], borderPoints[i + 1], IM_COL32_BLACK, float(thickness * 2));
-
-    for (size_t i = 0; i < borderPoints.size(); i += 2)
-        ImGui::GetBackgroundDrawList()->AddLine(borderPoints[i], borderPoints[i + 1], col, float(thickness));
+    // Draw all borders in one pass
+    for (const auto& [p1, p2] : borderLines) {
+        drawList->AddLine(p1, p2, IM_COL32_BLACK, float(thickness * 2));  // Outline
+        drawList->AddLine(p1, p2, col, float(thickness));  // Main color
+    }
 }
 
 // Check if there is an image available in the clipboard
