@@ -197,7 +197,7 @@ ImVec2 GetTilePos(int64_t index, float tileSize, float camX, float camY, int wid
     return { camX + float(index % width) * tileSize, camY + float(index / width) * tileSize };
 }
 
-void DrawSelectionRectangle(const std::unordered_set<uint64_t>& indexes, float tileSize, float camX, float camY, int width, ImU32 col, uint8_t thickness) {
+void DrawSelectionRectangle(const std::unordered_set<int>& indexes, float tileSize, float camX, float camY, int width, ImU32 col, uint8_t thickness) {
     if (indexes.empty()) return;
 
     ImDrawList* drawList = ImGui::GetBackgroundDrawList();
@@ -333,7 +333,7 @@ void cCanvas::PasteImageFromClipboard() {
     printf("Image pasted successfully.\n");
 }
 
-std::unordered_set<uint64_t> initialSelectedIndexes;
+std::unordered_set<int> initialSelectedIndexes;
 
 void cCanvas::PasteSelection() {
     // Ensure there is something to paste
@@ -346,7 +346,7 @@ void cCanvas::PasteSelection() {
     NewLayer();
     g_canvas[g_cidx].selLayerIndex = g_canvas[g_cidx].tiles.size() - (size_t)1; // Set to the newly created layer
 
-    std::unordered_set<uint64_t> newSelectedIndexes;
+    std::unordered_set<int> newSelectedIndexes;
     for (const auto& tile : copiedTiles) {
         const int selectX = tile.first % g_canvas[g_cidx].width, selectY = tile.first / g_canvas[g_cidx].width;
 
@@ -1136,8 +1136,8 @@ void cCanvas::Editor() {
                 const int offsetX = static_cast<int>((ImGui::GetMousePos().x - mouseStart.x) / TILE_SIZE) * TILE_SIZE;
                 const int offsetY = static_cast<int>((ImGui::GetMousePos().y - mouseStart.y) / TILE_SIZE) * TILE_SIZE;
 
-                std::unordered_set<uint64_t> newSelectedIndexes; // Changed to uint32_t
-                std::unordered_map<uint64_t, ImU32> newTileColors; // Changed to uint32_t
+                std::unordered_set<int> newSelectedIndexes; // Changed to uint32_t
+                std::unordered_map<int, ImU32> newTileColors; // Changed to uint32_t
 
                 for (const auto& index : initialSelectedIndexes) {
                     const int selectX = index % width, selectY = index / width;

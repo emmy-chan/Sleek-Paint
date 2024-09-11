@@ -13,8 +13,8 @@ inline FT_Face face;
 inline ID3D11Texture2D* canvasTexture = nullptr;
 inline ID3D11ShaderResourceView* canvasSRV = nullptr;
 inline ID3D11SamplerState* g_pSamplerStatePoint = nullptr;
-inline std::unordered_set<uint64_t> selectedIndexes;
-inline std::unordered_map<uint64_t, std::vector<uint8_t>> copiedTiles; // Store copied tiles and their colors
+inline std::unordered_set<int> selectedIndexes;
+inline std::unordered_map<int, std::vector<uint8_t>> copiedTiles; // Store copied tiles and their colors
 inline std::vector<ImVec2> freeformPath;
 inline uint8_t TILE_SIZE = 16;
 inline uint8_t paintToolSelected = 0;

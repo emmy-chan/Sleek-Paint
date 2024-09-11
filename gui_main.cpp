@@ -159,7 +159,7 @@ void cGUI::Display()
 
                     // Create a copy of the current tiles
                     std::vector<ImU32> newTiles = g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex];
-                    std::unordered_set<uint64_t> newSelectedIndexes;
+                    std::unordered_set<int> newSelectedIndexes;
 
                     // Clear the area within the bounding box
                     for (uint64_t y = 0; y < g_canvas[g_cidx].height; y++) {
@@ -227,7 +227,7 @@ void cGUI::Display()
 
                     // Create a copy of the current tiles
                     std::vector<ImU32> newTiles = g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex];
-                    std::unordered_set<uint64_t> newSelectedIndexes;
+                    std::unordered_set<int> newSelectedIndexes;
 
                     // Clear the area within the bounding box
                     for (uint64_t y = minY; y <= maxY; y++) {
@@ -284,7 +284,7 @@ void cGUI::Display()
                     }
 
                     // Create a new container for rotated indexes
-                    std::unordered_set<uint64_t> newSelectedIndexes;
+                    std::unordered_set<int> newSelectedIndexes;
 
                     // Create a copy of the current tiles
                     std::vector<ImU32> newTiles = g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex];
@@ -295,8 +295,8 @@ void cGUI::Display()
 
                     // Rotate the selected tiles 90 degrees within their bounding box
                     for (const auto& index : selectedIndexes) {
-                        const uint64_t x = index % g_canvas[g_cidx].width;
-                        const uint64_t y = index / g_canvas[g_cidx].width;
+                        const int x = index % g_canvas[g_cidx].width;
+                        const int y = index / g_canvas[g_cidx].width;
 
                         // Calculate new position relative to the bounding box center
                         const int newX = minY + (y - minY);
@@ -344,7 +344,7 @@ void cGUI::Display()
 
                     // Create a copy of the current tiles
                     std::vector<ImU32> newTiles = g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex];
-                    std::unordered_set<uint64_t> newSelectedIndexes;
+                    std::unordered_set<int> newSelectedIndexes;
 
                     // Clear the area within the bounding box
                     for (uint64_t y = 0; y < g_canvas[g_cidx].height; y++) {
