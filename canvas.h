@@ -7,8 +7,7 @@
 #include <ft2build.h>
 #include FT_FREETYPE_H
 
-//The id of our current selected canvas project!
-extern uint16_t g_cidx;
+extern uint8_t g_cidx; //The id of our current selected canvas project!
 inline FT_Face face;
 inline ID3D11Texture2D* canvasTexture = nullptr;
 inline ID3D11ShaderResourceView* canvasSRV = nullptr;
