@@ -10,7 +10,7 @@
 #include "data_manager.h"
 
 std::vector<cCanvas> g_canvas = std::vector<cCanvas>();
-uint16_t g_cidx = uint16_t();
+uint8_t g_cidx = uint8_t();
 
 #include <utility> // for std::pair
 #include <set>
