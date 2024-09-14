@@ -1133,19 +1133,15 @@ void cCanvas::Editor() {
             }
 
             if (g_util.MouseReleased(0)) {
-                const int offsetX = static_cast<int>((ImGui::GetMousePos().x - mouseStart.x) / TILE_SIZE) * TILE_SIZE;
-                const int offsetY = static_cast<int>((ImGui::GetMousePos().y - mouseStart.y) / TILE_SIZE) * TILE_SIZE;
-
-                std::unordered_set<int> newSelectedIndexes; // Changed to uint32_t
-                std::unordered_map<int, ImU32> newTileColors; // Changed to uint32_t
+                const int offsetX = static_cast<int>((ImGui::GetMousePos().x - mouseStart.x) / TILE_SIZE) * TILE_SIZE, offsetY = static_cast<int>((ImGui::GetMousePos().y - mouseStart.y) / TILE_SIZE) * TILE_SIZE;
+                std::unordered_set<int> newSelectedIndexes;
+                std::unordered_map<int, ImU32> newTileColors;
 
                 for (const auto& index : initialSelectedIndexes) {
                     const int selectX = index % width, selectY = index / width;
+                    const int newX = (selectX + offsetX / TILE_SIZE + width) % width, newY = (selectY + offsetY / TILE_SIZE + height) % height; // Wrap positions within canvas boundaries
 
-                    // Wrap positions within canvas boundaries
-                    const int newX = (selectX + offsetX / TILE_SIZE + width) % width, newY = (selectY + offsetY / TILE_SIZE + height) % height;
-
-                    const uint32_t newIndex = newX + newY * width; // Changed to uint32_t
+                    const uint32_t newIndex = newX + newY * width;
                     newSelectedIndexes.insert(newIndex);
                     newTileColors[newIndex] = tiles[g_canvas[g_cidx].selLayerIndex][index];
                 }
@@ -1166,10 +1162,8 @@ void cCanvas::Editor() {
             else
                 d.AddRectFilled({ g_cam.x + x * TILE_SIZE, g_cam.y + y * TILE_SIZE }, { g_cam.x + x * TILE_SIZE + TILE_SIZE, g_cam.y + y * TILE_SIZE + TILE_SIZE }, myCols[selColIndex]);
 
-            if (g_util.MouseReleased(0)) {
-                const uint16_t startX = static_cast<int>((mouseStart.x - g_cam.x) / TILE_SIZE), startY = static_cast<int>((mouseStart.y - g_cam.y) / TILE_SIZE); // Convert the screen coordinates to tile coordinates
-                DrawLineOnCanvas(startX, startY, x, y, myCols[selColIndex]); // Draw the line on the canvas
-            }
+            if (g_util.MouseReleased(0))
+                DrawLineOnCanvas(static_cast<int>((mouseStart.x - g_cam.x) / TILE_SIZE), static_cast<int>((mouseStart.y - g_cam.y) / TILE_SIZE), x, y, myCols[selColIndex]); // Draw the line on the canvas
 
             break;
         case TOOL_SQUARE:
@@ -1178,10 +1172,8 @@ void cCanvas::Editor() {
             else
                 d.AddRectFilled({ g_cam.x + x * TILE_SIZE, g_cam.y + y * TILE_SIZE }, { g_cam.x + x * TILE_SIZE + TILE_SIZE, g_cam.y + y * TILE_SIZE + TILE_SIZE }, myCols[selColIndex]);
 
-            if (g_util.MouseReleased(0)) {
-                const uint16_t startX = static_cast<int>((mouseStart.x - g_cam.x) / TILE_SIZE), startY = static_cast<int>((mouseStart.y - g_cam.y) / TILE_SIZE); // Convert the screen coordinates to tile coordinates
-                DrawRectangleOnCanvas(startX, startY, x, y, myCols[selColIndex]); // Draw the rectangle on the canvas
-            }
+            if (g_util.MouseReleased(0))
+                DrawRectangleOnCanvas(static_cast<int>((mouseStart.x - g_cam.x) / TILE_SIZE), static_cast<int>((mouseStart.y - g_cam.y) / TILE_SIZE), x, y, myCols[selColIndex]); // Draw the rectangle on the canvas
 
             break;
         case TOOL_ELIPSE:
@@ -1190,10 +1182,8 @@ void cCanvas::Editor() {
             else
                 d.AddRectFilled({ g_cam.x + x * TILE_SIZE, g_cam.y + y * TILE_SIZE }, { g_cam.x + x * TILE_SIZE + TILE_SIZE, g_cam.y + y * TILE_SIZE + TILE_SIZE }, myCols[selColIndex]);
 
-            if (g_util.MouseReleased(0)) {
-                const uint16_t startX = static_cast<int>((mouseStart.x - g_cam.x) / TILE_SIZE), startY = static_cast<int>((mouseStart.y - g_cam.y) / TILE_SIZE); // Convert the screen coordinates to tile coordinates
-                DrawCircleOnCanvas(startX, startY, x, y, myCols[selColIndex]); // Draw the ellipse on the canvas
-            }
+            if (g_util.MouseReleased(0))
+                DrawCircleOnCanvas(static_cast<int>((mouseStart.x - g_cam.x) / TILE_SIZE), static_cast<int>((mouseStart.y - g_cam.y) / TILE_SIZE), x, y, myCols[selColIndex]); // Draw the ellipse on the canvas
 
             break;
         case TOOL_ZOOM:
@@ -1383,15 +1373,13 @@ void cCanvas::Editor() {
 
             // Draw blinking cursor with corrected position and height
             if (fmod(ImGui::GetTime(), 1.0f) > 0.5f) {
-                ImVec2 cursorPos1 = ImVec2(cursorPos.x, cursorPos.y - cursorHeight);
-                ImVec2 cursorPos2 = ImVec2(cursorPos.x, cursorPos.y + cursorHeight);
+                ImVec2 cursorPos1 = ImVec2(cursorPos.x, cursorPos.y - cursorHeight), cursorPos2 = ImVec2(cursorPos.x, cursorPos.y + cursorHeight);
                 d.AddLine(cursorPos1, cursorPos2, IM_COL32_BLACK, 2.0f);
                 d.AddLine(cursorPos1, cursorPos2, IM_COL32_WHITE, 1.0f);
             }
         }
-        else {
+        else
             isTypingText = false;
-        }
     }
 
     // Draw a rectangle around the selected indexes
