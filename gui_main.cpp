@@ -590,13 +590,13 @@ void cGUI::Display()
         ImGui::Begin("##ScrollH", NULL, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove);
         ImGui::SetWindowSize({ ImGui::GetWindowWidth() - 20, 20});
         ImGui::PushItemWidth(ImGui::GetWindowWidth());
-        ImGui::SliderFloat("##ScrollHorizontal", &g_cam.x, glm::abs((g_canvas[g_cidx].width * (TILE_SIZE * 1.685f))), -glm::abs((g_canvas[g_cidx].width * TILE_SIZE)), "");
+        ImGui::SliderFloat("##ScrollHorizontal", &g_cam.x, glm::abs((g_canvas[g_cidx].width * TILE_SIZE + io.DisplaySize.x - 197)), -glm::abs((g_canvas[g_cidx].width * TILE_SIZE)), "");
         ImGui::End();
 
         ImGui::SetNextWindowPos({ io.DisplaySize.x - 60, 24 });
         ImGui::SetNextWindowSize({ 20, io.DisplaySize.y - 43 });
         ImGui::Begin("##ScrollV", NULL, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoBringToFrontOnFocus);
-        ImGui::VSliderFloat("##ScrollVertical", { 20, ImGui::GetWindowHeight() }, &g_cam.y, -glm::abs((g_canvas[g_cidx].height * TILE_SIZE)), glm::abs(((g_canvas[g_cidx].height * TILE_SIZE)) + 125), "");
+        ImGui::VSliderFloat("##ScrollVertical", { 20, ImGui::GetWindowHeight() }, &g_cam.y, -glm::abs((g_canvas[g_cidx].height * TILE_SIZE)), glm::abs(((g_canvas[g_cidx].height * TILE_SIZE + io.DisplaySize.y - 369))), "");
         ImGui::End();
 
         ImGui::PopStyleVar(2);
