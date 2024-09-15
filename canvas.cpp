@@ -18,6 +18,7 @@ uint8_t g_cidx = uint8_t();
 #include "assets.h"
 #include <iostream>
 #include <execution>
+#include "ui_states.h"
 
 void cCanvas::CreateCanvasTexture(ID3D11Device* device, uint32_t width, uint32_t height) {
     if (!device) {
@@ -935,12 +936,19 @@ void UpdateCanvasTexture(ID3D11DeviceContext* context, const std::vector<ImU32>&
 }
 
 void cCanvas::Editor() {
+    key_state.update();
+
+    if (GetAsyncKeyState(VK_CONTROL) && key_state.key_pressed('N') & 1)
+        g_app.ui_state = std::make_unique<cUIStateNewProject>();
+    else if (GetAsyncKeyState(VK_CONTROL) && key_state.key_pressed('O') & 1)
+        g_app.ui_state = std::make_unique<cUIStateOpenProject>();
+    else if (GetAsyncKeyState(VK_CONTROL) && key_state.key_pressed('S') & 1)
+        g_app.ui_state = std::make_unique<cUIStateSaveProject>();
+
     if (g_canvas.empty() || g_canvas[g_cidx].tiles.empty() || g_canvas[g_cidx].layerVisibility.empty()) return;
     auto& d = *ImGui::GetBackgroundDrawList(); auto& io = ImGui::GetIO(); static bool isTypingText = false;
 
     if (!g_app.ui_state) {
-        key_state.update();
-
         if (!isTypingText) {
             if (GetAsyncKeyState(VK_CONTROL) && key_state.key_pressed('Z') & 1) {
                 // Undo operation

@@ -235,7 +235,7 @@ int main(int, char**)
         ImGui::NewFrame();
 
         // Update UI state / Canvas
-        if (!g_canvas.empty()) g_canvas[g_cidx].Editor();
+        g_canvas[g_cidx].Editor();
         if (g_app.ui_state) g_app.ui_state->Update();
 
         {
