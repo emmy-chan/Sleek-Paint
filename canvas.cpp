@@ -17,6 +17,7 @@ uint8_t g_cidx = uint8_t();
 #include "keystate.h"
 #include "assets.h"
 #include <iostream>
+#include <execution>
 
 void cCanvas::CreateCanvasTexture(ID3D11Device* device, uint32_t width, uint32_t height) {
     if (!device) {
@@ -585,7 +586,7 @@ void DrawTextOnCanvasFreeType(FT_Face& face, const std::string& text, int mouseX
 }
 
 void applyBrushEffect(const ImVec2& lastMousePos, int x, int y, const ImU32& col) {
-    const float brushRadius = brush_size / 2.0f;
+    const float brushRadius = brush_size / 2.0f + (pen_pressure * 4);
     const uint8_t brushRadiusInt = static_cast<int>(brushRadius);
 
     // Check if there is a valid previous position
@@ -915,18 +916,19 @@ void UpdateCanvasTexture(ID3D11DeviceContext* context, const std::vector<ImU32>&
     D3D11_MAPPED_SUBRESOURCE mappedResource;
     HRESULT hr = context->Map(canvasTexture, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
     if (FAILED(hr)) {
-        printf("Failed to map texture for canvas update. HRESULT: 0x%08X\n", hr); return;
+        printf("Failed to map texture for canvas update. HRESULT: 0x%08X\n", hr);
+        return;
     }
 
     ImU32* dest = static_cast<ImU32*>(mappedResource.pData);
     const size_t rowPitch = mappedResource.RowPitch / sizeof(ImU32);
 
-    if (rowPitch == width) // Check if rowPitch matches the buffer's row size (width) to copy all at once
-        memcpy(dest, compositedBuffer.data(), width * height * sizeof(ImU32)); // If rowPitch and width match, perform a single memory copy for the entire buffer
+    if (rowPitch == width)
+        std::copy(std::execution::par_unseq, compositedBuffer.begin(), compositedBuffer.end(), dest); // Parallelized copy
     else {
         #pragma omp parallel for
-        for (int y = 0; y < height; ++y) // Otherwise, fall back to row-by-row copy
-            memcpy(dest + y * rowPitch, compositedBuffer.data() + y * width, width * sizeof(ImU32));
+        for (int y = 0; y < height; ++y)
+            std::copy(compositedBuffer.data() + y * width, compositedBuffer.data() + (y + 1) * width, dest + y * rowPitch);
     }
 
     context->Unmap(canvasTexture, 0);

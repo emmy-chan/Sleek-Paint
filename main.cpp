@@ -352,6 +352,22 @@ LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 
     switch (msg)
     {
+    case WM_POINTERUPDATE: {
+        UINT32 pointerId = GET_POINTERID_WPARAM(wParam);
+        POINTER_INFO pointerInfo;
+
+        if (GetPointerInfo(pointerId, &pointerInfo)) {
+            if (pointerInfo.pointerType == PT_PEN) {
+                POINTER_PEN_INFO penInfo;
+                if (GetPointerPenInfo(pointerId, &penInfo)) {
+                    // Get pressure between 0.0 (no pressure) and 1.0 (max pressure)
+                    pen_pressure = penInfo.pressure / 1024.0f;  // Maximum pressure value is 1024
+                    std::cout << "Pressure: " << pen_pressure << std::endl;
+                }
+            }
+        }
+        break;
+    }
     case WM_SIZE:
         if (g_app.g_pd3dDevice != NULL && wParam != SIZE_MINIMIZED)
         {
