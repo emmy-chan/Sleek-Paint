@@ -88,6 +88,50 @@ void cGUI::Display()
                 g_canvas[g_cidx].UpdateCanvasHistory();
             }
 
+            if (ImGui::MenuItem(ICON_FA_TINT " Apply Selection Blur") && g_canvas.size() > 0) {
+                const uint8_t blurRadius = glm::min(int(selectedIndexes.size() * 0.05f), 4);
+
+                // Apply blur to the selected blocks
+                for (const auto& index : selectedIndexes) {
+                    const uint64_t x = index % g_canvas[g_cidx].width, y = index / g_canvas[g_cidx].width;
+                    uint64_t redSum = 0, greenSum = 0, blueSum = 0, alphaSum = 0, pixelCount = 0;
+
+                    // Loop over the neighboring pixels within the blur radius
+                    for (int64_t by = -blurRadius; by <= blurRadius; ++by) {
+                        for (int64_t bx = -blurRadius; bx <= blurRadius; ++bx) {
+                            const int64_t nx = x + bx;
+                            const int64_t ny = y + by;
+                            // Make sure the neighboring pixel is within canvas bounds
+                            if (nx >= 0 && nx < g_canvas[g_cidx].width && ny >= 0 && ny < g_canvas[g_cidx].height) {
+                                const uint64_t neighborIndex = nx + ny * g_canvas[g_cidx].width;
+                                // Check if the neighboring pixel is part of the selection
+                                if (selectedIndexes.find(neighborIndex) != selectedIndexes.end()) {
+                                    const ImU32 color = g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex][neighborIndex];
+                                    redSum += (color >> IM_COL32_R_SHIFT) & 0xFF;
+                                    greenSum += (color >> IM_COL32_G_SHIFT) & 0xFF;
+                                    blueSum += (color >> IM_COL32_B_SHIFT) & 0xFF;
+                                    alphaSum += (color >> IM_COL32_A_SHIFT) & 0xFF;
+                                    ++pixelCount;
+                                }
+                            }
+                        }
+                    }
+
+                    if (pixelCount > 0) {
+                        // Calculate the average color
+                        const ImU32 avgColor = IM_COL32(
+                            redSum / pixelCount, greenSum / pixelCount,
+                            blueSum / pixelCount, alphaSum / pixelCount
+                        );
+
+                        // Assign the average color to the current pixel
+                        g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex][index] = avgColor;
+                    }
+                }
+
+                g_canvas[g_cidx].UpdateCanvasHistory();
+            }
+
             if (ImGui::MenuItem(ICON_FA_TH " Apply Selection Pixelate") && g_canvas.size() > 0) {
                 // Define the pixelation block size
                 const uint8_t blockSize = glm::min(int(selectedIndexes.size() * 0.1f), 8);
