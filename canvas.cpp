@@ -927,7 +927,7 @@ void UpdateCanvasTexture(ID3D11DeviceContext* context, const std::vector<ImU32>&
     if (rowPitch == width)
         std::copy(std::execution::par_unseq, compositedBuffer.begin(), compositedBuffer.end(), dest); // Parallelized copy
     else {
-        #pragma omp parallel for
+        #pragma omp simd
         for (int y = 0; y < height; ++y)
             std::copy(compositedBuffer.data() + y * width, compositedBuffer.data() + (y + 1) * width, dest + y * rowPitch);
     }
