@@ -132,6 +132,72 @@ void cGUI::Display()
                 g_canvas[g_cidx].UpdateCanvasHistory();
             }
 
+            if (ImGui::MenuItem(ICON_FA_MAGIC " Apply Selection Noise") && g_canvas.size() > 0) {
+                // Define the block size for blending
+                const uint8_t blockSize = glm::min(int(selectedIndexes.size() * 0.1f), 8);
+
+                // Apply colored noise blending to the selected blocks
+                for (const auto& index : selectedIndexes) {
+                    const uint64_t x = index % g_canvas[g_cidx].width, y = index / g_canvas[g_cidx].width;
+                    const uint64_t blockX = x / blockSize * blockSize, blockY = y / blockSize * blockSize;
+                    uint64_t redSum = 0, greenSum = 0, blueSum = 0, alphaSum = 0, pixelCount = 0;
+
+                    // First, compute the average color of the block
+                    for (uint64_t by = 0; by < blockSize && (blockY + by) < g_canvas[g_cidx].height; ++by) {
+                        for (uint64_t bx = 0; bx < blockSize && (blockX + bx) < g_canvas[g_cidx].width; ++bx) {
+                            const uint64_t blockIndex = (blockX + bx) + (blockY + by) * g_canvas[g_cidx].width;
+                            if (selectedIndexes.find(blockIndex) != selectedIndexes.end()) {
+                                const ImU32 color = g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex][blockIndex];
+                                redSum += (color >> IM_COL32_R_SHIFT) & 0xFF;
+                                greenSum += (color >> IM_COL32_G_SHIFT) & 0xFF;
+                                blueSum += (color >> IM_COL32_B_SHIFT) & 0xFF;
+                                alphaSum += (color >> IM_COL32_A_SHIFT) & 0xFF;
+                                ++pixelCount;
+                            }
+                        }
+                    }
+
+                    if (pixelCount > 0) {
+                        const ImU32 avgColor = IM_COL32(
+                            redSum / pixelCount, greenSum / pixelCount,
+                            blueSum / pixelCount, alphaSum / pixelCount
+                        );
+
+                        // Now, apply normalized colored noise with fading effect to the block
+                        for (uint64_t by = 0; by < blockSize && (blockY + by) < g_canvas[g_cidx].height; ++by) {
+                            for (uint64_t bx = 0; bx < blockSize && (blockX + bx) < g_canvas[g_cidx].width; ++bx) {
+                                const uint64_t blockIndex = (blockX + bx) + (blockY + by) * g_canvas[g_cidx].width;
+                                if (selectedIndexes.find(blockIndex) != selectedIndexes.end()) {
+
+                                    // Generate random noise for each color channel (small range to avoid darkening)
+                                    float redNoise = ((float(rand()) / float(RAND_MAX)) - 0.5f) * 0.2f * 255.0f; // Between -25 and 25
+                                    float greenNoise = ((float(rand()) / float(RAND_MAX)) - 0.5f) * 0.2f * 255.0f;
+                                    float blueNoise = ((float(rand()) / float(RAND_MAX)) - 0.5f) * 0.2f * 255.0f;
+
+                                    // Fade the noise towards the edges of the block
+                                    float fadeFactor = 1.0f - glm::max(glm::abs(float(bx) - blockSize / 2.0f) / float(blockSize / 2.0f),
+                                        glm::abs(float(by) - blockSize / 2.0f) / float(blockSize / 2.0f));
+                                    redNoise *= fadeFactor;
+                                    greenNoise *= fadeFactor;
+                                    blueNoise *= fadeFactor;
+
+                                    // Blend the noise with the average color for each channel
+                                    const uint8_t r = glm::clamp(int((redSum / pixelCount) + redNoise), 0, 255);
+                                    const uint8_t g = glm::clamp(int((greenSum / pixelCount) + greenNoise), 0, 255);
+                                    const uint8_t b = glm::clamp(int((blueSum / pixelCount) + blueNoise), 0, 255);
+                                    const uint8_t a = glm::clamp(int((alphaSum / pixelCount)), 0, 255); // Keep alpha unchanged
+
+                                    const ImU32 blendedColor = IM_COL32(r, g, b, a);
+                                    g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex][blockIndex] = blendedColor;
+                                }
+                            }
+                        }
+                    }
+                }
+
+                g_canvas[g_cidx].UpdateCanvasHistory();
+            }
+
             if (ImGui::MenuItem(ICON_FA_TH " Apply Selection Pixelate") && g_canvas.size() > 0) {
                 // Define the pixelation block size
                 const uint8_t blockSize = glm::min(int(selectedIndexes.size() * 0.1f), 8);
