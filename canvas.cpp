@@ -74,6 +74,29 @@ void cCanvas::Initialize(const std::vector<ImU32>& initial_data, const uint16_t&
 
     // Create new layer
     NewLayer("Layer 1", initial_data, color);
+
+    // Calculate the canvas size in pixels
+    const float canvasWidthInPixels = width * TILE_SIZE;
+    const float canvasHeightInPixels = height * TILE_SIZE;
+
+    // Adjust camera centering logic based on the actual window size
+    const float windowWidth = ImGui::GetIO().DisplaySize.x;
+    const float windowHeight = ImGui::GetIO().DisplaySize.y;
+
+    // Define the left UI panel width
+    const float leftUIPanelWidth = 197.0f; // Adjust this value based on your actual left panel width
+
+    // Add space for scrollbar thickness (adjust based on your scrollbar size)
+    const float horizontalScrollbarThickness = 60.0f;
+    const float verticalScrollbarThickness = 20.0f;
+
+    // Calculate horizontal and vertical middle points, accounting for the left UI panel and scrollbars
+    const float horizontalCenter = -(canvasWidthInPixels - (windowWidth + leftUIPanelWidth) + horizontalScrollbarThickness) / 2.0f;
+    const float verticalCenter = -(canvasHeightInPixels - windowHeight - verticalScrollbarThickness) / 2.0f;
+
+    // Set the camera to the calculated centered position
+    g_cam.x = horizontalCenter;
+    g_cam.y = verticalCenter;
 }
 
 void cCanvas::NewLayer(std::string name, const std::vector<ImU32>& initial_data, ImU32 color) {
