@@ -373,6 +373,7 @@ std::vector<ImU32> cUtils::DecompressCanvasDataRLE(const std::vector<uint8_t>& i
     std::vector<ImU32> decompressedData;
     if (input.empty() || input.size() % 5 != 0) return decompressedData; // Each entry has 5 bytes: count and RGBA
 
+    #pragma omp simd
     for (size_t i = 0; i < input.size(); i += 5) {
         const uint8_t count = input[i];
         const uint8_t r = input[i + 1];
