@@ -76,8 +76,8 @@ void cCanvas::Initialize(const std::vector<ImU32>& initial_data, const uint16_t&
     NewLayer("Layer 1", initial_data, color);
 
     // Zoom out if the image is larger than our display
-    if (width * TILE_SIZE > ImGui::GetIO().DisplaySize.x || height * TILE_SIZE > ImGui::GetIO().DisplaySize.y)
-        TILE_SIZE = 1;
+    while (TILE_SIZE > 1 && width * TILE_SIZE > ImGui::GetIO().DisplaySize.x || TILE_SIZE > 1 && height * TILE_SIZE > ImGui::GetIO().DisplaySize.y)
+        TILE_SIZE--;
 
     // Calculate the canvas size in pixels
     const float canvasWidthInPixels = width * TILE_SIZE;
