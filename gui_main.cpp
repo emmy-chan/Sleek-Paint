@@ -680,6 +680,7 @@ void cGUI::Display()
         ImGui::PushStyleVar(ImGuiStyleVar_ButtonTextAlign, { 0.7f, 1.f });
 
         // Determine the texture based on the current tool selection
+        // Determine the texture or icon based on the current tool selection
         void* buttonTexture = g_util.GetToolTexture(paintToolSelected);
 
         ImGui::PushStyleColor(ImGuiCol_Button,
@@ -687,8 +688,14 @@ void cGUI::Display()
             paintToolSelected == TOOL_FREEFORM_SELECT ||
             paintToolSelected == 5 ? panelActiveColor : panelColor);
 
-        // Check if the texture is valid before using it
-        if (buttonTexture) {
+        if (paintToolSelected == TOOL_WAND) {
+            // Render Font Awesome magic icon as a button
+            if (ImGui::Button(ICON_FA_MAGIC)) {
+                ImGui::OpenPopup("Select Tool Popup");
+                paintToolSelected = TOOL_WAND;
+            }
+        }
+        else if (buttonTexture) {
             // Create a button with the current tool texture, resized to 16x16
             if (ImGui::ImageButton(buttonTexture, ImVec2(16, 16))) {
                 ImGui::OpenPopup("Select Tool Popup");
@@ -702,6 +709,7 @@ void cGUI::Display()
                 paintToolSelected = TOOL_SELECT;
             }
         }
+
         ImGui::PopStyleColor();
 
         // Create the popup for all selection tools
@@ -726,7 +734,7 @@ void cGUI::Display()
 
             // Magic Wand Tool Button
             ImGui::PushStyleColor(ImGuiCol_Button, paintToolSelected == 5 ? panelActiveColor : panelColor);
-            if (ImGui::ImageButton((void*)g_assets.wand_texture, ImVec2(16, 16))) {
+            if (ImGui::Button(ICON_FA_MAGIC, ImVec2(25, 25))) {
                 paintToolSelected = 5;
                 ImGui::CloseCurrentPopup();
             }

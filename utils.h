@@ -16,9 +16,8 @@ public:
 	// Function to get the texture ID for the current selection
 	inline void* GetToolTexture(int tool) {
 		switch (tool) {
-			case 4: return (void*)g_assets.selection_texture;
+			case TOOL_SELECT: return (void*)g_assets.selection_texture;
 			case TOOL_FREEFORM_SELECT: return (void*)g_assets.freeform_selection_texture;
-			case TOOL_WAND: return (void*)g_assets.wand_texture;
 			default: return g_assets.selection_texture; // No texture if no tool is selected
 		}
 	}
