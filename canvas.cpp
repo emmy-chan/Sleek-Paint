@@ -967,9 +967,17 @@ void UpdateCanvasTexture(ID3D11DeviceContext* context, const std::vector<ImU32>&
     if (rowPitch == width)
         std::copy(std::execution::par_unseq, compositedBuffer.begin(), compositedBuffer.end(), dest); // Parallelized copy
     else {
-        #pragma omp simd
-        for (int y = 0; y < height; ++y)
-            std::copy(compositedBuffer.data() + y * width, compositedBuffer.data() + (y + 1) * width, dest + y * rowPitch);
+        // For non-contiguous memory, use explicit SIMD instructions
+        #pragma omp parallel for
+        for (int y = 0; y < height; ++y) {
+            const ImU32* src = compositedBuffer.data() + y * width;
+            ImU32* dstRow = dest + y * rowPitch;
+
+            #pragma omp simd
+            for (uint32_t x = 0; x < width; ++x) {
+                dstRow[x] = src[x];
+            }
+        }
     }
 
     context->Unmap(canvasTexture, 0);
