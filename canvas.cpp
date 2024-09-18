@@ -932,10 +932,23 @@ void CompositeLayersToBuffer(std::vector<ImU32>& compositedBuffer, const std::ve
                 }
             }
 
-            // Apply checkerboard pattern if fully transparent
-            compositedBuffer[pixelIndex] = (finalAlpha == 0)
-                ? (((x + y) % 2 == 0) ? checker1 : checker2)
-                : IM_COL32(finalR, finalG, finalB, finalAlpha);
+            // Checkerboard pattern blend based on transparency
+            ImU32 checkerColor = ((x + y) % 2 == 0) ? checker1 : checker2;
+
+            // Get checker color components
+            const uint8_t checkerR = (checkerColor >> IM_COL32_R_SHIFT) & 0xFF;
+            const uint8_t checkerG = (checkerColor >> IM_COL32_G_SHIFT) & 0xFF;
+            const uint8_t checkerB = (checkerColor >> IM_COL32_B_SHIFT) & 0xFF;
+            const uint8_t checkerA = 255;  // Checker is fully opaque
+
+            // Blend checker color with final result based on transparency
+            const uint8_t inverseAlpha = 255 - finalAlpha;
+            finalR = (finalR * finalAlpha + checkerR * inverseAlpha) >> 8;
+            finalG = (finalG * finalAlpha + checkerG * inverseAlpha) >> 8;
+            finalB = (finalB * finalAlpha + checkerB * inverseAlpha) >> 8;
+            finalAlpha = std::max(finalAlpha, inverseAlpha); // Preserve max alpha
+
+            compositedBuffer[pixelIndex] = IM_COL32(finalR, finalG, finalB, finalAlpha);
         }
     }
 }
