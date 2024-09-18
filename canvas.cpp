@@ -965,7 +965,7 @@ void UpdateCanvasTexture(ID3D11DeviceContext* context, const std::vector<ImU32>&
     const size_t rowPitch = mappedResource.RowPitch / sizeof(ImU32);
 
     if (rowPitch == width)
-        std::copy(std::execution::par_unseq, compositedBuffer.begin(), compositedBuffer.end(), dest); // Parallelized copy
+        std::memcpy(dest, compositedBuffer.data(), width * height * sizeof(ImU32));
     else {
         // For non-contiguous memory, use explicit SIMD instructions
         #pragma omp parallel for
