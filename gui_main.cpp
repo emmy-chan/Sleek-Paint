@@ -89,7 +89,7 @@ void cGUI::Display()
             }
 
             if (ImGui::MenuItem(ICON_FA_TINT " Apply Selection Blur") && g_canvas.size() > 0) {
-                const uint8_t blurRadius = glm::min(int(selectedIndexes.size() * 0.05f), 4);
+                const uint8_t blurRadius = glm::max(glm::min(int(selectedIndexes.size() * 0.05f), 4), 1);
 
                 // Apply blur to the selected blocks
                 for (const auto& index : selectedIndexes) {
@@ -134,17 +134,25 @@ void cGUI::Display()
 
             if (ImGui::MenuItem(ICON_FA_MAGIC " Apply Selection Noise") && g_canvas.size() > 0) {
                 // Define the block size for blending
-                const uint8_t blockSize = glm::min(int(selectedIndexes.size() * 0.1f), 8);
+                const uint8_t blockSize = glm::clamp(int(glm::ceil(selectedIndexes.size() * 0.1f)), 1, 8);
 
                 // Apply colored noise blending to the selected blocks
                 for (const auto& index : selectedIndexes) {
                     const uint64_t x = index % g_canvas[g_cidx].width, y = index / g_canvas[g_cidx].width;
-                    const uint64_t blockX = x / blockSize * blockSize, blockY = y / blockSize * blockSize;
+
+                    // Ensure blockX and blockY stay within canvas boundaries
+                    const uint64_t blockX = glm::min(x / blockSize * blockSize, (uint64_t)g_canvas[g_cidx].width - blockSize);
+                    const uint64_t blockY = glm::min(y / blockSize * blockSize, (uint64_t)g_canvas[g_cidx].height - blockSize);
+
+                    // Adjust block size dynamically near the edges
+                    const uint64_t adjustedBlockSizeX = glm::min((uint64_t)blockSize, (uint64_t)g_canvas[g_cidx].width - blockX);
+                    const uint64_t adjustedBlockSizeY = glm::min((uint64_t)blockSize, (uint64_t)g_canvas[g_cidx].height - blockY);
+
                     uint64_t redSum = 0, greenSum = 0, blueSum = 0, alphaSum = 0, pixelCount = 0;
 
                     // First, compute the average color of the block
-                    for (uint64_t by = 0; by < blockSize && (blockY + by) < g_canvas[g_cidx].height; ++by) {
-                        for (uint64_t bx = 0; bx < blockSize && (blockX + bx) < g_canvas[g_cidx].width; ++bx) {
+                    for (uint64_t by = 0; by < adjustedBlockSizeY; ++by) {
+                        for (uint64_t bx = 0; bx < adjustedBlockSizeX; ++bx) {
                             const uint64_t blockIndex = (blockX + bx) + (blockY + by) * g_canvas[g_cidx].width;
                             if (selectedIndexes.find(blockIndex) != selectedIndexes.end()) {
                                 const ImU32 color = g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex][blockIndex];
@@ -163,14 +171,14 @@ void cGUI::Display()
                             blueSum / pixelCount, alphaSum / pixelCount
                         );
 
-                        // Now, apply normalized colored noise with fading effect to the block
-                        for (uint64_t by = 0; by < blockSize && (blockY + by) < g_canvas[g_cidx].height; ++by) {
-                            for (uint64_t bx = 0; bx < blockSize && (blockX + bx) < g_canvas[g_cidx].width; ++bx) {
+                        // Apply normalized colored noise with fading effect to the block
+                        for (uint64_t by = 0; by < adjustedBlockSizeY; ++by) {
+                            for (uint64_t bx = 0; bx < adjustedBlockSizeX; ++bx) {
                                 const uint64_t blockIndex = (blockX + bx) + (blockY + by) * g_canvas[g_cidx].width;
                                 if (selectedIndexes.find(blockIndex) != selectedIndexes.end()) {
 
-                                    // Generate random noise for each color channel (small range to avoid darkening)
-                                    float redNoise = ((float(rand()) / float(RAND_MAX)) - 0.5f) * 0.2f * 255.0f; // Between -25 and 25
+                                    // Generate random noise for each color channel
+                                    float redNoise = ((float(rand()) / float(RAND_MAX)) - 0.5f) * 0.2f * 255.0f;
                                     float greenNoise = ((float(rand()) / float(RAND_MAX)) - 0.5f) * 0.2f * 255.0f;
                                     float blueNoise = ((float(rand()) / float(RAND_MAX)) - 0.5f) * 0.2f * 255.0f;
 
