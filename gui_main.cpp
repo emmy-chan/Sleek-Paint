@@ -151,7 +151,7 @@ void cGUI::Display()
 
             if (ImGui::MenuItem(ICON_FA_MAGIC " Apply Selection Noise") && g_canvas.size() > 0) {
                 // Define the block size for blending
-                const uint8_t blockSize = 4;
+                const uint8_t blockSize = 3;
 
                 // Apply colored noise blending to the selected blocks
                 for (const auto& index : selectedIndexes) {
