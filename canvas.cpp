@@ -625,16 +625,13 @@ void applyBrushEffect(const ImVec2& lastMousePos, int x, int y, const ImU32& col
         const float distX = x - lastX, distY = y - lastY, distance = glm::sqrt(distX * distX + distY * distY);
         const int steps = static_cast<int>(distance) + 1; // Number of steps to interpolate
 
-        #pragma omp simd
         for (int i = 0; i <= steps; ++i) {
             const float t = static_cast<float>(i) / steps;
             const int brushX = static_cast<int>(lastX + t * distX), brushY = static_cast<int>(lastY + t * distY);
 
             // Apply brush effect at the interpolated position
             if (selectedIndexes.empty() || selectedIndexes.find((uint64_t)brushX + (uint64_t)brushY * g_canvas[g_cidx].width) != selectedIndexes.end()) {
-                #pragma omp simd
                 for (int offsetY = -brushRadiusInt; offsetY <= brushRadiusInt; ++offsetY) {
-                    #pragma omp simd
                     for (int offsetX = -brushRadiusInt; offsetX <= brushRadiusInt; ++offsetX) {
                         const int finalX = brushX + offsetX, finalY = brushY + offsetY;
                         if (finalX >= 0 && finalX < g_canvas[g_cidx].width && finalY >= 0 && finalY < g_canvas[g_cidx].height) {
@@ -708,7 +705,6 @@ void applyBandAidBrushEffect(const ImVec2& lastMousePos, int x, int y) {
         const float distX = x - lastX, distY = y - lastY, distance = glm::sqrt(distX * distX + distY * distY);
         const int steps = static_cast<int>(distance) + 1;
 
-        #pragma omp simd
         for (int i = 0; i <= steps; ++i) {
             const float t = static_cast<float>(i) / steps;
             const int brushX = static_cast<int>(lastX + t * distX), brushY = static_cast<int>(lastY + t * distY);
@@ -741,9 +737,7 @@ void applyBandAidEffect() {
     for (auto index : selectedIndexes) {
         const int x = index % g_canvas[g_cidx].width, y = index / g_canvas[g_cidx].width;
 
-        #pragma omp simd
         for (int offsetY = -1; offsetY <= 1; ++offsetY) {
-            #pragma omp simd
             for (int offsetX = -1; offsetX <= 1; ++offsetX) {
                 const int sampleX = x + offsetX, sampleY = y + offsetY;
 
@@ -809,12 +803,15 @@ void cCanvas::UpdateZoom(float value) {
 
 bool IsPointInPolygon(const ImVec2& point, const std::vector<ImVec2>& polygon) {
     bool inside = false;
+    size_t j = polygon.size() - 1;
+
     #pragma omp simd
-    for (size_t i = 0, j = polygon.size() - 1; i < polygon.size(); j = i++) {
+    for (size_t i = 0; i < polygon.size(); ++i) {
         if ((polygon[i].y > point.y) != (polygon[j].y > point.y) &&
             point.x < (polygon[j].x - polygon[i].x) * (point.y - polygon[i].y) / (polygon[j].y - polygon[i].y) + polygon[i].x) {
             inside = !inside;
         }
+        j = i;
     }
     return inside;
 }
