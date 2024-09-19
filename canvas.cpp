@@ -625,13 +625,16 @@ void applyBrushEffect(const ImVec2& lastMousePos, int x, int y, const ImU32& col
         const float distX = x - lastX, distY = y - lastY, distance = glm::sqrt(distX * distX + distY * distY);
         const int steps = static_cast<int>(distance) + 1; // Number of steps to interpolate
 
+        #pragma omp simd
         for (int i = 0; i <= steps; ++i) {
             const float t = static_cast<float>(i) / steps;
             const int brushX = static_cast<int>(lastX + t * distX), brushY = static_cast<int>(lastY + t * distY);
 
             // Apply brush effect at the interpolated position
             if (selectedIndexes.empty() || selectedIndexes.find((uint64_t)brushX + (uint64_t)brushY * g_canvas[g_cidx].width) != selectedIndexes.end()) {
+                #pragma omp simd
                 for (int offsetY = -brushRadiusInt; offsetY <= brushRadiusInt; ++offsetY) {
+                    #pragma omp simd
                     for (int offsetX = -brushRadiusInt; offsetX <= brushRadiusInt; ++offsetX) {
                         const int finalX = brushX + offsetX, finalY = brushY + offsetY;
                         if (finalX >= 0 && finalX < g_canvas[g_cidx].width && finalY >= 0 && finalY < g_canvas[g_cidx].height) {
@@ -705,6 +708,7 @@ void applyBandAidBrushEffect(const ImVec2& lastMousePos, int x, int y) {
         const float distX = x - lastX, distY = y - lastY, distance = glm::sqrt(distX * distX + distY * distY);
         const int steps = static_cast<int>(distance) + 1;
 
+        #pragma omp simd
         for (int i = 0; i <= steps; ++i) {
             const float t = static_cast<float>(i) / steps;
             const int brushX = static_cast<int>(lastX + t * distX), brushY = static_cast<int>(lastY + t * distY);
@@ -737,7 +741,9 @@ void applyBandAidEffect() {
     for (auto index : selectedIndexes) {
         const int x = index % g_canvas[g_cidx].width, y = index / g_canvas[g_cidx].width;
 
+        #pragma omp simd
         for (int offsetY = -1; offsetY <= 1; ++offsetY) {
+            #pragma omp simd
             for (int offsetX = -1; offsetX <= 1; ++offsetX) {
                 const int sampleX = x + offsetX, sampleY = y + offsetY;
 
@@ -803,6 +809,7 @@ void cCanvas::UpdateZoom(float value) {
 
 bool IsPointInPolygon(const ImVec2& point, const std::vector<ImVec2>& polygon) {
     bool inside = false;
+    #pragma omp simd
     for (size_t i = 0, j = polygon.size() - 1; i < polygon.size(); j = i++) {
         if ((polygon[i].y > point.y) != (polygon[j].y > point.y) &&
             point.x < (polygon[j].x - polygon[i].x) * (point.y - polygon[i].y) / (polygon[j].y - polygon[i].y) + polygon[i].x) {
@@ -854,6 +861,7 @@ std::unordered_set<int> GetTilesWithinPolygon(const std::vector<ImVec2>& polygon
     const int endY = std::min(height - 1, int((maxY - g_cam.y) / TILE_SIZE));
 
     for (int y = startY; y <= endY; ++y) {
+        #pragma omp simd
         for (int x = startX; x <= endX; ++x) {
             const ImVec2 topLeft(g_cam.x + x * TILE_SIZE, g_cam.y + y * TILE_SIZE);
             const ImVec2 center(topLeft.x + TILE_SIZE / 2, topLeft.y + TILE_SIZE / 2);
@@ -906,29 +914,32 @@ void CompositeLayersToBuffer(std::vector<ImU32>& compositedBuffer, const std::ve
             uint8_t finalAlpha = 0, finalR = 0, finalG = 0, finalB = 0;
             const size_t pixelIndex = y * width + x;
 
-            for (size_t layer : visibleLayers) {
+            #pragma omp simd
+            for (size_t i = 0; i < visibleLayers.size(); ++i) {
+                const auto& layer = visibleLayers[i];
                 const ImU32& color = tiles[layer][pixelIndex];
                 const uint8_t pixelAlpha = (color >> IM_COL32_A_SHIFT) & 0xFF;
-                if (pixelAlpha == 0) continue;
 
-                const uint8_t layerAlpha = layerOpacity[layer];
-                const uint8_t blendedAlpha = (pixelAlpha * layerAlpha) >> 8; // Approximate alpha blending using bit shift
+                if (pixelAlpha != 0) {
+                    const uint8_t layerAlpha = layerOpacity[layer];
+                    const uint8_t blendedAlpha = (pixelAlpha * layerAlpha) >> 8; // Approximate alpha blending using bit shift
 
-                if (blendedAlpha > 0) {
-                    const uint8_t colorR = (color >> IM_COL32_R_SHIFT) & 0xFF;
-                    const uint8_t colorG = (color >> IM_COL32_G_SHIFT) & 0xFF;
-                    const uint8_t colorB = (color >> IM_COL32_B_SHIFT) & 0xFF;
+                    if (blendedAlpha > 0) {
+                        const uint8_t colorR = (color >> IM_COL32_R_SHIFT) & 0xFF;
+                        const uint8_t colorG = (color >> IM_COL32_G_SHIFT) & 0xFF;
+                        const uint8_t colorB = (color >> IM_COL32_B_SHIFT) & 0xFF;
 
-                    // Pre-multiply the color with the blended alpha using bit shifting
-                    const uint16_t blendR = (colorR * blendedAlpha) >> 8;
-                    const uint16_t blendG = (colorG * blendedAlpha) >> 8;
-                    const uint16_t blendB = (colorB * blendedAlpha) >> 8;
+                        // Pre-multiply the color with the blended alpha using bit shifting
+                        const uint16_t blendR = (colorR * blendedAlpha) >> 8;
+                        const uint16_t blendG = (colorG * blendedAlpha) >> 8;
+                        const uint16_t blendB = (colorB * blendedAlpha) >> 8;
 
-                    // Optimized alpha blending using bit shifting for division approximation
-                    finalR = (blendR + ((finalR * (255 - blendedAlpha)) >> 8));
-                    finalG = (blendG + ((finalG * (255 - blendedAlpha)) >> 8));
-                    finalB = (blendB + ((finalB * (255 - blendedAlpha)) >> 8));
-                    finalAlpha = blendedAlpha + ((finalAlpha * (255 - blendedAlpha)) >> 8);
+                        // Optimized alpha blending using bit shifting for division approximation
+                        finalR = (blendR + ((finalR * (255 - blendedAlpha)) >> 8));
+                        finalG = (blendG + ((finalG * (255 - blendedAlpha)) >> 8));
+                        finalB = (blendB + ((finalB * (255 - blendedAlpha)) >> 8));
+                        finalAlpha = blendedAlpha + ((finalAlpha * (255 - blendedAlpha)) >> 8);
+                    }
                 }
             }
 
