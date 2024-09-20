@@ -239,8 +239,8 @@ void cUtils::FloodFill(const int& x, const int& y, bool paint) {
     const ImU32 initialCol = g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex][x + y * g_canvas[g_cidx].width];
     const ImU32 fillCol = paint ? g_canvas[g_cidx].myCols[g_canvas[g_cidx].selColIndex] : initialCol;
 
-    // Scale the threshold from 0-100 to 0-765
-    const int threshold = (paint ? bucket_fill_threshold : magic_wand_threshold) * 765 / 100;
+    // Scale the threshold from 0-100 to 0-255
+    const int threshold = (paint ? bucket_fill_threshold : magic_wand_threshold) * 255 / 100;
 
     std::queue<std::pair<int, int>> queue;
     queue.push({ x, y });
