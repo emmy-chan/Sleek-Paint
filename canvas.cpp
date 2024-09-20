@@ -142,6 +142,7 @@ void cCanvas::AdaptNewSize(int width, int height) {
 
         // Map old pixels to new positions with scaling
         for (int y = 0; y < height; ++y) {
+            #pragma omp simd
             for (int x = 0; x < width; ++x) {
                 const int oldX = static_cast<int>(x / scaleX), oldY = static_cast<int>(y / scaleY);
                 if (oldX < g_canvas[g_cidx].width && oldY < g_canvas[g_cidx].height) {
@@ -224,16 +225,13 @@ void cCanvas::DestroyCanvas() {
 // Function to calculate the bounding box of the selected indexes
 ImVec2 GetTilePos(int64_t index, float tileSize, float camX, float camY, int width, int height) {
     // Calculate the total number of tiles
-    int64_t totalTiles = int64_t(width) * int64_t(height);
+    const int64_t totalTiles = int64_t(width) * int64_t(height);
 
     // Clamp the index to ensure it is within valid bounds
     index = glm::clamp(index, int64_t(0), totalTiles - 1);
 
     // Calculate the X and Y position of the tile
-    const float x = camX + float(index % width) * tileSize;
-    const float y = camY + float(index / width) * tileSize;
-
-    return ImVec2(x, y);
+    return ImVec2(camX + float(index % width) * tileSize, camY + float(index / width) * tileSize);
 }
 
 void DrawSelectionRectangle(const std::unordered_set<int>& indexes, float tileSize, float camX, float camY, int width, int height, ImU32 col, uint8_t thickness) {
@@ -245,25 +243,22 @@ void DrawSelectionRectangle(const std::unordered_set<int>& indexes, float tileSi
     tilePositions.reserve(indexes.size());  // Reserve space in advance to avoid resizing
 
     // Get the positions of all selected tiles
-    for (uint64_t index : indexes) {
+    for (uint64_t index : indexes)
         tilePositions[index] = GetTilePos(index, tileSize, camX, camY, width, height);
-    }
 
     // Check if a tile is at the edge of the canvas
     auto isBorderTile = [&](uint64_t index, int dx, int dy) {
         // Calculate the neighboring index
-        int neighborX = int(index % width) + dx;
-        int neighborY = int(index / width) + dy;
+        int neighborX = int(index % width) + dx, neighborY = int(index / width) + dy;
 
         // Ensure the neighbor is within canvas bounds
-        if (neighborX < 0 || neighborX >= width || neighborY < 0 || neighborY >= height) {
+        if (neighborX < 0 || neighborX >= width || neighborY < 0 || neighborY >= height)
             return true;  // Tile is at the canvas edge
-        }
 
         // Check if the neighboring tile is part of the selection
         uint64_t neighborIndex = index + dx + dy * width;
         return indexes.find(neighborIndex) == indexes.end();
-        };
+    };
 
     std::vector<std::pair<ImVec2, ImVec2>> borderLines;  // Store border line pairs
 
@@ -273,18 +268,17 @@ void DrawSelectionRectangle(const std::unordered_set<int>& indexes, float tileSi
         ImVec2 bottomRight = ImVec2(std::floor(pos.x + tileSize), std::floor(pos.y + tileSize));
 
         // Add lines for the borders if there are no neighboring tiles in that direction
-        if (isBorderTile(index, -1, 0)) {  // Left border
+        if (isBorderTile(index, -1, 0))  // Left border
             borderLines.emplace_back(topLeft, ImVec2(topLeft.x, bottomRight.y));
-        }
-        if (isBorderTile(index, 1, 0)) {  // Right border
+
+        if (isBorderTile(index, 1, 0))  // Right border
             borderLines.emplace_back(ImVec2(bottomRight.x, topLeft.y), bottomRight);
-        }
-        if (isBorderTile(index, 0, -1)) {  // Top border
+
+        if (isBorderTile(index, 0, -1))  // Top border
             borderLines.emplace_back(topLeft, ImVec2(bottomRight.x, topLeft.y));
-        }
-        if (isBorderTile(index, 0, 1)) {  // Bottom border
+
+        if (isBorderTile(index, 0, 1))  // Bottom border
             borderLines.emplace_back(ImVec2(topLeft.x, bottomRight.y), bottomRight);
-        }
     }
 
     // Draw all borders in one pass
@@ -327,8 +321,10 @@ std::vector<ImU32> GetImageFromClipboard(uint16_t& outWidth, uint16_t& outHeight
 
     imageData.resize(outWidth * outHeight);
 
+    #pragma omp simd
     for (int y = 0; y < outHeight; y++) {
         int sourceY = isBottomUp ? (outHeight - 1 - y) : y;
+        #pragma omp simd
         for (int x = 0; x < outWidth; x++) {
             BYTE* pPixel = pPixels + (sourceY * outWidth + x) * 4; // Assuming 32-bit DIB
             const BYTE r = pPixel[2];
@@ -365,9 +361,9 @@ void cCanvas::PasteImageFromClipboard() {
     std::vector<ImU32> imageLayer(width * height, IM_COL32_BLACK_TRANS); // Initialize with transparent color
 
     // Instead of manually copying pixel by pixel, we can use std::copy
+    #pragma omp simd
     for (int y = 0; y < imageHeight; y++) {
-        int imageStartIndex = y * imageWidth;
-        int canvasStartIndex = y * width;
+        const int imageStartIndex = y * imageWidth, canvasStartIndex = y * width;
 
         // Copy each row of image data to the corresponding location in the canvas
         std::copy(imageData.begin() + imageStartIndex, imageData.begin() + imageStartIndex + imageWidth, imageLayer.begin() + canvasStartIndex);
