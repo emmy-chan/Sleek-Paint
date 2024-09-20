@@ -6,7 +6,7 @@
 #include "imgui.h"
 #include <numeric>
 #include <random>
-#include <stack>
+#include <queue>
 #include <set>
 #include "stb_image.h"
 
@@ -242,31 +242,33 @@ void cUtils::FloodFill(const int& x, const int& y, bool paint) {
     // Scale the threshold from 0-100 to 0-765
     const int threshold = (paint ? bucket_fill_threshold : magic_wand_threshold) * 765 / 100;
 
-    std::stack<std::pair<int, int>> stack;
-    stack.push({ x, y });
+    std::queue<std::pair<int, int>> queue;
+    queue.push({ x, y });
 
     if (!paint) selectedIndexes.clear();
-    std::set<uint32_t> visited; // Use uint32_t for larger canvas sizes
 
-    while (!stack.empty()) {
-        std::pair<int, int> p = stack.top();
-        stack.pop();
-        const int curX = p.first,
-            curY = p.second;
+    const int totalSize = g_canvas[g_cidx].width * g_canvas[g_cidx].height;
+    std::vector<bool> visited(totalSize, false);  // Use a boolean vector for visited check
+
+    while (!queue.empty()) {
+        std::pair<int, int> p = queue.front();
+        queue.pop();
+        const int curX = p.first;
+        const int curY = p.second;
 
         if (curX < 0 || curX >= g_canvas[g_cidx].width || curY < 0 || curY >= g_canvas[g_cidx].height)
             continue;
 
-        const uint32_t currentIndex = curX + curY * g_canvas[g_cidx].width; // Changed to uint32_t
+        const uint32_t currentIndex = curX + curY * g_canvas[g_cidx].width;
 
-        if (visited.find(currentIndex) != visited.end())
-            continue; // Skip already processed pixels
+        if (visited[currentIndex])
+            continue;  // Skip already processed pixels
 
-        visited.insert(currentIndex);
+        visited[currentIndex] = true;
+
         const ImU32 currentCol = g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex][currentIndex];
 
         if (paint) {
-            // Check if the tile is in the selected tiles set (if there are any selected tiles)
             if (!selectedIndexes.empty() && selectedIndexes.find(currentIndex) == selectedIndexes.end())
                 continue;
 
@@ -282,10 +284,11 @@ void cUtils::FloodFill(const int& x, const int& y, bool paint) {
             selectedIndexes.insert(currentIndex);
         }
 
-        stack.push({ curX + 1, curY });
-        stack.push({ curX - 1, curY });
-        stack.push({ curX, curY + 1 });
-        stack.push({ curX, curY - 1 });
+        // Add neighbors to the queue only if they are valid
+        if (curX + 1 < g_canvas[g_cidx].width) queue.push({ curX + 1, curY });
+        if (curX - 1 >= 0) queue.push({ curX - 1, curY });
+        if (curY + 1 < g_canvas[g_cidx].height) queue.push({ curX, curY + 1 });
+        if (curY - 1 >= 0) queue.push({ curX, curY - 1 });
     }
 
     printf("FloodFill: Completed successfully!\n");
