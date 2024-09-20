@@ -222,11 +222,21 @@ void cCanvas::DestroyCanvas() {
 }
 
 // Function to calculate the bounding box of the selected indexes
-ImVec2 GetTilePos(int64_t index, float tileSize, float camX, float camY, int width) {
-    return { camX + float(index % width) * tileSize, camY + float(index / width) * tileSize };
+ImVec2 GetTilePos(int64_t index, float tileSize, float camX, float camY, int width, int height) {
+    // Calculate the total number of tiles
+    int64_t totalTiles = int64_t(width) * int64_t(height);
+
+    // Clamp the index to ensure it is within valid bounds
+    index = glm::clamp(index, int64_t(0), totalTiles - 1);
+
+    // Calculate the X and Y position of the tile
+    const float x = camX + float(index % width) * tileSize;
+    const float y = camY + float(index / width) * tileSize;
+
+    return ImVec2(x, y);
 }
 
-void DrawSelectionRectangle(const std::unordered_set<int>& indexes, float tileSize, float camX, float camY, int width, ImU32 col, uint8_t thickness) {
+void DrawSelectionRectangle(const std::unordered_set<int>& indexes, float tileSize, float camX, float camY, int width, int height, ImU32 col, uint8_t thickness) {
     if (indexes.empty()) return;
 
     ImDrawList* drawList = ImGui::GetBackgroundDrawList();
@@ -234,20 +244,35 @@ void DrawSelectionRectangle(const std::unordered_set<int>& indexes, float tileSi
     std::unordered_map<uint64_t, ImVec2> tilePositions;
     tilePositions.reserve(indexes.size());  // Reserve space in advance to avoid resizing
 
-    for (uint64_t index : indexes)
-        tilePositions[index] = GetTilePos(index, tileSize, camX, camY, width);
+    // Get the positions of all selected tiles
+    for (uint64_t index : indexes) {
+        tilePositions[index] = GetTilePos(index, tileSize, camX, camY, width, height);
+    }
 
+    // Check if a tile is at the edge of the canvas
     auto isBorderTile = [&](uint64_t index, int dx, int dy) {
-        return indexes.find(index + dx + dy * width) == indexes.end();
-    };
+        // Calculate the neighboring index
+        int neighborX = int(index % width) + dx;
+        int neighborY = int(index / width) + dy;
+
+        // Ensure the neighbor is within canvas bounds
+        if (neighborX < 0 || neighborX >= width || neighborY < 0 || neighborY >= height) {
+            return true;  // Tile is at the canvas edge
+        }
+
+        // Check if the neighboring tile is part of the selection
+        uint64_t neighborIndex = index + dx + dy * width;
+        return indexes.find(neighborIndex) == indexes.end();
+        };
 
     std::vector<std::pair<ImVec2, ImVec2>> borderLines;  // Store border line pairs
 
+    // For each tile, add borders based on its neighbors
     for (const auto& [index, pos] : tilePositions) {
-        ImVec2 topLeft = pos;
-        ImVec2 bottomRight = ImVec2(pos.x + tileSize, pos.y + tileSize);
+        ImVec2 topLeft = ImVec2(std::floor(pos.x), std::floor(pos.y));
+        ImVec2 bottomRight = ImVec2(std::floor(pos.x + tileSize), std::floor(pos.y + tileSize));
 
-        // Add lines based on neighboring tiles
+        // Add lines for the borders if there are no neighboring tiles in that direction
         if (isBorderTile(index, -1, 0)) {  // Left border
             borderLines.emplace_back(topLeft, ImVec2(topLeft.x, bottomRight.y));
         }
@@ -264,8 +289,8 @@ void DrawSelectionRectangle(const std::unordered_set<int>& indexes, float tileSi
 
     // Draw all borders in one pass
     for (const auto& [p1, p2] : borderLines) {
-        drawList->AddLine(p1, p2, IM_COL32_BLACK, float(thickness * 2));  // Outline
-        drawList->AddLine(p1, p2, col, float(thickness));  // Main color
+        drawList->AddLine(ImVec2(std::round(p1.x), std::round(p1.y)), ImVec2(std::round(p2.x), std::round(p2.y)), IM_COL32_BLACK, float(thickness * 2));  // Outline
+        drawList->AddLine(ImVec2(std::round(p1.x), std::round(p1.y)), ImVec2(std::round(p2.x), std::round(p2.y)), col, float(thickness));  // Main color
     }
 }
 
@@ -1449,7 +1474,7 @@ void cCanvas::Editor() {
     }
 
     // Draw a rectangle around the selected indexes
-    DrawSelectionRectangle(selectedIndexes, TILE_SIZE, g_cam.x, g_cam.y, width, IM_COL32_WHITE, 2);
+    DrawSelectionRectangle(selectedIndexes, TILE_SIZE, g_cam.x, g_cam.y, width, height, IM_COL32_WHITE, 2);
 
     // Add canvas to history for undo-redo feature
     if (!g_canvas.empty())
