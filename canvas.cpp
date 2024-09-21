@@ -1300,7 +1300,10 @@ void cCanvas::Editor() {
                 freeformPath.push_back(ImGui::GetMousePos());
             }
 
-            if (ImGui::IsMouseDown(0)) freeformPath.push_back(ImGui::GetMousePos());
+            if (ImGui::IsMouseDown(0)) {
+                if (freeformPath.empty() || freeformPath.back().x != ImGui::GetMousePos().x || freeformPath.back().y != ImGui::GetMousePos().y)
+                    freeformPath.push_back(ImGui::GetMousePos());
+            }
 
             if (g_util.MouseReleased(0)) {
                 // Finalize the freeform selection
