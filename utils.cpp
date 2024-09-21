@@ -240,7 +240,7 @@ void cUtils::FloodFill(const int& x, const int& y, bool paint) {
     const ImU32 fillCol = paint ? g_canvas[g_cidx].myCols[g_canvas[g_cidx].selColIndex] : initialCol;
 
     // Scale the threshold from 0-100 to 0-255
-    const int threshold = (paint ? bucket_fill_threshold : magic_wand_threshold) * 255 / 100;
+    const int threshold = std::pow((paint ? bucket_fill_threshold : magic_wand_threshold) * 255 / 100, 2);
 
     std::queue<std::pair<int, int>> queue;
     queue.push({ x, y });
@@ -272,13 +272,13 @@ void cUtils::FloodFill(const int& x, const int& y, bool paint) {
             if (!selectedIndexes.empty() && std::find(selectedIndexes.begin(), selectedIndexes.end(), currentIndex) == selectedIndexes.end())
                 continue;
 
-            if (g_util.ColorDifference(currentCol, initialCol) > threshold)
+            if (g_util.ColorDistanceSquared(currentCol, initialCol) > threshold)
                 continue;
 
             g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex][currentIndex] = fillCol;
         }
         else {
-            if (g_util.ColorDifference(currentCol, initialCol) > threshold)
+            if (g_util.ColorDistanceSquared(currentCol, initialCol) > threshold)
                 continue;
 
             selectedIndexes.push_back(currentIndex);
