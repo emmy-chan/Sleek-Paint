@@ -80,8 +80,8 @@ void cCanvas::Initialize(const std::vector<ImU32>& initial_data, const uint16_t&
         TILE_SIZE--;
 
     // Calculate the canvas size in pixels
-    const float canvasWidthInPixels = width * TILE_SIZE;
-    const float canvasHeightInPixels = height * TILE_SIZE;
+    const float canvasWidthInPixels = float(width * TILE_SIZE);
+    const float canvasHeightInPixels = float(height * TILE_SIZE);
 
     // Adjust camera centering logic based on the actual window size
     const float windowWidth = ImGui::GetIO().DisplaySize.x;
@@ -196,7 +196,7 @@ void cCanvas::UpdateCanvasHistory() {
 
         // Add the new state to history
         previousCanvases.push_back(compressedData);
-        canvas_idx = previousCanvases.size() - 1;
+        canvas_idx = (uint8_t)previousCanvases.size() - 1;
 
         printf("Canvas state created with RLE compression.\n");
     }
@@ -641,7 +641,7 @@ void applyBrushEffect(const ImVec2& lastMousePos, int x, int y, const ImU32& col
         const int lastX = static_cast<int>((lastMousePos.x - g_cam.x) / TILE_SIZE), lastY = static_cast<int>((lastMousePos.y - g_cam.y) / TILE_SIZE);
 
         // Calculate the distance between the previous and current mouse positions
-        const float distX = x - lastX, distY = y - lastY, distance = glm::sqrt(distX * distX + distY * distY);
+        const float distX = float(x - lastX), distY = float(y - lastY), distance = glm::sqrt(distX * distX + distY * distY);
         const int steps = static_cast<int>(distance) + 1; // Number of steps to interpolate
 
         for (int i = 0; i <= steps; ++i) {
@@ -687,7 +687,7 @@ void applyBrushEffect(const ImVec2& lastMousePos, int x, int y, const ImU32& col
 
     std::vector<ImVec2> borderPoints;
     for (uint64_t index : brushIndexes) {
-        const int tileX = index % g_canvas[g_cidx].width, tileY = index / g_canvas[g_cidx].width;
+        const uint64_t tileX = index % g_canvas[g_cidx].width, tileY = index / g_canvas[g_cidx].width;
         const ImVec2 pos(g_cam.x + tileX * TILE_SIZE, g_cam.y + tileY * TILE_SIZE);
 
         if (isBorderTile(index, -1, 0)) {
@@ -721,7 +721,7 @@ void applyBandAidBrushEffect(const ImVec2& lastMousePos, int x, int y) {
 
     if (lastMousePos.x >= 0 && lastMousePos.y >= 0) {
         const int lastX = static_cast<int>((lastMousePos.x - g_cam.x) / TILE_SIZE), lastY = static_cast<int>((lastMousePos.y - g_cam.y) / TILE_SIZE);
-        const float distX = x - lastX, distY = y - lastY, distance = glm::sqrt(distX * distX + distY * distY);
+        const float distX = float(x - lastX), distY = float(y - lastY), distance = glm::sqrt(distX * distX + distY * distY);
         const int steps = static_cast<int>(distance) + 1;
 
         for (int i = 0; i <= steps; ++i) {
@@ -779,7 +779,7 @@ void applyBandAidEffect() {
         totalA += (color >> IM_COL32_A_SHIFT) & 0xFF;
     }
 
-    const int count = surroundingColors.size();
+    const int count = (int)surroundingColors.size();
     const ImU32 blendedColor = IM_COL32(totalR / count, totalG / count, totalB / count, totalA / count);
 
     // Step 3: Apply the blended color to the selected tiles
@@ -815,7 +815,7 @@ void cCanvas::UpdateZoom(float value) {
             g_cam.y = mousePos.y - preZoomWorldPos.y * newZoom;
 
             // Update TILE_SIZE to the new zoom level
-            TILE_SIZE = newZoom;
+            TILE_SIZE = (uint8_t)newZoom;
         }
     }
 }
@@ -887,7 +887,7 @@ std::vector<int> GetTilesWithinPolygon(const std::vector<ImVec2>& polygon, int w
 
             // Check if the tile's center point is inside the polygon
             if (IsPointInPolygon(center, polygon)) {
-                const uint64_t index = x + y * width;
+                const int index = x + y * width;
                 selectedTiles.push_back(index);
                 continue; // No need to check edges if the center is inside
             }
@@ -897,7 +897,7 @@ std::vector<int> GetTilesWithinPolygon(const std::vector<ImVec2>& polygon, int w
                 IsLineIntersectingPolygon(polygon, topRight, bottomRight) ||  // Right edge
                 IsLineIntersectingPolygon(polygon, bottomRight, bottomLeft) ||  // Bottom edge
                 IsLineIntersectingPolygon(polygon, bottomLeft, topLeft)) {  // Left edge
-                const uint64_t index = x + y * width;
+                const int index = x + y * width;
                 selectedTiles.push_back(index);
             }
         }
@@ -960,7 +960,7 @@ void CompositeLayersToBuffer(std::vector<ImU32>& compositedBuffer, const std::ve
             }
 
             // Checkerboard pattern blend based on transparency
-            ImU32 checkerColor = ((x + y) % 2 == 0) ? checker1 : checker2;
+            const ImU32 checkerColor = ((x + y) % 2 == 0) ? checker1 : checker2;
 
             // Get checker color components
             const uint8_t checkerR = (checkerColor >> IM_COL32_R_SHIFT) & 0xFF;
@@ -1150,8 +1150,8 @@ void cCanvas::Editor() {
                 const float endY = std::ceil(std::max(mouseStartY, mouseEndY) / TILE_SIZE) * TILE_SIZE;
 
                 // Calculate the selection dimensions
-                const int startTileX = startX / TILE_SIZE, startTileY = startY / TILE_SIZE;
-                const int endTileX = endX / TILE_SIZE, endTileY = endY / TILE_SIZE;
+                const int startTileX = int(startX / TILE_SIZE), startTileY = int(startY / TILE_SIZE);
+                const int endTileX = (int)endX / TILE_SIZE, endTileY = (int)endY / TILE_SIZE;
 
                 for (int tileY = startTileY; tileY < endTileY; tileY++) {
                     for (int tileX = startTileX; tileX < endTileX; tileX++)
