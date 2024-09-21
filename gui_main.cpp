@@ -117,7 +117,7 @@ void cGUI::Display()
                                 const uint64_t neighborIndex = nx + ny * g_canvas[g_cidx].width;
 
                                 // Only consider pixels that are part of the selection
-                                if (selectedIndexes.find(neighborIndex) != selectedIndexes.end()) {
+                                if (std::find(selectedIndexes.begin(), selectedIndexes.end(), neighborIndex) != selectedIndexes.end()) {
                                     const ImU32 color = g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex][neighborIndex];
 
                                     // Accumulate the color values for averaging
@@ -172,7 +172,7 @@ void cGUI::Display()
                     for (uint64_t by = 0; by < adjustedBlockSizeY; ++by) {
                         for (uint64_t bx = 0; bx < adjustedBlockSizeX; ++bx) {
                             const uint64_t blockIndex = (blockX + bx) + (blockY + by) * g_canvas[g_cidx].width;
-                            if (selectedIndexes.find(blockIndex) != selectedIndexes.end()) {
+                            if (std::find(selectedIndexes.begin(), selectedIndexes.end(), blockIndex) != selectedIndexes.end()) {
                                 const ImU32 color = g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex][blockIndex];
                                 redSum += (color >> IM_COL32_R_SHIFT) & 0xFF;
                                 greenSum += (color >> IM_COL32_G_SHIFT) & 0xFF;
@@ -194,7 +194,7 @@ void cGUI::Display()
                         for (uint64_t by = 0; by < adjustedBlockSizeY; ++by) {
                             for (uint64_t bx = 0; bx < adjustedBlockSizeX; ++bx) {
                                 const uint64_t blockIndex = (blockX + bx) + (blockY + by) * g_canvas[g_cidx].width;
-                                if (selectedIndexes.find(blockIndex) != selectedIndexes.end()) {
+                                if (std::find(selectedIndexes.begin(), selectedIndexes.end(), blockIndex) != selectedIndexes.end()) {
 
                                     // Generate random noise for each color channel
                                     float redNoise = ((float(rand()) / float(RAND_MAX)) - 0.5f) * 0.2f * 255.0f;
@@ -238,7 +238,7 @@ void cGUI::Display()
                     for (uint64_t by = 0; by < blockSize && (blockY + by) < g_canvas[g_cidx].height; ++by) {
                         for (uint64_t bx = 0; bx < blockSize && (blockX + bx) < g_canvas[g_cidx].width; ++bx) {
                             const uint64_t blockIndex = (blockX + bx) + (blockY + by) * g_canvas[g_cidx].width;
-                            if (selectedIndexes.find(blockIndex) != selectedIndexes.end()) {
+                            if (std::find(selectedIndexes.begin(), selectedIndexes.end(), blockIndex) != selectedIndexes.end()) {
                                 const ImU32 color = g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex][blockIndex];
                                 redSum += (color >> IM_COL32_R_SHIFT) & 0xFF;
                                 greenSum += (color >> IM_COL32_G_SHIFT) & 0xFF;
@@ -259,7 +259,7 @@ void cGUI::Display()
                         for (uint64_t by = 0; by < blockSize && (blockY + by) < g_canvas[g_cidx].height; ++by) {
                             for (uint64_t bx = 0; bx < blockSize && (blockX + bx) < g_canvas[g_cidx].width; ++bx) {
                                 const uint64_t blockIndex = (blockX + bx) + (blockY + by) * g_canvas[g_cidx].width;
-                                if (selectedIndexes.find(blockIndex) != selectedIndexes.end())
+                                if (std::find(selectedIndexes.begin(), selectedIndexes.end(), blockIndex) != selectedIndexes.end())
                                     g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex][blockIndex] = avgColor;
                             }
                         }
@@ -277,7 +277,7 @@ void cGUI::Display()
                     // Find the horizontal bounding box of the non-transparent tiles
                     for (uint64_t y = 0; y < g_canvas[g_cidx].height; y++) {
                         for (uint64_t x = 0; x < g_canvas[g_cidx].width; x++) {
-                            if (selectedIndexes.find(x + y * g_canvas[g_cidx].width) == selectedIndexes.end())
+                            if (std::find(selectedIndexes.begin(), selectedIndexes.end(), x + y * g_canvas[g_cidx].width) == selectedIndexes.end())
                                 continue;
 
                             const uint64_t index = x + y * g_canvas[g_cidx].width;
@@ -296,13 +296,13 @@ void cGUI::Display()
 
                     // Create a copy of the current tiles
                     std::vector<ImU32> newTiles = g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex];
-                    std::unordered_set<int> newSelectedIndexes;
+                    std::vector<int> newSelectedIndexes;
 
                     // Clear the area within the bounding box
                     for (uint64_t y = 0; y < g_canvas[g_cidx].height; y++) {
                         for (uint64_t x = minX; x <= maxX; x++) {
                             const uint64_t oldIndex = x + y * g_canvas[g_cidx].width;
-                            if (selectedIndexes.find(oldIndex) != selectedIndexes.end())
+                            if (std::find(selectedIndexes.begin(), selectedIndexes.end(), oldIndex) == selectedIndexes.end())
                                 newTiles[oldIndex] = 0;
                         }
                     }
@@ -310,7 +310,7 @@ void cGUI::Display()
                     // Move the non-transparent tiles to the new horizontally centered positions
                     for (uint64_t y = 0; y < g_canvas[g_cidx].height; y++) {
                         for (uint64_t x = 0; x < g_canvas[g_cidx].width; x++) {
-                            if (selectedIndexes.find(x + y * g_canvas[g_cidx].width) == selectedIndexes.end())
+                            if (std::find(selectedIndexes.begin(), selectedIndexes.end(), x + y * g_canvas[g_cidx].width) == selectedIndexes.end())
                                 continue;
 
                             const uint64_t oldIndex = x + y * g_canvas[g_cidx].width;
@@ -322,7 +322,7 @@ void cGUI::Display()
                                 if (newX >= 0 && newX < g_canvas[g_cidx].width) {
                                     const uint64_t newIndex = newX + y * g_canvas[g_cidx].width;
                                     newTiles[newIndex] = currentColor;
-                                    newSelectedIndexes.insert(newIndex);
+                                    newSelectedIndexes.push_back(newIndex);
                                 }
                             }
                         }
@@ -345,7 +345,7 @@ void cGUI::Display()
                     // Find the vertical bounding box of the non-transparent tiles
                     for (uint64_t y = 0; y < g_canvas[g_cidx].height; y++) {
                         for (uint64_t x = 0; x < g_canvas[g_cidx].width; x++) {
-                            if (selectedIndexes.find(x + y * g_canvas[g_cidx].width) == selectedIndexes.end())
+                            if (std::find(selectedIndexes.begin(), selectedIndexes.end(), x + y * g_canvas[g_cidx].width) == selectedIndexes.end())
                                 continue;
 
                             const uint64_t index = x + y * g_canvas[g_cidx].width;
@@ -364,13 +364,13 @@ void cGUI::Display()
 
                     // Create a copy of the current tiles
                     std::vector<ImU32> newTiles = g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex];
-                    std::unordered_set<int> newSelectedIndexes;
+                    std::vector<int> newSelectedIndexes;
 
                     // Clear the area within the bounding box
                     for (uint64_t y = minY; y <= maxY; y++) {
                         for (uint64_t x = 0; x < g_canvas[g_cidx].width; x++) {
                             const uint64_t oldIndex = x + y * g_canvas[g_cidx].width;
-                            if (selectedIndexes.find(oldIndex) != selectedIndexes.end())
+                            if (std::find(selectedIndexes.begin(), selectedIndexes.end(), oldIndex) == selectedIndexes.end())
                                 newTiles[oldIndex] = 0;
                         }
                     }
@@ -378,7 +378,7 @@ void cGUI::Display()
                     // Move the non-transparent tiles to the new vertically centered positions
                     for (uint64_t y = 0; y < g_canvas[g_cidx].height; y++) {
                         for (uint64_t x = 0; x < g_canvas[g_cidx].width; x++) {
-                            if (selectedIndexes.find(x + y * g_canvas[g_cidx].width) == selectedIndexes.end())
+                            if (std::find(selectedIndexes.begin(), selectedIndexes.end(), x + y * g_canvas[g_cidx].width) == selectedIndexes.end())
                                 continue;
 
                             const uint64_t oldIndex = x + y * g_canvas[g_cidx].width;
@@ -390,7 +390,7 @@ void cGUI::Display()
                                 if (newY >= 0 && newY < g_canvas[g_cidx].height) {
                                     const uint64_t newIndex = x + newY * g_canvas[g_cidx].width;
                                     newTiles[newIndex] = currentColor;
-                                    newSelectedIndexes.insert(newIndex);
+                                    newSelectedIndexes.push_back(newIndex);
                                 }
                             }
                         }
@@ -421,7 +421,7 @@ void cGUI::Display()
                     }
 
                     // Create a new container for rotated indexes
-                    std::unordered_set<int> newSelectedIndexes;
+                    std::vector<int> newSelectedIndexes;
 
                     // Create a copy of the current tiles
                     std::vector<ImU32> newTiles = g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex];
@@ -444,7 +444,7 @@ void cGUI::Display()
 
                         // Set the new tile color and update new selected indexes
                         newTiles[newIndex] = g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex][index];
-                        newSelectedIndexes.insert(newIndex);
+                        newSelectedIndexes.push_back(newIndex);
                     }
 
                     // Update the canvas with the new tiles
@@ -466,7 +466,7 @@ void cGUI::Display()
                     // Find the horizontal bounding box of the non-transparent tiles
                     for (uint64_t y = 0; y < g_canvas[g_cidx].height; y++) {
                         for (uint64_t x = 0; x < g_canvas[g_cidx].width; x++) {
-                            if (selectedIndexes.find(x + y * g_canvas[g_cidx].width) == selectedIndexes.end())
+                            if (std::find(selectedIndexes.begin(), selectedIndexes.end(), x + y * g_canvas[g_cidx].width) == selectedIndexes.end())
                                 continue;
 
                             const uint64_t index = x + y * g_canvas[g_cidx].width;
@@ -481,13 +481,13 @@ void cGUI::Display()
 
                     // Create a copy of the current tiles
                     std::vector<ImU32> newTiles = g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex];
-                    std::unordered_set<int> newSelectedIndexes;
+                    std::vector<int> newSelectedIndexes;
 
                     // Clear the area within the bounding box
                     for (uint64_t y = 0; y < g_canvas[g_cidx].height; y++) {
                         for (uint64_t x = minX; x <= maxX; x++) {
                             const uint64_t oldIndex = x + y * g_canvas[g_cidx].width;
-                            if (selectedIndexes.find(oldIndex) != selectedIndexes.end())
+                            if (std::find(selectedIndexes.begin(), selectedIndexes.end(), oldIndex) == selectedIndexes.end())
                                 newTiles[oldIndex] = 0;
                         }
                     }
@@ -496,7 +496,7 @@ void cGUI::Display()
                     for (uint64_t y = 0; y < g_canvas[g_cidx].height; y++) {
                         for (uint64_t x = minX; x <= maxX; x++) {
                             const uint64_t oldIndex = x + y * g_canvas[g_cidx].width;
-                            if (selectedIndexes.find(oldIndex) == selectedIndexes.end())
+                            if (std::find(selectedIndexes.begin(), selectedIndexes.end(), oldIndex) == selectedIndexes.end())
                                 continue;
 
                             const ImU32& currentColor = g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex][oldIndex];
@@ -507,7 +507,7 @@ void cGUI::Display()
                                 if (newX >= 0 && newX < g_canvas[g_cidx].width) {
                                     const uint64_t newIndex = newX + y * g_canvas[g_cidx].width;
                                     newTiles[newIndex] = currentColor;
-                                    newSelectedIndexes.insert(newIndex);
+                                    newSelectedIndexes.push_back(newIndex);
                                 }
                             }
                         }

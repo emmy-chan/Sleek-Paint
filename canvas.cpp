@@ -234,7 +234,7 @@ ImVec2 GetTilePos(int64_t index, float tileSize, float camX, float camY, int wid
     return ImVec2(camX + float(index % width) * tileSize, camY + float(index / width) * tileSize);
 }
 
-void DrawSelectionRectangle(const std::unordered_set<int>& indexes, float tileSize, float camX, float camY, int width, int height, ImU32 col, uint8_t thickness) {
+void DrawSelectionRectangle(const std::vector<int>& indexes, float tileSize, float camX, float camY, int width, int height, ImU32 col, uint8_t thickness) {
     if (indexes.empty()) return;
 
     ImDrawList* drawList = ImGui::GetBackgroundDrawList();
@@ -257,7 +257,7 @@ void DrawSelectionRectangle(const std::unordered_set<int>& indexes, float tileSi
 
         // Check if the neighboring tile is part of the selection
         uint64_t neighborIndex = index + dx + dy * width;
-        return indexes.find(neighborIndex) == indexes.end();
+        return std::find(indexes.begin(), indexes.end(), neighborIndex) == indexes.end();
     };
 
     std::vector<std::pair<ImVec2, ImVec2>> borderLines;  // Store border line pairs
@@ -383,7 +383,7 @@ void cCanvas::PasteImageFromClipboard() {
     printf("Image pasted successfully.\n");
 }
 
-std::unordered_set<int> initialSelectedIndexes;
+std::vector<int> initialSelectedIndexes;
 
 void cCanvas::PasteSelection() {
     // Ensure there is something to paste
@@ -396,7 +396,7 @@ void cCanvas::PasteSelection() {
     NewLayer();
     g_canvas[g_cidx].selLayerIndex = g_canvas[g_cidx].tiles.size() - (size_t)1; // Set to the newly created layer
 
-    std::unordered_set<int> newSelectedIndexes;
+    std::vector<int> newSelectedIndexes;
     for (const auto& tile : copiedTiles) {
         const int selectX = tile.first % g_canvas[g_cidx].width, selectY = tile.first / g_canvas[g_cidx].width;
 
@@ -407,7 +407,7 @@ void cCanvas::PasteSelection() {
             // Decompress the color data before pasting
             const ImU32 color = g_util.DecompressColorRLE(tile.second);
             g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex][newIndex] = color;
-            newSelectedIndexes.insert(newIndex);
+            newSelectedIndexes.push_back(newIndex);
         }
     }
 
@@ -651,7 +651,7 @@ void applyBrushEffect(const ImVec2& lastMousePos, int x, int y, const ImU32& col
             const int brushX = static_cast<int>(lastX + t * distX), brushY = static_cast<int>(lastY + t * distY);
 
             // Apply brush effect at the interpolated position
-            if (selectedIndexes.empty() || selectedIndexes.find((uint64_t)brushX + (uint64_t)brushY * g_canvas[g_cidx].width) != selectedIndexes.end()) {
+            if (selectedIndexes.empty() || std::find(selectedIndexes.begin(), selectedIndexes.end(), brushX + brushY * g_canvas[g_cidx].width) != selectedIndexes.end()) {
                 for (int offsetY = -brushRadiusInt; offsetY <= brushRadiusInt; ++offsetY) {
                     for (int offsetX = -brushRadiusInt; offsetX <= brushRadiusInt; ++offsetX) {
                         const int finalX = brushX + offsetX, finalY = brushY + offsetY;
@@ -734,7 +734,7 @@ void applyBandAidBrushEffect(const ImVec2& lastMousePos, int x, int y) {
                 for (int offsetX = -brushRadiusInt; offsetX <= brushRadiusInt; ++offsetX) {
                     const int finalX = brushX + offsetX, finalY = brushY + offsetY;
                     if (finalX >= 0 && finalX < g_canvas[g_cidx].width && finalY >= 0 && finalY < g_canvas[g_cidx].height) {
-                        selectedIndexes.insert(finalX + finalY * g_canvas[g_cidx].width);
+                        selectedIndexes.push_back(finalX + finalY * g_canvas[g_cidx].width);
 
                         // Draw the brush effect with the same style as applyBrushEffect
                         const ImVec2 topLeft = { g_cam.x + finalX * TILE_SIZE, g_cam.y + finalY * TILE_SIZE };
@@ -764,7 +764,7 @@ void applyBandAidEffect() {
 
                 if (sampleX >= 0 && sampleX < g_canvas[g_cidx].width && sampleY >= 0 && sampleY < g_canvas[g_cidx].height) {
                     const ImU32 color = g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex][sampleY * g_canvas[g_cidx].width + sampleX];
-                    if (color != IM_COL32_BLACK_TRANS && selectedIndexes.find(sampleX + sampleY * g_canvas[g_cidx].width) == selectedIndexes.end())
+                    if (color != IM_COL32_BLACK_TRANS && std::find(selectedIndexes.begin(), selectedIndexes.end(), sampleX + sampleY * g_canvas[g_cidx].width) == selectedIndexes.end())
                         surroundingColors.push_back(color);
                 }
             }
@@ -858,8 +858,8 @@ bool IsLineIntersectingPolygon(const std::vector<ImVec2>& polygon, ImVec2 p1, Im
     return DoLinesIntersect(p1, p2, polygon.back(), polygon.front());
 }
 
-std::unordered_set<int> GetTilesWithinPolygon(const std::vector<ImVec2>& polygon, int width, int height) {
-    std::unordered_set<int> selectedTiles;
+std::vector<int> GetTilesWithinPolygon(const std::vector<ImVec2>& polygon, int width, int height) {
+    std::vector<int> selectedTiles;
 
     // Calculate the bounding box of the polygon to limit the tile checks
     float minX = polygon[0].x, maxX = polygon[0].x;
@@ -890,7 +890,7 @@ std::unordered_set<int> GetTilesWithinPolygon(const std::vector<ImVec2>& polygon
             // Check if the tile's center point is inside the polygon
             if (IsPointInPolygon(center, polygon)) {
                 const uint64_t index = x + y * width;
-                selectedTiles.insert(index);
+                selectedTiles.push_back(index);
                 continue; // No need to check edges if the center is inside
             }
 
@@ -900,7 +900,7 @@ std::unordered_set<int> GetTilesWithinPolygon(const std::vector<ImVec2>& polygon
                 IsLineIntersectingPolygon(polygon, bottomRight, bottomLeft) ||  // Bottom edge
                 IsLineIntersectingPolygon(polygon, bottomLeft, topLeft)) {  // Left edge
                 const uint64_t index = x + y * width;
-                selectedTiles.insert(index);
+                selectedTiles.push_back(index);
             }
         }
     }
@@ -1101,7 +1101,7 @@ void cCanvas::Editor() {
             break;
         case TOOL_BUCKET:
             if (g_util.MousePressed(0))
-                if (selectedIndexes.empty() || selectedIndexes.find((uint64_t)x + (uint64_t)y * width) != selectedIndexes.end())
+                if (selectedIndexes.empty() || std::find(selectedIndexes.begin(), selectedIndexes.end(), (uint64_t)x + (uint64_t)y * width) != selectedIndexes.end())
                     g_util.FloodFill((int)x, (int)y, true);
 
             d.AddRectFilled({ g_cam.x + x * TILE_SIZE, g_cam.y + y * TILE_SIZE }, { g_cam.x + x * TILE_SIZE + TILE_SIZE, g_cam.y + y * TILE_SIZE + TILE_SIZE }, myCols[selColIndex]);
@@ -1157,7 +1157,7 @@ void cCanvas::Editor() {
 
                 for (int tileY = startTileY; tileY < endTileY; tileY++) {
                     for (int tileX = startTileX; tileX < endTileX; tileX++)
-                        selectedIndexes.insert((int64_t)(tileX + tileY * width));
+                        selectedIndexes.push_back((int64_t)(tileX + tileY * width));
                 }
 
                 if (selectedIndexes.size() <= 1) selectedIndexes.clear();
@@ -1182,7 +1182,7 @@ void cCanvas::Editor() {
                     // Select all tiles if none are selected
                     for (int i = 0; i < width * height; ++i) {
                         if (tiles[g_canvas[g_cidx].selLayerIndex][i] != IM_COL32_BLACK_TRANS)
-                            initialSelectedIndexes.insert(i);
+                            initialSelectedIndexes.push_back(i);
                     }
                 }
 
@@ -1221,7 +1221,7 @@ void cCanvas::Editor() {
 
             if (g_util.MouseReleased(0)) {
                 const int offsetX = static_cast<int>((ImGui::GetMousePos().x - mouseStart.x) / TILE_SIZE) * TILE_SIZE, offsetY = static_cast<int>((ImGui::GetMousePos().y - mouseStart.y) / TILE_SIZE) * TILE_SIZE;
-                std::unordered_set<int> newSelectedIndexes;
+                std::vector<int> newSelectedIndexes;
                 std::unordered_map<int, ImU32> newTileColors;
 
                 for (const auto& index : initialSelectedIndexes) {
@@ -1229,7 +1229,7 @@ void cCanvas::Editor() {
                     const int newX = (selectX + offsetX / TILE_SIZE + width) % width, newY = (selectY + offsetY / TILE_SIZE + height) % height; // Wrap positions within canvas boundaries
 
                     const uint32_t newIndex = newX + newY * width;
-                    newSelectedIndexes.insert(newIndex);
+                    newSelectedIndexes.push_back(newIndex);
                     newTileColors[newIndex] = tiles[g_canvas[g_cidx].selLayerIndex][index];
                 }
 
@@ -1306,8 +1306,8 @@ void cCanvas::Editor() {
                 // Finalize the freeform selection
                 if (!freeformPath.empty()) {
                     // Convert the path to a polygon and select tiles within it
-                    std::unordered_set<int> selectedTiles = GetTilesWithinPolygon(freeformPath, g_canvas[g_cidx].width, g_canvas[g_cidx].height);
-                    selectedIndexes.insert(selectedTiles.begin(), selectedTiles.end());
+                    std::vector<int> selectedTiles = GetTilesWithinPolygon(freeformPath, g_canvas[g_cidx].width, g_canvas[g_cidx].height);
+                    selectedIndexes.insert(selectedIndexes.end(), selectedTiles.begin(), selectedTiles.end());
                 }
 
                 freeformPath.clear(); // Clear the path after selection

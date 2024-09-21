@@ -269,7 +269,7 @@ void cUtils::FloodFill(const int& x, const int& y, bool paint) {
         const ImU32 currentCol = g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex][currentIndex];
 
         if (paint) {
-            if (!selectedIndexes.empty() && selectedIndexes.find(currentIndex) == selectedIndexes.end())
+            if (!selectedIndexes.empty() && std::find(selectedIndexes.begin(), selectedIndexes.end(), currentIndex) == selectedIndexes.end())
                 continue;
 
             if (g_util.ColorDifference(currentCol, initialCol) > threshold)
@@ -278,10 +278,10 @@ void cUtils::FloodFill(const int& x, const int& y, bool paint) {
             g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex][currentIndex] = fillCol;
         }
         else {
-            if (g_util.ColorDifference(currentCol, initialCol) > threshold || selectedIndexes.find(currentIndex) != selectedIndexes.end())
+            if (g_util.ColorDifference(currentCol, initialCol) > threshold || std::find(selectedIndexes.begin(), selectedIndexes.end(), currentIndex) == selectedIndexes.end())
                 continue;
 
-            selectedIndexes.insert(currentIndex);
+            selectedIndexes.push_back(currentIndex);
         }
 
         // Add neighbors to the queue only if they are valid
