@@ -557,7 +557,7 @@ void BitmapFont::LoadCharacterBitmaps() {
 void BitmapFont::EnsureBitmapDimensions() {
     for (auto& pair : charBitmaps) {
         auto& bitmap = pair.second;
-        int currentCharHeight = bitmap.size();
+        int currentCharHeight = (int)bitmap.size();
         int currentCharWidth = bitmap.empty() ? 0 : bitmap[0].size();
 
         // Adjust rows if necessary
@@ -586,9 +586,6 @@ void cAssets::LoadAssets()
 {
     bool ret = LoadTextureFromFile("gfx/selection.png", &g_assets.selection_texture, NULL, NULL);
     IM_ASSERT(ret);
-
-    bool ret2 = LoadTextureFromFile("gfx/wand.png", &g_assets.wand_texture, NULL, NULL);
-    IM_ASSERT(ret2);
 
     bool ret3 = LoadTextureFromFile("gfx/bucket2.png", &g_assets.bucket_texture, NULL, NULL);
     IM_ASSERT(ret3);
