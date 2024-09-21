@@ -278,7 +278,7 @@ void cUtils::FloodFill(const int& x, const int& y, bool paint) {
             g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex][currentIndex] = fillCol;
         }
         else {
-            if (g_util.ColorDifference(currentCol, initialCol) > threshold || std::find(selectedIndexes.begin(), selectedIndexes.end(), currentIndex) == selectedIndexes.end())
+            if (g_util.ColorDifference(currentCol, initialCol) > threshold)
                 continue;
 
             selectedIndexes.push_back(currentIndex);
