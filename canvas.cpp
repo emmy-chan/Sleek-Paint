@@ -383,8 +383,6 @@ void cCanvas::PasteImageFromClipboard() {
     printf("Image pasted successfully.\n");
 }
 
-std::vector<int> initialSelectedIndexes;
-
 void cCanvas::PasteSelection() {
     // Ensure there is something to paste
     if (copiedTiles.empty()) {
@@ -1176,13 +1174,11 @@ void cCanvas::Editor() {
             if (g_util.MousePressed(1)) selectedIndexes.clear();
 
             if (g_util.MousePressed(0)) {
-                initialSelectedIndexes = selectedIndexes;
-
-                if (initialSelectedIndexes.empty()) {
+                if (selectedIndexes.empty()) {
                     // Select all tiles if none are selected
                     for (int i = 0; i < width * height; ++i) {
                         if (tiles[g_canvas[g_cidx].selLayerIndex][i] != IM_COL32_BLACK_TRANS)
-                            initialSelectedIndexes.push_back(i);
+                            selectedIndexes.push_back(i);
                     }
                 }
 
@@ -1190,7 +1186,7 @@ void cCanvas::Editor() {
                 float minX = FLT_MAX, minY = FLT_MAX;
                 float maxX = -FLT_MAX, maxY = -FLT_MAX;
 
-                for (const auto& index : initialSelectedIndexes) {
+                for (const auto& index : selectedIndexes) {
                     const int selectX = index % width, selectY = index / width;
                     const float tilePosX = g_cam.x + selectX * TILE_SIZE, tilePosY = g_cam.y + selectY * TILE_SIZE;
                     minX = std::min(minX, tilePosX); minY = std::min(minY, tilePosY);
@@ -1200,19 +1196,19 @@ void cCanvas::Editor() {
                 // Check if the click is outside the bounds
                 if (mouseStart.x < minX || mouseStart.x > maxX || mouseStart.y < minY || mouseStart.y > maxY) {
                     selectedIndexes.clear();
-                    initialSelectedIndexes.clear();
                 }
             }
 
             if (ImGui::IsMouseDown(0)) {
                 ImVec2 offset = ImGui::GetMousePos();
-                offset.x -= mouseStart.x; offset.y -= mouseStart.y;
+                offset.x -= mouseStart.x;
+                offset.y -= mouseStart.y;
 
                 // Snap offset to grid
                 offset.x = static_cast<float>(static_cast<int>(offset.x / TILE_SIZE) * TILE_SIZE);
                 offset.y = static_cast<float>(static_cast<int>(offset.y / TILE_SIZE) * TILE_SIZE);
 
-                for (const auto& index : initialSelectedIndexes) {
+                for (const auto& index : selectedIndexes) {
                     const int selectX = index % width, selectY = index / width;
                     const ImVec2 tilePos = { g_cam.x + selectX * TILE_SIZE + offset.x, g_cam.y + selectY * TILE_SIZE + offset.y };
                     d.AddRectFilled(tilePos, { tilePos.x + TILE_SIZE, tilePos.y + TILE_SIZE }, tiles[g_canvas[g_cidx].selLayerIndex][index]);
@@ -1220,13 +1216,15 @@ void cCanvas::Editor() {
             }
 
             if (g_util.MouseReleased(0)) {
-                const int offsetX = static_cast<int>((ImGui::GetMousePos().x - mouseStart.x) / TILE_SIZE) * TILE_SIZE, offsetY = static_cast<int>((ImGui::GetMousePos().y - mouseStart.y) / TILE_SIZE) * TILE_SIZE;
+                const int offsetX = static_cast<int>((ImGui::GetMousePos().x - mouseStart.x) / TILE_SIZE) * TILE_SIZE;
+                const int offsetY = static_cast<int>((ImGui::GetMousePos().y - mouseStart.y) / TILE_SIZE) * TILE_SIZE;
                 std::vector<int> newSelectedIndexes;
                 std::unordered_map<int, ImU32> newTileColors;
 
-                for (const auto& index : initialSelectedIndexes) {
+                for (const auto& index : selectedIndexes) {
                     const int selectX = index % width, selectY = index / width;
-                    const int newX = (selectX + offsetX / TILE_SIZE + width) % width, newY = (selectY + offsetY / TILE_SIZE + height) % height; // Wrap positions within canvas boundaries
+                    const int newX = (selectX + offsetX / TILE_SIZE + width) % width;
+                    const int newY = (selectY + offsetY / TILE_SIZE + height) % height; // Wrap positions within canvas boundaries
 
                     const uint32_t newIndex = newX + newY * width;
                     newSelectedIndexes.push_back(newIndex);
@@ -1234,10 +1232,12 @@ void cCanvas::Editor() {
                 }
 
                 // Clear the original positions
-                for (const auto& index : initialSelectedIndexes) tiles[g_canvas[g_cidx].selLayerIndex][index] = IM_COL32_BLACK_TRANS;
+                for (const auto& index : selectedIndexes)
+                    tiles[g_canvas[g_cidx].selLayerIndex][index] = IM_COL32_BLACK_TRANS;
 
                 // Update new positions
-                for (const auto& [newIndex, color] : newTileColors) tiles[g_canvas[g_cidx].selLayerIndex][newIndex] = color;
+                for (const auto& [newIndex, color] : newTileColors)
+                    tiles[g_canvas[g_cidx].selLayerIndex][newIndex] = color;
 
                 selectedIndexes = newSelectedIndexes;
             }
