@@ -69,6 +69,19 @@ int cUtils::ColorDifference(const ImU32& col1, const ImU32& col2) {
     return diff;
 }
 
+int cUtils::ColorDifferenceSquared(const ImU32& col1, const ImU32& col2) {
+    const int r1 = (col1 >> IM_COL32_R_SHIFT) & 0xFF;
+    const int g1 = (col1 >> IM_COL32_G_SHIFT) & 0xFF;
+    const int b1 = (col1 >> IM_COL32_B_SHIFT) & 0xFF;
+    const int a1 = (col1 >> IM_COL32_A_SHIFT) & 0xFF;
+    const int r2 = (col2 >> IM_COL32_R_SHIFT) & 0xFF;
+    const int g2 = (col2 >> IM_COL32_G_SHIFT) & 0xFF;
+    const int b2 = (col2 >> IM_COL32_B_SHIFT) & 0xFF;
+    const int a2 = (col2 >> IM_COL32_A_SHIFT) & 0xFF;
+    const int diff = (r1 - r2) * (r1 - r2) + (g1 - g2) * (g1 - g2) + (b1 - b2) * (b1 - b2) + (a1 - a2) * (a1 - a2);
+    return diff;
+}
+
 // Helper function to compare two 1D vectors
 bool cUtils::IsTilesEqual(const std::vector<ImU32>& a, const std::vector<ImU32>& b) {
     if (a.size() != b.size()) return false;
@@ -272,13 +285,13 @@ void cUtils::FloodFill(const int& x, const int& y, bool paint) {
             if (!selectedIndexes.empty() && std::find(selectedIndexes.begin(), selectedIndexes.end(), currentIndex) == selectedIndexes.end())
                 continue;
 
-            if (g_util.ColorDistanceSquared(currentCol, initialCol) > threshold)
+            if (g_util.ColorDifferenceSquared(currentCol, initialCol) > threshold)
                 continue;
 
             g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex][currentIndex] = fillCol;
         }
         else {
-            if (g_util.ColorDistanceSquared(currentCol, initialCol) > threshold)
+            if (g_util.ColorDifferenceSquared(currentCol, initialCol) > threshold)
                 continue;
 
             selectedIndexes.push_back(currentIndex);

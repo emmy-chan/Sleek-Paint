@@ -29,6 +29,7 @@ public:
 	bool MouseReleased(const uint8_t& btn);
 	int ColorDistanceSquared(const ImU32& col1, const ImU32& col2);
 	int ColorDifference(const ImU32& col1, const ImU32& col2);
+	int ColorDifferenceSquared(const ImU32& col1, const ImU32& col2);
 	bool IsTilesEqual(const std::vector<ImU32>& a, const std::vector<ImU32>& b);
 	const bool IsClickingOutsideCanvas(ImVec2 mouse);
 	std::vector<uint64_t> GeneratePermutation(uint64_t size, uint64_t seed);
