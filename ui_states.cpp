@@ -331,7 +331,7 @@ void cUIStateNewProject::Update()
         ImGui::Checkbox("Match Size", &constrain_proportions);
         ImGui::PopStyleVar();
 
-        if (ImGui::Button("Ok")) {
+        if (ImGui::Button("Ok") || GetAsyncKeyState(VK_RETURN)) {
             // Todo: just call our canvas initialize function and pass the width / height
             std::string scene_name = "Sprite " + std::to_string(g_canvas.size() + 1);
             uint16_t scene_idx = (uint16_t)g_canvas.size() + 2;
@@ -385,7 +385,7 @@ void cUIStateNewProject::Update()
         }
 
         ImGui::SameLine();
-        if (ImGui::Button("Cancel")) g_app.ui_state.reset();
+        if (ImGui::Button("Cancel") || GetAsyncKeyState(VK_ESCAPE)) g_app.ui_state.reset();
         ImGui::EndPopup();
     }
     else
@@ -425,7 +425,7 @@ void cUIStateCanvasSize::Update()
         ImGui::Checkbox("Match Size", &constrain_proportions);
         ImGui::PopStyleVar();
 
-        if (ImGui::Button("Ok")) {
+        if (ImGui::Button("Ok") || GetAsyncKeyState(VK_RETURN)) {
             // Adapt canvas size
             g_canvas[g_cidx].AdaptNewSize((int)wInput, (int)hInput);
 
@@ -434,7 +434,7 @@ void cUIStateCanvasSize::Update()
         }
 
         ImGui::SameLine();
-        if (ImGui::Button("Cancel")) g_app.ui_state.reset();
+        if (ImGui::Button("Cancel") || GetAsyncKeyState(VK_ESCAPE)) g_app.ui_state.reset();
         ImGui::End();
     }
 }
