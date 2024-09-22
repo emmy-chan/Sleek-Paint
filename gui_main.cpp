@@ -520,7 +520,7 @@ void cGUI::Display()
 
             if (ImGui::CollapsingHeader("Scrambler")) {
                 // Scramble Key / Seed
-                static ImU32 key = 0xA5A5A5A5;
+                static uint64_t key = 0xA5A5A5A5;
                 static uint64_t seed = 12345;
 
                 // Encrypt and Decrypt buttons
@@ -573,7 +573,7 @@ void cGUI::Display()
                 }
 
                 // Input fields for key and seed
-                ImGui::InputScalar("Key", ImGuiDataType_U32, &key, nullptr, nullptr, "%08X", ImGuiInputTextFlags_CharsHexadecimal);
+                ImGui::InputScalar("Key", ImGuiDataType_U64, &key, nullptr, nullptr, "%016llX", ImGuiInputTextFlags_CharsHexadecimal);
                 ImGui::InputScalar("Seed", ImGuiDataType_U64, &seed, nullptr, nullptr, "%016llX", ImGuiInputTextFlags_CharsHexadecimal);
 
                 // Button to generate random key and seed

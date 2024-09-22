@@ -108,7 +108,6 @@ const bool cUtils::IsClickingOutsideCanvas(ImVec2 mouse) {
     return !bCanDraw;
 }
 
-// Function to generate a permutation of indices
 std::vector<uint64_t> cUtils::GeneratePermutation(uint64_t size, uint64_t seed) {
     std::vector<uint64_t> permutation(size);
     std::iota(permutation.begin(), permutation.end(), 0);
@@ -116,26 +115,26 @@ std::vector<uint64_t> cUtils::GeneratePermutation(uint64_t size, uint64_t seed) 
     return permutation;
 }
 
+void cUtils::GenerateRandomKeyAndSeed(uint64_t& key, uint64_t& seed) {
+    std::random_device rd;
+    std::mt19937_64 gen(rd());
+    std::uniform_int_distribution<uint64_t> disKey(0, UINT64_MAX);
+    std::uniform_int_distribution<uint64_t> disSeed(0, UINT64_MAX);
+
+    key = disKey(gen);
+    seed = disSeed(gen);
+}
+
 // Function to apply XOR to a color
-ImU32 cUtils::XorColor(ImU32 color, ImU32 key) {
+ImU32 cUtils::XorColor(ImU32 color, uint64_t key) {
     // Extract the alpha channel
     const ImU32 alpha = color & 0xFF000000;
     // XOR only the RGB channels
     const ImU32 rgb = color & 0x00FFFFFF;
-    const ImU32 key_rgb = key & 0x00FFFFFF;
+    const uint64_t key_rgb = key & 0x00FFFFFF;
     const ImU32 xor_rgb = rgb ^ key_rgb;
     // Combine the unchanged alpha channel with the XORed RGB channels
     return alpha | xor_rgb;
-}
-
-void cUtils::GenerateRandomKeyAndSeed(ImU32& key, uint64_t& seed) {
-    std::random_device rd;
-    std::mt19937 gen(rd());
-    std::uniform_int_distribution<uint32_t> disKey;
-    std::uniform_int_distribution<uint64_t> disSeed;
-
-    key = disKey(gen);
-    seed = disSeed(gen);
 }
 
 ImU32 cUtils::AdjustSaturation(ImU32 color, float saturationFactor) {
