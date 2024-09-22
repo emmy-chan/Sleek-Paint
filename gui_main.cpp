@@ -75,7 +75,6 @@ void cGUI::Display()
             
             if (ImGui::MenuItem(ICON_FA_ADJUST " Apply Dithering") && g_canvas.size() > 0) {
                 // Apply the changes to the canvas
-                #pragma omp simd
                 for (uint64_t y = 0; y < g_canvas[g_cidx].height; y++) {
                     for (uint64_t x = 0; x < g_canvas[g_cidx].width; x++) {
                         const uint64_t index = x + y * g_canvas[g_cidx].width;
@@ -106,7 +105,6 @@ void cGUI::Display()
                     uint64_t redSum = 0, greenSum = 0, blueSum = 0, alphaSum = 0, pixelCount = 0;
 
                     // Loop over the neighboring pixels within the blur radius
-                    #pragma omp simd
                     for (int64_t by = -blurRadius; by <= blurRadius; ++by) {
                         for (int64_t bx = -blurRadius; bx <= blurRadius; ++bx) {
                             const int64_t nx = x + bx;
@@ -168,7 +166,6 @@ void cGUI::Display()
                     uint64_t redSum = 0, greenSum = 0, blueSum = 0, alphaSum = 0, pixelCount = 0;
 
                     // First, compute the average color of the block
-                    #pragma omp simd
                     for (uint64_t by = 0; by < adjustedBlockSizeY; ++by) {
                         for (uint64_t bx = 0; bx < adjustedBlockSizeX; ++bx) {
                             const uint64_t blockIndex = (blockX + bx) + (blockY + by) * g_canvas[g_cidx].width;
@@ -190,7 +187,6 @@ void cGUI::Display()
                         );
 
                         // Apply normalized colored noise with fading effect to the block
-                        #pragma omp simd
                         for (uint64_t by = 0; by < adjustedBlockSizeY; ++by) {
                             for (uint64_t bx = 0; bx < adjustedBlockSizeX; ++bx) {
                                 const uint64_t blockIndex = (blockX + bx) + (blockY + by) * g_canvas[g_cidx].width;
@@ -534,7 +530,6 @@ void cGUI::Display()
 
                     // Encrypt the colors on the canvas
                     std::vector<ImU32> tempColors(size);
-                    #pragma omp simd
                     for (uint64_t i = 0; i < size; i++) {
                         const uint64_t permutedIndex = permutation[i];
 
@@ -555,13 +550,11 @@ void cGUI::Display()
                     std::vector<uint64_t> inversePermutation(size);
 
                     // Create the inverse permutation
-                    #pragma omp simd
                     for (uint64_t i = 0; i < size; i++)
                         inversePermutation[permutation[i]] = i;
 
                     // Decrypt the colors on the canvas
                     std::vector<ImU32> tempColors(size);
-                    #pragma omp simd
                     for (uint64_t i = 0; i < size; i++) {
                         const uint64_t originalIndex = inversePermutation[i];
                         const ImU32 encryptedColor = g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex][i];
@@ -573,7 +566,6 @@ void cGUI::Display()
                     }
 
                     // Copy the decrypted colors back to the canvas
-                    #pragma omp simd
                     for (uint64_t i = 0; i < size; i++)
                         g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex][i] = tempColors[i];
 
@@ -597,7 +589,6 @@ void cGUI::Display()
                 static std::vector<ImU32> originalColors;
                 if (originalColors.empty() && g_canvas.size() > 0) {
                     originalColors.resize(g_canvas[g_cidx].width * g_canvas[g_cidx].height);
-                    #pragma omp simd
                     for (uint64_t y = 0; y < g_canvas[g_cidx].height; y++) {
                         for (uint64_t x = 0; x < g_canvas[g_cidx].width; x++) {
                             const uint64_t index = x + y * g_canvas[g_cidx].width;
@@ -616,7 +607,6 @@ void cGUI::Display()
 
                 if (changed) {
                     // Apply the changes to the canvas based on the original colors
-                    #pragma omp simd
                     for (uint64_t y = 0; y < g_canvas[g_cidx].height; y++) {
                         for (uint64_t x = 0; x < g_canvas[g_cidx].width; x++) {
                             const uint64_t index = x + y * g_canvas[g_cidx].width;
@@ -909,7 +899,6 @@ void cGUI::Display()
             g_app.ui_state = std::make_unique<cUIStateSavePalette>();
 
         if (ImGui::MenuItem(ICON_FA_ARROW_RIGHT " Convert Canvas Colors To Palette") && g_canvas.size() > 0) {
-            #pragma omp simd
             for (uint64_t y = 0; y < g_canvas[g_cidx].height; y++) {
                 for (uint64_t x = 0; x < g_canvas[g_cidx].width; x++) {
                     const uint64_t index = x + y * g_canvas[g_cidx].width;
@@ -952,7 +941,6 @@ void cGUI::Display()
             std::unordered_set<ImU32> uniqueColors;
 
             // Iterate over the canvas to collect unique colors
-            #pragma omp simd
             for (uint64_t y = 0; y < g_canvas[g_cidx].height; y++) {
                 for (uint64_t x = 0; x < g_canvas[g_cidx].width; x++) {
                     const uint64_t index = x + y * g_canvas[g_cidx].width;
@@ -967,7 +955,6 @@ void cGUI::Display()
             for (const auto& color : uniqueColors) g_canvas[g_cidx].myCols.push_back(color);
 
             // Make sure colors are not duplicates, starting from the third element
-            #pragma omp simd
             for (int i = 2; i < g_canvas[g_cidx].myCols.size() - 1; i++) {
                 bool duplicateFound = false;
                 int duplicateIndex = -1;
@@ -1165,7 +1152,6 @@ void cGUI::Display()
             }
 
             // Adjust the alpha for each pixel if opacity is not zero
-            #pragma omp simd
             for (uint64_t y = 0; y < g_canvas[g_cidx].height; y++) {
                 for (uint64_t x = 0; x < g_canvas[g_cidx].width; x++) {
                     const uint64_t index = x + y * g_canvas[g_cidx].width;

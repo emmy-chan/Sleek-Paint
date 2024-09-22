@@ -142,7 +142,6 @@ void cCanvas::AdaptNewSize(int width, int height) {
 
         // Map old pixels to new positions with scaling
         for (int y = 0; y < height; ++y) {
-            #pragma omp simd
             for (int x = 0; x < width; ++x) {
                 const int oldX = static_cast<int>(x / scaleX), oldY = static_cast<int>(y / scaleY);
                 if (oldX < g_canvas[g_cidx].width && oldY < g_canvas[g_cidx].height) {
@@ -319,10 +318,8 @@ std::vector<ImU32> GetImageFromClipboard(uint16_t& outWidth, uint16_t& outHeight
 
     imageData.resize(outWidth * outHeight);
 
-    #pragma omp simd
     for (int y = 0; y < outHeight; y++) {
         int sourceY = isBottomUp ? (outHeight - 1 - y) : y;
-        #pragma omp simd
         for (int x = 0; x < outWidth; x++) {
             BYTE* pPixel = pPixels + (sourceY * outWidth + x) * 4; // Assuming 32-bit DIB
             const BYTE r = pPixel[2];
@@ -359,7 +356,6 @@ void cCanvas::PasteImageFromClipboard() {
     std::vector<ImU32> imageLayer(width * height, IM_COL32_BLACK_TRANS); // Initialize with transparent color
 
     // Instead of manually copying pixel by pixel, we can use std::copy
-    #pragma omp simd
     for (int y = 0; y < imageHeight; y++) {
         const int imageStartIndex = y * imageWidth, canvasStartIndex = y * width;
 
@@ -822,7 +818,6 @@ bool IsPointInPolygon(const ImVec2& point, const std::vector<ImVec2>& polygon) {
     bool inside = false;
     size_t j = polygon.size() - 1;
 
-    #pragma omp simd
     for (size_t i = 0; i < polygon.size(); ++i) {
         if ((polygon[i].y > point.y) != (polygon[j].y > point.y) &&
             point.x < (polygon[j].x - polygon[i].x) * (point.y - polygon[i].y) / (polygon[j].y - polygon[i].y) + polygon[i].x) {
@@ -875,7 +870,6 @@ std::vector<int> GetTilesWithinPolygon(const std::vector<ImVec2>& polygon, int w
     const int endY = std::min(height - 1, int((maxY - g_cam.y) / TILE_SIZE));
 
     for (int y = startY; y <= endY; ++y) {
-        #pragma omp simd
         for (int x = startX; x <= endX; ++x) {
             const ImVec2 topLeft(g_cam.x + x * TILE_SIZE, g_cam.y + y * TILE_SIZE);
             const ImVec2 center(topLeft.x + TILE_SIZE / 2, topLeft.y + TILE_SIZE / 2);
@@ -923,13 +917,11 @@ void CompositeLayersToBuffer(std::vector<ImU32>& compositedBuffer, const std::ve
     // Iterate over all pixels
     #pragma omp parallel for
     for (int32_t y = 0; y < height; ++y) {
-        #pragma omp simd // Apply SIMD to optimize within the loop
         for (int32_t x = 0; x < width; ++x) {
             uint8_t finalAlpha = 0, finalR = 0, finalG = 0, finalB = 0;
             const size_t pixelIndex = y * width + x;
 
-            #pragma omp simd
-            for (size_t i = 0; i < visibleLayers.size(); ++i) {
+            for (int i = 0; i < visibleLayers.size(); ++i) {
                 const auto& layer = visibleLayers[i];
                 const ImU32& color = tiles[layer][pixelIndex];
                 const uint8_t pixelAlpha = (color >> IM_COL32_A_SHIFT) & 0xFF;

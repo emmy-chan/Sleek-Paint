@@ -334,7 +334,6 @@ void cUtils::LoadImageFileToCanvas(const std::string& filepath, const std::strin
     const size_t image_size = image_width * image_height;
 
     // Ensure we have 4 channels (RGBA)
-    #pragma omp simd
     for (size_t i = 0; i < image_size; ++i) {
         const unsigned char r = image_data[i * channels];
         const unsigned char g = (channels > 1) ? image_data[i * channels + 1] : r;
@@ -359,7 +358,6 @@ std::vector<uint8_t> cUtils::CompressCanvasDataRLE(const std::vector<ImU32>& inp
     size_t count = 1;
     ImU32 previous = input[0];
 
-    #pragma omp simd
     for (size_t i = 1; i < input.size(); ++i) {
         if (input[i] == previous && count < 255)
             ++count;
@@ -392,7 +390,6 @@ std::vector<ImU32> cUtils::DecompressCanvasDataRLE(const std::vector<uint8_t>& i
     std::vector<ImU32> decompressedData;
     if (input.empty() || input.size() % 5 != 0) return decompressedData; // Each entry has 5 bytes: count and RGBA
 
-    #pragma omp simd
     for (size_t i = 0; i < input.size(); i += 5) {
         const uint8_t count = input[i];
         const uint8_t r = input[i + 1];
