@@ -1122,8 +1122,8 @@ void cCanvas::Editor() {
                 const float endY = g_cam.y + std::ceil(std::max(mouseStartY, mouseEndY) / TILE_SIZE) * TILE_SIZE;
 
                 // Draw the rectangle with snapping to the grid
-                d.AddRect({ startX, startY }, { endX, endY }, IM_COL32_BLACK, 0, NULL, 4);
-                d.AddRect({ startX, startY }, { endX, endY }, IM_COL32_WHITE, 0, NULL, 2);
+                d.AddRect({ startX - 1, startY - 1 }, { endX, endY }, IM_COL32_BLACK, 0, NULL, 4);
+                d.AddRect({ startX - 1, startY - 1 }, { endX, endY }, IM_COL32_WHITE, 0, NULL, 2);
             }
 
             if (g_util.MouseReleased(0)) {
