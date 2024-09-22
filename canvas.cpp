@@ -237,51 +237,55 @@ void DrawSelectionRectangle(const std::vector<int>& indexes, float tileSize, flo
     if (indexes.empty()) return;
 
     std::unordered_map<uint64_t, ImVec2> tilePositions;
-    tilePositions.reserve(indexes.size());  // Reserve space in advance to avoid resizing
+    tilePositions.reserve(indexes.size());  // Reserve space to avoid resizing
 
     // Get the positions of all selected tiles
     for (uint64_t index : indexes)
         tilePositions[index] = GetTilePos(index, tileSize, camX, camY, width, height);
 
-    // Check if a tile is at the edge of the canvas
-    auto isBorderTile = [&](uint64_t index, int dx, int dy) {
+    // Check if a neighboring tile is present
+    auto isNeighborPresent = [&](uint64_t index, int dx, int dy) {
         // Calculate the neighboring index
         const int neighborX = int(index % width) + dx, neighborY = int(index / width) + dy;
 
         // Ensure the neighbor is within canvas bounds
         if (neighborX < 0 || neighborX >= width || neighborY < 0 || neighborY >= height)
-            return true;  // Tile is at the canvas edge
+            return false;
 
-        // Check if the neighboring tile is part of the selection
+        // Calculate the neighbor's index and check if it's part of the selection
         const uint64_t neighborIndex = index + dx + dy * width;
-        return std::find(indexes.begin(), indexes.end(), neighborIndex) == indexes.end();
+        return tilePositions.find(neighborIndex) != tilePositions.end();
     };
 
-    std::vector<std::pair<ImVec2, ImVec2>> borderLines;  // Store border line pairs
+    std::vector<std::pair<ImVec2, ImVec2>> borderLines;  // Store border lines
 
-    // For each tile, add borders based on its neighbors
+    // For each tile, add borders based on missing neighbors
     for (const auto& [index, pos] : tilePositions) {
         ImVec2 topLeft = ImVec2(std::floor(pos.x), std::floor(pos.y));
         ImVec2 bottomRight = ImVec2(std::floor(pos.x + tileSize), std::floor(pos.y + tileSize));
 
-        // Add lines for the borders if there are no neighboring tiles in that direction
-        if (isBorderTile(index, -1, 0))  // Left border
+        // Only draw borders where there are no adjacent tiles, ensuring no overlapping borders
+
+        if (!isNeighborPresent(index, -1, 0))  // Left border (no left neighbor)
             borderLines.emplace_back(topLeft, ImVec2(topLeft.x, bottomRight.y));
 
-        if (isBorderTile(index, 1, 0))  // Right border
+        if (!isNeighborPresent(index, 1, 0))  // Right border (no right neighbor)
             borderLines.emplace_back(ImVec2(bottomRight.x, topLeft.y), bottomRight);
 
-        if (isBorderTile(index, 0, -1))  // Top border
+        if (!isNeighborPresent(index, 0, -1))  // Top border (no top neighbor)
             borderLines.emplace_back(topLeft, ImVec2(bottomRight.x, topLeft.y));
 
-        if (isBorderTile(index, 0, 1))  // Bottom border
+        if (!isNeighborPresent(index, 0, 1))  // Bottom border (no bottom neighbor)
             borderLines.emplace_back(ImVec2(topLeft.x, bottomRight.y), bottomRight);
     }
 
-    // Draw all borders in one pass
+    // Draw all borders
     for (const auto& [p1, p2] : borderLines) {
-        ImGui::GetBackgroundDrawList()->AddLine(ImVec2(std::round(p1.x), std::round(p1.y)), ImVec2(std::round(p2.x), std::round(p2.y)), IM_COL32_BLACK, float(thickness * 2));  // Outline
-        ImGui::GetBackgroundDrawList()->AddLine(ImVec2(std::round(p1.x), std::round(p1.y)), ImVec2(std::round(p2.x), std::round(p2.y)), col, float(thickness));  // Main color
+        // Outline for each line
+        ImGui::GetBackgroundDrawList()->AddLine(ImVec2(std::round(p1.x), std::round(p1.y)), ImVec2(std::round(p2.x), std::round(p2.y)), IM_COL32_BLACK, float(thickness * 2));
+
+        // Main color for each line
+        ImGui::GetBackgroundDrawList()->AddLine(ImVec2(std::round(p1.x), std::round(p1.y)), ImVec2(std::round(p2.x), std::round(p2.y)), col, float(thickness));
     }
 }
 
