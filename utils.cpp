@@ -294,7 +294,8 @@ void cUtils::FloodFill(const int& x, const int& y, bool paint) {
             if (g_util.ColorDifferenceSquared(currentCol, initialCol) > threshold)
                 continue;
 
-            selectedIndexes.push_back(currentIndex);
+            if (std::find(selectedIndexes.begin(), selectedIndexes.end(), currentIndex) == selectedIndexes.end())
+                selectedIndexes.push_back(currentIndex);
         }
 
         // Add neighbors to the queue only if they are valid
