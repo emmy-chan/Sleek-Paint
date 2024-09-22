@@ -237,8 +237,6 @@ ImVec2 GetTilePos(int64_t index, float tileSize, float camX, float camY, int wid
 void DrawSelectionRectangle(const std::vector<int>& indexes, float tileSize, float camX, float camY, int width, int height, ImU32 col, uint8_t thickness) {
     if (indexes.empty()) return;
 
-    ImDrawList* drawList = ImGui::GetBackgroundDrawList();
-
     std::unordered_map<uint64_t, ImVec2> tilePositions;
     tilePositions.reserve(indexes.size());  // Reserve space in advance to avoid resizing
 
@@ -249,14 +247,14 @@ void DrawSelectionRectangle(const std::vector<int>& indexes, float tileSize, flo
     // Check if a tile is at the edge of the canvas
     auto isBorderTile = [&](uint64_t index, int dx, int dy) {
         // Calculate the neighboring index
-        int neighborX = int(index % width) + dx, neighborY = int(index / width) + dy;
+        const int neighborX = int(index % width) + dx, neighborY = int(index / width) + dy;
 
         // Ensure the neighbor is within canvas bounds
         if (neighborX < 0 || neighborX >= width || neighborY < 0 || neighborY >= height)
             return true;  // Tile is at the canvas edge
 
         // Check if the neighboring tile is part of the selection
-        uint64_t neighborIndex = index + dx + dy * width;
+        const uint64_t neighborIndex = index + dx + dy * width;
         return std::find(indexes.begin(), indexes.end(), neighborIndex) == indexes.end();
     };
 
@@ -283,8 +281,8 @@ void DrawSelectionRectangle(const std::vector<int>& indexes, float tileSize, flo
 
     // Draw all borders in one pass
     for (const auto& [p1, p2] : borderLines) {
-        drawList->AddLine(ImVec2(std::round(p1.x), std::round(p1.y)), ImVec2(std::round(p2.x), std::round(p2.y)), IM_COL32_BLACK, float(thickness * 2));  // Outline
-        drawList->AddLine(ImVec2(std::round(p1.x), std::round(p1.y)), ImVec2(std::round(p2.x), std::round(p2.y)), col, float(thickness));  // Main color
+        ImGui::GetBackgroundDrawList()->AddLine(ImVec2(std::round(p1.x), std::round(p1.y)), ImVec2(std::round(p2.x), std::round(p2.y)), IM_COL32_BLACK, float(thickness * 2));  // Outline
+        ImGui::GetBackgroundDrawList()->AddLine(ImVec2(std::round(p1.x), std::round(p1.y)), ImVec2(std::round(p2.x), std::round(p2.y)), col, float(thickness));  // Main color
     }
 }
 
