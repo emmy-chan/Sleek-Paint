@@ -1315,11 +1315,9 @@ void cCanvas::Editor() {
             }
 
             // Draw the freeform selection path
-            if (freeformPath.size() > 1) {
-                for (size_t i = 0; i < freeformPath.size() - 1; ++i) {
-                    ImGui::GetBackgroundDrawList()->AddLine(freeformPath[i], freeformPath[i + 1], IM_COL32_BLACK, 4.0f);
-                    ImGui::GetBackgroundDrawList()->AddLine(freeformPath[i], freeformPath[i + 1], IM_COL32_WHITE, 2.0f);
-                }
+            if (!freeformPath.empty()) {
+                ImGui::GetBackgroundDrawList()->AddPolyline(freeformPath.data(), freeformPath.size(), IM_COL32_BLACK, NULL, 4.0f);
+                ImGui::GetBackgroundDrawList()->AddPolyline(freeformPath.data(), freeformPath.size(), IM_COL32_WHITE, NULL, 2.0f);
             }
 
             break;
