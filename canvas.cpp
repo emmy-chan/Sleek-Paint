@@ -570,7 +570,7 @@ void DrawTextOnCanvasFreeType(FT_Face& face, const std::string& text, int mouseX
         startX, startY, canvasWidth, canvasHeight, g_cam.x, g_cam.y, TILE_SIZE);
 
     // Set the desired font size using FreeType
-    if (FT_Set_Pixel_Sizes(face, 0, fontSize)) {
+    if (FT_Set_Pixel_Sizes(face, 0, text_size)) {
         printf("Failed to set pixel sizes\n");
         return;
     }
@@ -590,7 +590,7 @@ void DrawTextOnCanvasFreeType(FT_Face& face, const std::string& text, int mouseX
         FT_GlyphSlot g = face->glyph;
 
         // Calculate the glyph position
-        int glyph_x = x + g->bitmap_left, glyph_y = baselineY - g->bitmap_top;
+        int glyph_x = static_cast<int>(x + g->bitmap_left), glyph_y = static_cast<int>(baselineY - g->bitmap_top);
 
         // Ensure the glyph is within the canvas bounds
         if (glyph_x < 0 || glyph_y < 0 || glyph_x + g->bitmap.width > canvasWidth || glyph_y + g->bitmap.rows > canvasHeight) {
@@ -614,7 +614,7 @@ void DrawTextOnCanvasFreeType(FT_Face& face, const std::string& text, int mouseX
         }
 
         // Move the cursor to the next character's position
-        x += (g->advance.x >> 6);
+        x += (g->advance.x >> 6) + 1;
 
         // If text exceeds canvas width, move to the next line
         if (x + g->bitmap.width >= canvasWidth) {
@@ -1368,10 +1368,10 @@ void cCanvas::Editor() {
                         if (!textInput.empty()) {
                             if (FT_Load_Char(face, textInput.back(), FT_LOAD_RENDER) == 0) {
                                 FT_GlyphSlot g = face->glyph;
-                                int glyphWidth = g->advance.x >> 6;
+                                int glyphWidth = (g->advance.x >> 6) + TILE_SIZE;
 
-                                // Move cursor back by the width of the last glyph
-                                cursorPos.x -= glyphWidth + 1.5f * TILE_SIZE / text_size;  // Add extra spacing to align correctly
+                                // Move cursor back by the width of the last glyph + TILE_SIZE
+                                cursorPos.x -= glyphWidth;
 
                                 // Clear the last character's area on the canvas
                                 int glyph_x = static_cast<int>(cursorPos.x), glyph_y = static_cast<int>(cursorPos.y - (face->size->metrics.ascender >> 6));
@@ -1386,6 +1386,9 @@ void cCanvas::Editor() {
                                             g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex][posY * width + posX] = IM_COL32_BLACK_TRANS; // Background color or transparent
                                     }
                                 }
+
+                                // Move cursor after rendering the glyph and add extra tile size for spacing
+                                cursorPos.x += (g->advance.x >> 6) + TILE_SIZE;
                             }
                         }
                         else {
@@ -1413,8 +1416,10 @@ void cCanvas::Editor() {
             if (!lines.empty()) lines.back() = textInput;
 
             // Draw the current text at the mouse position using FreeType
-            for (size_t i = 0; i < lines.size(); ++i)
+            for (size_t i = 0; i < lines.size(); ++i) {
+                DrawTextOnCanvasFreeType(face, lines[i], static_cast<int>(linePositions[i].x) - TILE_SIZE, static_cast<int>(linePositions[i].y), IM_COL32_BLACK, text_size);
                 DrawTextOnCanvasFreeType(face, lines[i], static_cast<int>(linePositions[i].x), static_cast<int>(linePositions[i].y), myCols[selColIndex], text_size);
+            }
 
             // Update the previous text input and position
             previousTextInput = textInput;
@@ -1424,7 +1429,7 @@ void cCanvas::Editor() {
             float cursorHeight = 0.0f;
 
             // Set font size in FreeType
-            FT_Set_Pixel_Sizes(face, 0, static_cast<int>(text_size * TILE_SIZE));
+            FT_Set_Pixel_Sizes(face, 0, text_size);
 
             // Adjust cursor position based on text and glyph metrics
             if (!textInput.empty()) {

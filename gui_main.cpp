@@ -1350,7 +1350,7 @@ void cGUI::Display()
             ImGui::Text("Text Size:");
             int temp = static_cast<int>(text_size);
 
-            if (ImGui::SliderInt("##Text Size", &temp, 8, 100))
+            if (ImGui::SliderInt("##Text Size", &temp, 10, 100))
                 text_size = static_cast<uint8_t>(temp);
             break;
         }

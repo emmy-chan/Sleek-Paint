@@ -200,8 +200,8 @@ int main(int, char**)
         return 0;
     }
 
-    // Set the default font size (this can be changed dynamically)
-    FT_Set_Pixel_Sizes(face, 0, 12); // 18 pixels font size
+    // Set the default font size
+    FT_Set_Pixel_Sizes(face, 0, 32);
 
     // Setup our IMGUI theme!
     SetupTheme();

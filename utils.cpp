@@ -220,27 +220,18 @@ ImU32 cUtils::ApplyFloydSteinbergDithering(ImU32 color, uint64_t x, uint64_t y) 
 }
 
 ImU32 cUtils::BlendColor(ImU32 baseColor, uint8_t glyphAlpha) {
-    // Extract base color components
+    // Extract base color components (ignoring the alpha channel)
     const uint8_t baseR = (baseColor >> IM_COL32_R_SHIFT) & 0xFF;
     const uint8_t baseG = (baseColor >> IM_COL32_G_SHIFT) & 0xFF;
     const uint8_t baseB = (baseColor >> IM_COL32_B_SHIFT) & 0xFF;
-    const uint8_t baseA = (baseColor >> IM_COL32_A_SHIFT) & 0xFF;
 
-    // If glyph is fully opaque, return the color as is
-    if (glyphAlpha == 255) return baseColor;
+    // If the glyph has any alpha value greater than zero, we'll directly apply the base color
+    if (glyphAlpha > 0) {
+        return baseColor; // Use the solid color, ignoring alpha channel blending
+    }
 
-    // If glyph is fully transparent, do not blend
-    if (glyphAlpha == 0) return baseColor;
-
-    // Calculate the blended alpha
-    const uint8_t finalAlpha = (glyphAlpha * baseA) / 255;
-
-    // Calculate the blended color components
-    const uint8_t blendedR = (glyphAlpha * ((baseColor >> IM_COL32_R_SHIFT) & 0xFF) + (255 - glyphAlpha) * baseR) / 255;
-    const uint8_t blendedG = (glyphAlpha * ((baseColor >> IM_COL32_G_SHIFT) & 0xFF) + (255 - glyphAlpha) * baseG) / 255;
-    const uint8_t blendedB = (glyphAlpha * ((baseColor >> IM_COL32_B_SHIFT) & 0xFF) + (255 - glyphAlpha) * baseB) / 255;
-
-    return IM_COL32(blendedR, blendedG, blendedB, finalAlpha);
+    // If the glyph is fully transparent (which in this case we don't want), return an unchanged color
+    return IM_COL32(baseR, baseG, baseB, 255);  // Forcefully return opaque color
 }
 
 // Flood fill function
