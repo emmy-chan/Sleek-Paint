@@ -558,7 +558,7 @@ void BitmapFont::EnsureBitmapDimensions() {
     for (auto& pair : charBitmaps) {
         auto& bitmap = pair.second;
         int currentCharHeight = (int)bitmap.size();
-        int currentCharWidth = bitmap.empty() ? 0 : bitmap[0].size();
+        int currentCharWidth = bitmap.empty() ? 0 : (int)bitmap[0].size();
 
         // Adjust rows if necessary
         while (currentCharHeight < charHeight) {
