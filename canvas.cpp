@@ -551,7 +551,7 @@ void DrawRectangleOnCanvas(int x0, int y0, int x1, int y1, ImU32 color, bool pre
     }
 }
 
-void DrawTextOnCanvasFreeType(FT_Face& face, const std::string& text, int mouseX, int mouseY, ImU32 color, int fontSize) {
+void DrawTextOnCanvasFreeType(FT_Face& face, const std::string& text, int mouseX, int mouseY, ImU32 color, int fontSize, bool clearPrevious = false) {
     // Canvas dimensions
     int canvasWidth = g_canvas[g_cidx].width, canvasHeight = g_canvas[g_cidx].height;
 
@@ -570,7 +570,7 @@ void DrawTextOnCanvasFreeType(FT_Face& face, const std::string& text, int mouseX
         startX, startY, canvasWidth, canvasHeight, g_cam.x, g_cam.y, TILE_SIZE);
 
     // Set the desired font size using FreeType
-    if (FT_Set_Pixel_Sizes(face, 0, text_size)) {
+    if (FT_Set_Pixel_Sizes(face, 0, fontSize)) {
         printf("Failed to set pixel sizes\n");
         return;
     }
@@ -596,6 +596,21 @@ void DrawTextOnCanvasFreeType(FT_Face& face, const std::string& text, int mouseX
         if (glyph_x < 0 || glyph_y < 0 || glyph_x + g->bitmap.width > canvasWidth || glyph_y + g->bitmap.rows > canvasHeight) {
             printf("Glyph position (%d, %d) is out of canvas bounds for character '%c'\n", glyph_x, glyph_y, c);
             continue;
+        }
+
+        // **Clear previous character area if needed**
+        if (clearPrevious) {
+            for (int row = 0; row < g->bitmap.rows; ++row) {
+                for (int col = 0; col < g->bitmap.width; ++col) {
+                    int posX = glyph_x + col, posY = glyph_y + row;
+
+                    // Ensure we're within bounds of the canvas
+                    if (posX >= 0 && posX < canvasWidth && posY >= 0 && posY < canvasHeight) {
+                        // Clear the pixel to the background color or transparent
+                        g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex][posY * canvasWidth + posX] = IM_COL32_BLACK_TRANS;
+                    }
+                }
+            }
         }
 
         // Render glyph within canvas bounds
@@ -1317,156 +1332,162 @@ void cCanvas::Editor() {
             }
 
             break;
-        }
-    }
+        case TOOL_TEXT: {
+            static ImVec2 textPosition, previousTextPosition;
+            static std::string textInput, previousTextInput;
+            static std::vector<ImVec2> linePositions;
+            static std::vector<std::string> lines;
 
-    static ImVec2 textPosition, previousTextPosition;
-    static std::string textInput, previousTextInput;
-    static std::vector<ImVec2> linePositions;
-    static std::vector<std::string> lines;
-
-    // Handle text input
-    if (paintToolSelected == TOOL_TEXT) {
-        if (io.MouseClicked[0] && !isTypingText) {
-            textPosition = ImGui::GetMousePos();
-            isTypingText = true;
-            textInput.clear();
-            previousTextInput.clear();
-            previousTextPosition = textPosition;
-            lines.clear();
-            linePositions.clear();
-            lines.push_back("");
-            linePositions.push_back(textPosition);
-        }
-
-        if (isTypingText) {
-            // Hotkey to quit typing
-            if (GetAsyncKeyState(VK_ESCAPE)) isTypingText = false;
-
-            ImVec2 cursorPos;
-
-            // Capture text input
-            for (int c = 0; c < io.InputQueueCharacters.Size; c++) {
-                const ImWchar ch = io.InputQueueCharacters[c];
-                if (ch == '\n' || ch == '\r') {
-                    // Handle Enter key: move to new line
-                    textPosition.y += text_size * TILE_SIZE; // Adjust with font size and TILE_SIZE
-                    textPosition.x = linePositions[0].x; // Reset x position to start of the line
-                    lines.push_back(""); // Add a new line
-                    linePositions.push_back(textPosition); // Save the position for the new line
-                    textInput.clear(); // Clear input for the new line
+            // Handle text input
+            if (paintToolSelected == TOOL_TEXT) {
+                if (io.MouseClicked[0] && !isTypingText) {
+                    textPosition = ImGui::GetMousePos();
+                    isTypingText = true;
+                    textInput.clear();
                     previousTextInput.clear();
-                    continue;
+                    previousTextPosition = textPosition;
+                    lines.clear();
+                    linePositions.clear();
+                    lines.push_back("");
+                    linePositions.push_back(textPosition);
                 }
 
-                // Handle backspace
-                if (ch == 127 || ch == '\b') {
-                    if (!textInput.empty()) {
-                        textInput.pop_back();  // Remove the last character from input
+                if (isTypingText) {
+                    // Hotkey to quit typing
+                    if (GetAsyncKeyState(VK_ESCAPE)) isTypingText = false;
 
-                        // Recalculate cursor position for last character
-                        if (!textInput.empty()) {
-                            if (FT_Load_Char(face, textInput.back(), FT_LOAD_RENDER) == 0) {
-                                FT_GlyphSlot g = face->glyph;
-                                int glyphWidth = (g->advance.x >> 6) + TILE_SIZE;
+                    ImVec2 cursorPos;
 
-                                // Move cursor back by the width of the last glyph + TILE_SIZE
-                                cursorPos.x -= glyphWidth;
+                    // Capture text input
+                    for (int c = 0; c < io.InputQueueCharacters.Size; c++) {
+                        const ImWchar ch = io.InputQueueCharacters[c];
+                        if (ch == '\n' || ch == '\r') {
+                            // Handle Enter key: move to new line
+                            textPosition.y += text_size * TILE_SIZE; // Adjust with font size and TILE_SIZE
+                            textPosition.x = linePositions[0].x; // Reset x position to start of the line
+                            lines.push_back(""); // Add a new line
+                            linePositions.push_back(textPosition); // Save the position for the new line
+                            textInput.clear(); // Clear input for the new line
+                            previousTextInput.clear();
+                            continue;
+                        }
 
-                                // Clear the last character's area on the canvas
-                                int glyph_x = static_cast<int>(cursorPos.x), glyph_y = static_cast<int>(cursorPos.y - (face->size->metrics.ascender >> 6));
-                                int glyph_height = (face->size->metrics.height >> 6);
+                        // Handle backspace
+                        if (ch == 127 || ch == '\b') {
+                            if (!textInput.empty()) {
+                                if (FT_Load_Char(face, textInput.back(), FT_LOAD_RENDER) == 0) {
+                                    FT_GlyphSlot g = face->glyph;
+                                    int glyphWidth = (g->advance.x >> 6) + TILE_SIZE;
+                                    int glyphHeight = (face->size->metrics.height >> 6);
 
-                                // Erase the previous character from the canvas
-                                for (int row = 0; row < glyph_height; ++row) {
-                                    for (int col = 0; col < glyphWidth; ++col) {
-                                        int posX = glyph_x + col, posY = glyph_y + row;
+                                    // Move cursor back by the width of the last glyph + TILE_SIZE
+                                    cursorPos.x -= glyphWidth;
 
-                                        if (posX >= 0 && posX < width && posY >= 0 && posY < height)
-                                            g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex][posY * width + posX] = IM_COL32_BLACK_TRANS; // Background color or transparent
+                                    // Adjust Y position for glyph baseline
+                                    int glyph_x = static_cast<int>(cursorPos.x);
+                                    int glyph_y = static_cast<int>(cursorPos.y - (g->bitmap_top));  // Adjust for bitmap top
+
+                                    // Clear the previous character's area on the canvas
+                                    for (int row = 0; row < glyphHeight; ++row) {
+                                        for (int col = 0; col < g->bitmap.width; ++col) {
+                                            int posX = glyph_x + col;
+                                            int posY = glyph_y + row;
+
+                                            // Ensure we are within canvas bounds
+                                            if (posX >= 0 && posX < width && posY >= 0 && posY < height) {
+                                                g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex][posY * width + posX] = IM_COL32_BLACK_TRANS;  // Clear to background color or transparent
+                                            }
+                                        }
                                     }
-                                }
 
-                                // Move cursor after rendering the glyph and add extra tile size for spacing
-                                cursorPos.x += (g->advance.x >> 6) + TILE_SIZE;
+                                    // Remove the last character from textInput
+                                    textInput.pop_back();
+
+                                    // Update the line content with the modified textInput
+                                    lines.back() = textInput;
+                                }
+                                else {
+                                    // If text input is empty, reset the position to start of the line
+                                    cursorPos.x = linePositions.back().x;
+                                }
+                            }
+                            else if (lines.size() > 1) {
+                                // Handle backspace when the current line is empty
+                                lines.pop_back();
+                                linePositions.pop_back();
+                                textPosition = linePositions.back();
+                                textInput = lines.back();
+                                previousTextInput = textInput;
+
+                                // Clear the entire line space on the canvas
+                                // Implement logic to clear the previous line
                             }
                         }
                         else {
-                            // If text input is empty, reset the position to start of line
-                            cursorPos.x = linePositions.back().x;
+                            textInput += static_cast<char>(ch);  // Ensure correct type cast
+                            UpdateCanvasHistory();
                         }
                     }
-                    else if (lines.size() > 1) {
-                        // Handle backspace when current line is empty
-                        lines.pop_back();
-                        linePositions.pop_back();
-                        textPosition = linePositions.back();
-                        textInput = lines.back();
-                        previousTextInput = textInput;
-                        // Clear the entire line space on canvas
+
+                    // Update the current line content
+                    if (!lines.empty()) lines.back() = textInput;
+
+                    // Draw the current text at the mouse position using FreeType
+                    for (size_t i = 0; i < lines.size(); ++i) {
+                        DrawTextOnCanvasFreeType(face, lines[i], static_cast<int>(linePositions[i].x) - TILE_SIZE, static_cast<int>(linePositions[i].y), IM_COL32_BLACK, text_size);
+                        DrawTextOnCanvasFreeType(face, lines[i], static_cast<int>(linePositions[i].x), static_cast<int>(linePositions[i].y), myCols[selColIndex], text_size);
+                    }
+
+                    // Update the previous text input and position
+                    previousTextInput = textInput;
+                    previousTextPosition = textPosition;
+
+                    // Calculate the cursor position and height
+                    float cursorHeight = 0.0f;
+
+                    // Set font size in FreeType
+                    FT_Set_Pixel_Sizes(face, 0, text_size);
+
+                    // Adjust cursor position based on text and glyph metrics
+                    if (!textInput.empty()) {
+                        // Load the last character to get its glyph metrics
+                        if (FT_Load_Char(face, textInput.back(), FT_LOAD_RENDER) == 0) {
+                            FT_GlyphSlot g = face->glyph;
+
+                            // Adjust cursor X-position by accounting for the full advance of all characters
+                            cursorPos.x = linePositions.back().x + (textInput.size() * ((g->advance.x >> 6) + static_cast<int>(1.5f * TILE_SIZE / text_size)));
+
+                            // Offset X-position slightly to the right to align perfectly after the last glyph
+                            cursorPos.x += 1.0f * TILE_SIZE / text_size;  // Fine-tuning offset
+
+                            // Adjust cursor Y-position to align with the baseline and account for glyph metrics
+                            cursorPos.y = linePositions.back().y + (face->size->metrics.ascender >> 6) * TILE_SIZE / text_size - (g->bitmap_top * TILE_SIZE / text_size);
+
+                            // Set cursor height based on the tallest glyph in the font size
+                            cursorHeight = (face->size->metrics.ascender >> 6) * TILE_SIZE / text_size;
+                            cursorHeight *= 0.25f;
+                        }
+                    }
+                    else {
+                        // Default cursor position and height if no text
+                        cursorPos.x = linePositions.back().x - text_size;
+                        cursorPos.y = linePositions.back().y + (face->size->metrics.ascender >> 6) * TILE_SIZE / text_size;
+                        cursorHeight = (face->size->metrics.ascender >> 6) * TILE_SIZE;
+                    }
+
+                    // Draw blinking cursor with corrected position and height
+                    if (fmod(ImGui::GetTime(), 1.0f) > 0.5f) {
+                        ImVec2 cursorPos1 = ImVec2(cursorPos.x, cursorPos.y - cursorHeight), cursorPos2 = ImVec2(cursorPos.x, cursorPos.y + cursorHeight);
+                        d.AddLine(cursorPos1, cursorPos2, IM_COL32_BLACK, 2.0f);
+                        d.AddLine(cursorPos1, cursorPos2, IM_COL32_WHITE, 1.0f);
                     }
                 }
-                else {
-                    textInput += static_cast<char>(ch);  // Ensure correct type cast
-                    UpdateCanvasHistory();
-                }
+                else
+                    isTypingText = false;
             }
-
-            // Update the current line content
-            if (!lines.empty()) lines.back() = textInput;
-
-            // Draw the current text at the mouse position using FreeType
-            for (size_t i = 0; i < lines.size(); ++i) {
-                DrawTextOnCanvasFreeType(face, lines[i], static_cast<int>(linePositions[i].x) - TILE_SIZE, static_cast<int>(linePositions[i].y), IM_COL32_BLACK, text_size);
-                DrawTextOnCanvasFreeType(face, lines[i], static_cast<int>(linePositions[i].x), static_cast<int>(linePositions[i].y), myCols[selColIndex], text_size);
-            }
-
-            // Update the previous text input and position
-            previousTextInput = textInput;
-            previousTextPosition = textPosition;
-
-            // Calculate the cursor position and height
-            float cursorHeight = 0.0f;
-
-            // Set font size in FreeType
-            FT_Set_Pixel_Sizes(face, 0, text_size);
-
-            // Adjust cursor position based on text and glyph metrics
-            if (!textInput.empty()) {
-                // Load the last character to get its glyph metrics
-                if (FT_Load_Char(face, textInput.back(), FT_LOAD_RENDER) == 0) {
-                    FT_GlyphSlot g = face->glyph;
-
-                    // Adjust cursor X-position by accounting for the full advance of all characters
-                    cursorPos.x = linePositions.back().x + (textInput.size() * ((g->advance.x >> 6) + static_cast<int>(1.5f * TILE_SIZE / text_size)));
-
-                    // Offset X-position slightly to the right to align perfectly after the last glyph
-                    cursorPos.x += 1.0f * TILE_SIZE / text_size;  // Fine-tuning offset
-
-                    // Adjust cursor Y-position to align with the baseline and account for glyph metrics
-                    cursorPos.y = linePositions.back().y + (face->size->metrics.ascender >> 6) * TILE_SIZE / text_size - (g->bitmap_top * TILE_SIZE / text_size);
-
-                    // Set cursor height based on the tallest glyph in the font size
-                    cursorHeight = (face->size->metrics.ascender >> 6) * TILE_SIZE / text_size;
-                    cursorHeight *= 0.25f;
-                }
-            }
-            else {
-                // Default cursor position and height if no text
-                cursorPos.x = linePositions.back().x - text_size;
-                cursorPos.y = linePositions.back().y + (face->size->metrics.ascender >> 6) * TILE_SIZE / text_size;
-                cursorHeight = (face->size->metrics.ascender >> 6) * TILE_SIZE;
-            }
-
-            // Draw blinking cursor with corrected position and height
-            if (fmod(ImGui::GetTime(), 1.0f) > 0.5f) {
-                ImVec2 cursorPos1 = ImVec2(cursorPos.x, cursorPos.y - cursorHeight), cursorPos2 = ImVec2(cursorPos.x, cursorPos.y + cursorHeight);
-                d.AddLine(cursorPos1, cursorPos2, IM_COL32_BLACK, 2.0f);
-                d.AddLine(cursorPos1, cursorPos2, IM_COL32_WHITE, 1.0f);
+                break;
             }
         }
-        else
-            isTypingText = false;
     }
 
     // Draw a rectangle around the selected indexes
