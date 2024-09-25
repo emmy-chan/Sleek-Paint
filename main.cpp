@@ -24,6 +24,7 @@
 #include "gui_main.h"
 #include "utils.h"
 #include <ft2build.h>
+#include <filesystem>
 #include FT_FREETYPE_H
 
 // Data
@@ -174,7 +175,8 @@ int main(int, char**)
     config.MergeMode = true;
 
     // Chinese / Japanese fonts
-    io.Fonts->AddFontFromFileTTF("c:\\Windows\\Fonts\\msyh.ttc", 18.0f, &config, io.Fonts->GetGlyphRangesChineseSimplifiedCommon());
+    if (std::filesystem::exists("c:\\Windows\\Fonts\\msyh.ttc"))
+        io.Fonts->AddFontFromFileTTF("c:\\Windows\\Fonts\\msyh.ttc", 18.0f, &config, io.Fonts->GetGlyphRangesChineseSimplifiedCommon());
 
     // Load icons!
     {
