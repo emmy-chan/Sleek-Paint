@@ -208,9 +208,16 @@
     <ClInclude Include="app.h" />
     <ClInclude Include="json.hpp" />
     <ClInclude Include="keystate.h" />
+    <ClInclude Include="resource.h" />
     <ClInclude Include="stb_image.h" />
     <ClInclude Include="stb_image_write.h" />
     <ClInclude Include="utils.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="Sprite Editor.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="gfx\ns.ico" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
