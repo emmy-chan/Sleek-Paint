@@ -143,8 +143,18 @@ int main(int, char**)
     // Create application window
     //ImGui_ImplWin32_EnableDpiAwareness();
     WNDCLASSEX wc = { sizeof(WNDCLASSEX), CS_CLASSDC, WndProc, 0L, 0L, GetModuleHandle(NULL), NULL, NULL, NULL, NULL, _T("Painteroni"), NULL };
+    wc.hIcon = LoadIcon(GetModuleHandle(NULL), MAKEINTRESOURCE("gfx/ns.ico"));  // Set your custom icon
+    wc.hIconSm = LoadIcon(GetModuleHandle(NULL), MAKEINTRESOURCE("gfx/ns.ico"));  // Small icon
+
     ::RegisterClassEx(&wc);
-    g_app.windowHandle = ::CreateWindow(wc.lpszClassName, _T("Paint"), WS_OVERLAPPEDWINDOW, 100, 100, 1000, 720, NULL, NULL, wc.hInstance, NULL);
+    g_app.windowHandle = ::CreateWindow(wc.lpszClassName, _T("Nostalgia Paint"), WS_OVERLAPPEDWINDOW, 100, 100, 1000, 720, NULL, NULL, wc.hInstance, NULL);
+
+    // Load the icon from file
+    HANDLE hIcon = LoadImage(GetModuleHandle(NULL), _T("gfx/ns.ico"), IMAGE_ICON, 32, 32, LR_LOADFROMFILE);
+
+    // Set the icon
+    SendMessage(g_app.windowHandle, WM_SETICON, ICON_SMALL, (LPARAM)hIcon);
+    SendMessage(g_app.windowHandle, WM_SETICON, ICON_BIG, (LPARAM)hIcon);
 
     // Initialize Direct3D
     if (!CreateDeviceD3D(g_app.windowHandle))
