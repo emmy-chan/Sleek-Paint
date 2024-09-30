@@ -149,19 +149,20 @@ int main(int, char**)
     ::RegisterClassEx(&wc);
     g_app.windowHandle = ::CreateWindow(wc.lpszClassName, _T("Nostalgia Paint"), WS_OVERLAPPEDWINDOW, 100, 100, 1000, 720, NULL, NULL, wc.hInstance, NULL);
 
-    // Load the icon from file
-    HANDLE hIcon = LoadImage(GetModuleHandle(NULL), _T("gfx/ns.ico"), IMAGE_ICON, 32, 32, LR_LOADFROMFILE);
-
-    // Set the icon
-    SendMessage(g_app.windowHandle, WM_SETICON, ICON_SMALL, (LPARAM)hIcon);
-    SendMessage(g_app.windowHandle, WM_SETICON, ICON_BIG, (LPARAM)hIcon);
-
     // Initialize Direct3D
     if (!CreateDeviceD3D(g_app.windowHandle))
     {
         CleanupDeviceD3D();
         ::UnregisterClass(wc.lpszClassName, wc.hInstance);
         return 1;
+    }
+    else {
+        // Load the icon from file
+        HANDLE hIcon = LoadImage(GetModuleHandle(NULL), _T("gfx/ns.ico"), IMAGE_ICON, 32, 32, LR_LOADFROMFILE);
+
+        // Set the icon
+        SendMessage(g_app.windowHandle, WM_SETICON, ICON_SMALL, (LPARAM)hIcon);
+        SendMessage(g_app.windowHandle, WM_SETICON, ICON_BIG, (LPARAM)hIcon);
     }
 
     // Show the window
