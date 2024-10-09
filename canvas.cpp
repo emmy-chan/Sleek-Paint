@@ -140,16 +140,23 @@ void cCanvas::AdaptNewSize(int width, int height) {
         const auto& oldLayer = g_canvas[g_cidx].tiles[layerIndex];
         auto& newLayer = newLayers[layerIndex];
 
-        // Map old pixels to new positions with scaling
+        // Use nearest-neighbor scaling to map old pixels to new positions
         for (int y = 0; y < height; ++y) {
             for (int x = 0; x < width; ++x) {
-                const int oldX = static_cast<int>(x / scaleX), oldY = static_cast<int>(y / scaleY);
-                if (oldX < g_canvas[g_cidx].width && oldY < g_canvas[g_cidx].height) {
-                    const int oldIndex = oldX + oldY * g_canvas[g_cidx].width, newIndex = x + y * width;
+                // Use nearest-neighbor interpolation to find the closest corresponding pixel in the original image
+                const int oldX = static_cast<int>(roundf(x / scaleX));
+                const int oldY = static_cast<int>(roundf(y / scaleY));
 
-                    if (oldIndex < oldLayer.size() && newIndex < newLayer.size())
-                        newLayer[newIndex] = oldLayer[oldIndex];
-                }
+                // Clamp the old coordinates to the size of the original image
+                const int clampedOldX = std::min(oldX, g_canvas[g_cidx].width - 1);
+                const int clampedOldY = std::min(oldY, g_canvas[g_cidx].height - 1);
+
+                // Calculate indices and map old pixels to new positions
+                const int oldIndex = clampedOldX + clampedOldY * g_canvas[g_cidx].width;
+                const int newIndex = x + y * width;
+
+                if (oldIndex < oldLayer.size() && newIndex < newLayer.size())
+                    newLayer[newIndex] = oldLayer[oldIndex];
             }
         }
     }
