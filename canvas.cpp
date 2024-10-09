@@ -128,44 +128,126 @@ void cCanvas::Clear() {
     for (auto& tile : g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex]) tile = IM_COL32(255, 255, 255, 0);
 }
 
-void cCanvas::AdaptNewSize(int width, int height) {
-    // Create a temporary container for the resized image
-    std::vector<std::vector<ImU32>> newLayers(g_canvas[g_cidx].tiles.size(), std::vector<ImU32>(width * height, IM_COL32_BLACK_TRANS));
+// Macros to extract color components from ImU32
+#define IM_GET_RED(col)   (((col) >> IM_COL32_R_SHIFT) & 0xFF)
+#define IM_GET_GREEN(col) (((col) >> IM_COL32_G_SHIFT) & 0xFF)
+#define IM_GET_BLUE(col)  (((col) >> IM_COL32_B_SHIFT) & 0xFF)
+#define IM_GET_ALPHA(col) (((col) >> IM_COL32_A_SHIFT) & 0xFF)
 
-    // Calculate scaling factors
-    const float scaleX = static_cast<float>(width) / g_canvas[g_cidx].width, scaleY = static_cast<float>(height) / g_canvas[g_cidx].height;
+// Helper function to perform bilinear interpolation of colors
+ImU32 BilinearInterpolate(ImU32 c00, ImU32 c10, ImU32 c01, ImU32 c11, float dx, float dy) {
+    // Extract color components and convert to linear space
+    auto ExtractComponents = [](ImU32 color, float& r, float& g, float& b, float& a) {
+        r = IM_GET_RED(color) / 255.0f;
+        g = IM_GET_GREEN(color) / 255.0f;
+        b = IM_GET_BLUE(color) / 255.0f;
+        a = IM_GET_ALPHA(color) / 255.0f;
+        };
+
+    float r00, g00, b00, a00;
+    float r10, g10, b10, a10;
+    float r01, g01, b01, a01;
+    float r11, g11, b11, a11;
+
+    ExtractComponents(c00, r00, g00, b00, a00);
+    ExtractComponents(c10, r10, g10, b10, a10);
+    ExtractComponents(c01, r01, g01, b01, a01);
+    ExtractComponents(c11, r11, g11, b11, a11);
+
+    // Interpolate along x for both rows
+    float r0 = r00 + dx * (r10 - r00);
+    float g0 = g00 + dx * (g10 - g00);
+    float b0 = b00 + dx * (b10 - b00);
+    float a0 = a00 + dx * (a10 - a00);
+
+    float r1 = r01 + dx * (r11 - r01);
+    float g1 = g01 + dx * (g11 - g01);
+    float b1 = b01 + dx * (b11 - b01);
+    float a1 = a01 + dx * (a11 - a01);
+
+    // Interpolate along y between the two rows
+    float r = r0 + dy * (r1 - r0);
+    float g = g0 + dy * (g1 - g0);
+    float b = b0 + dy * (b1 - b0);
+    float a = a0 + dy * (a1 - a0);
+
+    // Clamp values to [0,1]
+    r = std::min(std::max(r, 0.0f), 1.0f);
+    g = std::min(std::max(g, 0.0f), 1.0f);
+    b = std::min(std::max(b, 0.0f), 1.0f);
+    a = std::min(std::max(a, 0.0f), 1.0f);
+
+    // Convert back to sRGB color space if necessary
+    // (Assuming the input colors are in linear space; if not, apply gamma correction)
+
+    // Pack the components back into an ImU32 color
+    ImU32 interpolatedColor = IM_COL32(
+        static_cast<int>(r * 255.0f + 0.5f),
+        static_cast<int>(g * 255.0f + 0.5f),
+        static_cast<int>(b * 255.0f + 0.5f),
+        static_cast<int>(a * 255.0f + 0.5f)
+    );
+
+    return interpolatedColor;
+}
+
+void cCanvas::AdaptNewSize(int newWidth, int newHeight, bool maintainAspectRatio) {
+    // Aspect ratio
+    if (maintainAspectRatio) {
+        const float aspectRatio = static_cast<float>(g_canvas[g_cidx].width) / g_canvas[g_cidx].height;
+        if (newWidth / static_cast<float>(newHeight) > aspectRatio) {
+            newWidth = static_cast<int>(newHeight * aspectRatio);
+        }
+        else {
+            newHeight = static_cast<int>(newWidth / aspectRatio);
+        }
+    }
+
+    // Create a temporary container for the resized image
+    std::vector<std::vector<ImU32>> newLayers(g_canvas[g_cidx].tiles.size(), std::vector<ImU32>(newWidth * newHeight, IM_COL32_BLACK_TRANS));
+
+    // Scaling factors
+    const float scaleX = static_cast<float>(g_canvas[g_cidx].width) / newWidth;
+    const float scaleY = static_cast<float>(g_canvas[g_cidx].height) / newHeight;
 
     // Iterate over all layers and adapt the content
     for (size_t layerIndex = 0; layerIndex < g_canvas[g_cidx].tiles.size(); ++layerIndex) {
         const auto& oldLayer = g_canvas[g_cidx].tiles[layerIndex];
         auto& newLayer = newLayers[layerIndex];
 
-        // Use nearest-neighbor scaling to map old pixels to new positions
-        for (int y = 0; y < height; ++y) {
-            for (int x = 0; x < width; ++x) {
-                // Use nearest-neighbor interpolation to find the closest corresponding pixel in the original image
-                const int oldX = static_cast<int>(roundf(x / scaleX));
-                const int oldY = static_cast<int>(roundf(y / scaleY));
+        // Bilinear interpolation
+        for (int newY = 0; newY < newHeight; ++newY) {
+            const float srcY = newY * scaleY;
+            const int y0 = static_cast<int>(srcY);
+            const int y1 = std::min(y0 + 1, g_canvas[g_cidx].height - 1);
+            const float dy = srcY - y0;
 
-                // Clamp the old coordinates to the size of the original image
-                const int clampedOldX = std::min(oldX, g_canvas[g_cidx].width - 1);
-                const int clampedOldY = std::min(oldY, g_canvas[g_cidx].height - 1);
+            for (int newX = 0; newX < newWidth; ++newX) {
+                const float srcX = newX * scaleX;
+                const int x0 = static_cast<int>(srcX);
+                const int x1 = std::min(x0 + 1, g_canvas[g_cidx].width - 1);
+                const float dx = srcX - x0;
 
-                // Calculate indices and map old pixels to new positions
-                const int oldIndex = clampedOldX + clampedOldY * g_canvas[g_cidx].width;
-                const int newIndex = x + y * width;
+                // Get the four surrounding pixels
+                const ImU32 c00 = oldLayer[x0 + y0 * g_canvas[g_cidx].width];
+                const ImU32 c10 = oldLayer[x1 + y0 * g_canvas[g_cidx].width];
+                const ImU32 c01 = oldLayer[x0 + y1 * g_canvas[g_cidx].width];
+                const ImU32 c11 = oldLayer[x1 + y1 * g_canvas[g_cidx].width];
 
-                if (oldIndex < oldLayer.size() && newIndex < newLayer.size())
-                    newLayer[newIndex] = oldLayer[oldIndex];
+                // Interpolate between the four surrounding pixels
+                const ImU32 interpolatedColor = BilinearInterpolate(c00, c10, c01, c11, dx, dy);
+
+                // Set the pixel in the new layer
+                newLayer[newX + newY * newWidth] = interpolatedColor;
             }
         }
     }
 
     // Replace old layers with new layers
     g_canvas[g_cidx].tiles = std::move(newLayers);
-    g_canvas[g_cidx].width = width;
-    g_canvas[g_cidx].height = height;
-    g_canvas[g_cidx].CreateCanvasTexture(g_app.g_pd3dDevice, g_canvas[g_cidx].width, g_canvas[g_cidx].height);
+    g_canvas[g_cidx].width = newWidth;
+    g_canvas[g_cidx].height = newHeight;
+    g_canvas[g_cidx].CreateCanvasTexture(g_app.g_pd3dDevice, newWidth, newHeight);
 }
 
 // Function to update the canvas history
