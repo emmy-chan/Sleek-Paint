@@ -181,42 +181,44 @@ void DistributeError(uint64_t x, uint64_t y, int errR, int errG, int errB, doubl
     uint8_t ng = (neighborColor >> IM_COL32_G_SHIFT) & 0xFF;
     uint8_t nb = (neighborColor >> IM_COL32_B_SHIFT) & 0xFF;
 
-    nr = std::clamp<int>(nr + errR * factor, 0, 255);
-    ng = std::clamp<int>(ng + errG * factor, 0, 255);
-    nb = std::clamp<int>(nb + errB * factor, 0, 255);
+    nr = glm::clamp<int>(nr + errR * factor, 0, 255);
+    ng = glm::clamp<int>(ng + errG * factor, 0, 255);
+    nb = glm::clamp<int>(nb + errB * factor, 0, 255);
 
     neighborColor = IM_COL32(nr, ng, nb, 255);
+}
+
+// Quantize to a lower bit depth for a retro look
+uint8_t Quantize(uint8_t color, uint8_t bits) {
+    // Calculate the maximum value for the target bit depth
+    const uint8_t maxVal = (1 << bits) - 1;
+    return (color * maxVal) / 255 * (255 / maxVal);
 }
 
 // PS1-style Floyd-Steinberg dithering function
 ImU32 cUtils::ApplyFloydSteinbergDithering(ImU32 color, uint64_t x, uint64_t y) {
     // Extract color components
-    uint8_t r = (color >> IM_COL32_R_SHIFT) & 0xFF;
-    uint8_t g = (color >> IM_COL32_G_SHIFT) & 0xFF;
-    uint8_t b = (color >> IM_COL32_B_SHIFT) & 0xFF;
+    const uint8_t r = (color >> IM_COL32_R_SHIFT) & 0xFF;
+    const uint8_t g = (color >> IM_COL32_G_SHIFT) & 0xFF;
+    const uint8_t b = (color >> IM_COL32_B_SHIFT) & 0xFF;
 
-    // Save original color components
-    const uint8_t origR = r;
-    const uint8_t origG = g;
-    const uint8_t origB = b;
+    // Quantize to lower bit depth (e.g., 4 bits)
+    const uint8_t quantR = Quantize(r, 4);
+    const uint8_t quantG = Quantize(g, 4);
+    const uint8_t quantB = Quantize(b, 4);
 
-    // Reduce color depth to 5 bits per channel
-    r = (r & 0xF8) | (r >> 5);
-    g = (g & 0xF8) | (g >> 5);
-    b = (b & 0xF8) | (b >> 5);
+    // Calculate the error
+    const int errR = r - quantR;
+    const int errG = g - quantG;
+    const int errB = b - quantB;
 
-    // Calculate error
-    const int errR = origR - r;
-    const int errG = origG - g;
-    const int errB = origB - b;
-
-    // Distribute the error to neighboring pixels
+    // Distribute the error
     DistributeError(x + 1, y, errR, errG, errB, 7.0 / 16.0);
     DistributeError(x - 1, y + 1, errR, errG, errB, 3.0 / 16.0);
     DistributeError(x, y + 1, errR, errG, errB, 5.0 / 16.0);
     DistributeError(x + 1, y + 1, errR, errG, errB, 1.0 / 16.0);
 
-    return IM_COL32(r, g, b, 255);
+    return IM_COL32(quantR, quantG, quantB, 255);
 }
 
 ImU32 cUtils::BlendColor(ImU32 baseColor, uint8_t glyphAlpha) {
