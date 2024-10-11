@@ -181,19 +181,19 @@ int main(int, char**)
     config.OversampleH = 1; config.OversampleV = 1;
 
     // Store default font
-    io.Fonts->AddFontFromMemoryTTF(const_cast<std::uint8_t*>(Custom), sizeof(Custom), 18.0f, &config, io.Fonts->GetGlyphRangesDefault());
+    io.Fonts->AddFontFromMemoryTTF(const_cast<std::uint8_t*>(Custom), sizeof(Custom), 17.0f, &config, io.Fonts->GetGlyphRangesDefault());
     //io.Fonts->AddFontFromFileTTF("c:\\Windows\\Fonts\\Tahoma.ttf", 18.0f, &config, io.Fonts->GetGlyphRangesDefault());
     config.MergeMode = true;
 
     // Chinese / Japanese fonts
     if (std::filesystem::exists("c:\\Windows\\Fonts\\msyh.ttc"))
-        io.Fonts->AddFontFromFileTTF("c:\\Windows\\Fonts\\msyh.ttc", 18.0f, &config, io.Fonts->GetGlyphRangesChineseSimplifiedCommon());
+        io.Fonts->AddFontFromFileTTF("c:\\Windows\\Fonts\\msyh.ttc", 17.0f, &config, io.Fonts->GetGlyphRangesChineseSimplifiedCommon());
 
     // Load icons!
     {
         //config.GlyphMinAdvanceX = 35.0f; // Use if you want to make the icon monospaced
         static const ImWchar icon_ranges[] = { 0xf000, 0xf3ff, 0 };
-        io.Fonts->AddFontFromMemoryCompressedTTF(font_awesome_data, font_awesome_size, 16.0f, &config, icon_ranges);
+        io.Fonts->AddFontFromMemoryCompressedTTF(font_awesome_data, font_awesome_size, 17.0f, &config, icon_ranges);
     }
 
     // Build font atlas
