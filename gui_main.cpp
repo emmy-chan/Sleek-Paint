@@ -75,8 +75,9 @@ void cGUI::Display()
             
             if (ImGui::MenuItem(ICON_FA_ADJUST " Apply Dithering") && g_canvas.size() > 0) {
                 // Apply the changes to the canvas
-                for (uint64_t y = 0; y < g_canvas[g_cidx].height; y++) {
-                    for (uint64_t x = 0; x < g_canvas[g_cidx].width; x++) {
+                for (int16_t y = 0; y < g_canvas[g_cidx].height; y++) {
+                    #pragma omp simd
+                    for (int16_t x = 0; x < g_canvas[g_cidx].width; x++) {
                         const uint64_t index = x + y * g_canvas[g_cidx].width;
                         ImU32& currentColor = g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex][index];
                         

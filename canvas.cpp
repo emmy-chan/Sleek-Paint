@@ -142,7 +142,7 @@ ImU32 BilinearInterpolate(ImU32 c00, ImU32 c10, ImU32 c01, ImU32 c11, float dx, 
         g = IM_GET_GREEN(color) / 255.0f;
         b = IM_GET_BLUE(color) / 255.0f;
         a = IM_GET_ALPHA(color) / 255.0f;
-        };
+    };
 
     float r00, g00, b00, a00;
     float r10, g10, b10, a10;
