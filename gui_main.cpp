@@ -1355,6 +1355,14 @@ void cGUI::Display()
                 text_size = static_cast<uint8_t>(temp);
             break;
         }
+        case TOOL_SQUARE: {
+            ImGui::Text("Rounding:");
+            int temp = static_cast<int>(rect_rounding);
+
+            if (ImGui::SliderInt("##Rounding", &temp, 0, 4))
+                text_size = static_cast<uint8_t>(temp);
+            break;
+        }
         default:
             break;
     }

@@ -621,20 +621,94 @@ void DrawCircleOnCanvas(int startX, int startY, int endX, int endY, ImU32 color,
 void DrawRectangleOnCanvas(int x0, int y0, int x1, int y1, ImU32 color, bool preview = false) {
     const int startX = std::min(x0, x1), endX = std::max(x0, x1);
     const int startY = std::min(y0, y1), endY = std::max(y0, y1);
+    int rounding = std::abs(startX - endX) <= 5 || std::abs(startY - endY) <= 5 ? 1 : rect_rounding;
 
-    for (int x = startX; x <= endX; ++x) {
-        for (int y = startY; y <= endY; ++y) {
-            // Check if the current pixel is on the boundary
-            if (x == startX || x == endX || y == startY || y == endY) {
-                if (x >= 0 && x < g_canvas[g_cidx].width && y >= 0 && y < g_canvas[g_cidx].height) {
-                    if (preview) {
-                        const ImVec2 topLeft = { g_cam.x + x * TILE_SIZE, g_cam.y + y * TILE_SIZE };
-                        const ImVec2 bottomRight = { topLeft.x + TILE_SIZE, topLeft.y + TILE_SIZE };
-                        ImGui::GetBackgroundDrawList()->AddRectFilled(topLeft, bottomRight, color);
-                    }
-                    else
-                        g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex][y * g_canvas[g_cidx].width + x] = color;
-                }
+    // Draw the straight sides (excluding the rounded corners)
+    for (int x = startX + rounding; x <= endX - rounding; ++x) {
+        if (startY >= 0 && startY < g_canvas[g_cidx].height) {
+            if (preview) {
+                const ImVec2 topPixel = { g_cam.x + x * TILE_SIZE, g_cam.y + startY * TILE_SIZE };
+                ImGui::GetBackgroundDrawList()->AddRectFilled(topPixel, { topPixel.x + TILE_SIZE, topPixel.y + TILE_SIZE }, color);
+            }
+            else {
+                g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex][startY * g_canvas[g_cidx].width + x] = color;
+            }
+        }
+        if (endY >= 0 && endY < g_canvas[g_cidx].height) {
+            if (preview) {
+                const ImVec2 bottomPixel = { g_cam.x + x * TILE_SIZE, g_cam.y + endY * TILE_SIZE };
+                ImGui::GetBackgroundDrawList()->AddRectFilled(bottomPixel, { bottomPixel.x + TILE_SIZE, bottomPixel.y + TILE_SIZE }, color);
+            }
+            else {
+                g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex][endY * g_canvas[g_cidx].width + x] = color;
+            }
+        }
+    }
+
+    for (int y = startY + rounding; y <= endY - rounding; ++y) {
+        if (startX >= 0 && startX < g_canvas[g_cidx].width) {
+            if (preview) {
+                const ImVec2 leftPixel = { g_cam.x + startX * TILE_SIZE, g_cam.y + y * TILE_SIZE };
+                ImGui::GetBackgroundDrawList()->AddRectFilled(leftPixel, { leftPixel.x + TILE_SIZE, leftPixel.y + TILE_SIZE }, color);
+            }
+            else {
+                g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex][y * g_canvas[g_cidx].width + startX] = color;
+            }
+        }
+        if (endX >= 0 && endX < g_canvas[g_cidx].width) {
+            if (preview) {
+                const ImVec2 rightPixel = { g_cam.x + endX * TILE_SIZE, g_cam.y + y * TILE_SIZE };
+                ImGui::GetBackgroundDrawList()->AddRectFilled(rightPixel, { rightPixel.x + TILE_SIZE, rightPixel.y + TILE_SIZE }, color);
+            }
+            else {
+                g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex][y * g_canvas[g_cidx].width + endX] = color;
+            }
+        }
+    }
+
+    // Draw the minimal rounded corners
+    for (int i = 0; i < rounding; ++i) {
+        // Top-left corner
+        if (startX + i >= 0 && startY + rounding - i >= 0 && startX + i < g_canvas[g_cidx].width && startY + rounding - i < g_canvas[g_cidx].height) {
+            if (preview) {
+                const ImVec2 pixel = { g_cam.x + (startX + i) * TILE_SIZE, g_cam.y + (startY + rounding - i) * TILE_SIZE };
+                ImGui::GetBackgroundDrawList()->AddRectFilled(pixel, { pixel.x + TILE_SIZE, pixel.y + TILE_SIZE }, color);
+            }
+            else {
+                g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex][(startY + rounding - i) * g_canvas[g_cidx].width + (startX + i)] = color;
+            }
+        }
+
+        // Top-right corner
+        if (endX - i >= 0 && startY + rounding - i >= 0 && endX - i < g_canvas[g_cidx].width && startY + rounding - i < g_canvas[g_cidx].height) {
+            if (preview) {
+                const ImVec2 pixel = { g_cam.x + (endX - i) * TILE_SIZE, g_cam.y + (startY + rounding - i) * TILE_SIZE };
+                ImGui::GetBackgroundDrawList()->AddRectFilled(pixel, { pixel.x + TILE_SIZE, pixel.y + TILE_SIZE }, color);
+            }
+            else {
+                g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex][(startY + rounding - i) * g_canvas[g_cidx].width + (endX - i)] = color;
+            }
+        }
+
+        // Bottom-left corner
+        if (startX + i >= 0 && endY - rounding + i >= 0 && startX + i < g_canvas[g_cidx].width && endY - rounding + i < g_canvas[g_cidx].height) {
+            if (preview) {
+                const ImVec2 pixel = { g_cam.x + (startX + i) * TILE_SIZE, g_cam.y + (endY - rounding + i) * TILE_SIZE };
+                ImGui::GetBackgroundDrawList()->AddRectFilled(pixel, { pixel.x + TILE_SIZE, pixel.y + TILE_SIZE }, color);
+            }
+            else {
+                g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex][(endY - rounding + i) * g_canvas[g_cidx].width + (startX + i)] = color;
+            }
+        }
+
+        // Bottom-right corner
+        if (endX - i >= 0 && endY - rounding + i >= 0 && endX - i < g_canvas[g_cidx].width && endY - rounding + i < g_canvas[g_cidx].height) {
+            if (preview) {
+                const ImVec2 pixel = { g_cam.x + (endX - i) * TILE_SIZE, g_cam.y + (endY - rounding + i) * TILE_SIZE };
+                ImGui::GetBackgroundDrawList()->AddRectFilled(pixel, { pixel.x + TILE_SIZE, pixel.y + TILE_SIZE }, color);
+            }
+            else {
+                g_canvas[g_cidx].tiles[g_canvas[g_cidx].selLayerIndex][(endY - rounding + i) * g_canvas[g_cidx].width + (endX - i)] = color;
             }
         }
     }
