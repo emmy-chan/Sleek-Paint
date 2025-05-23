@@ -1183,16 +1183,7 @@ void UpdateCanvasTexture(ID3D11DeviceContext* context, const std::vector<ImU32>&
 }
 
 void cCanvas::Editor() {
-    key_state.update();
-
-    if (GetAsyncKeyState(VK_CONTROL) && key_state.key_pressed('N') & 1)
-        g_app.ui_state = std::make_unique<cUIStateNewProject>();
-    else if (GetAsyncKeyState(VK_CONTROL) && key_state.key_pressed('O') & 1)
-        g_app.ui_state = std::make_unique<cUIStateOpenProject>();
-    else if (GetAsyncKeyState(VK_CONTROL) && key_state.key_pressed('S') & 1)
-        g_app.ui_state = std::make_unique<cUIStateSaveProject>();
-
-    if (g_canvas.empty() || g_canvas[g_cidx].tiles.empty() || g_canvas[g_cidx].layerVisibility.empty()) return;
+    if (g_canvas[g_cidx].tiles.empty() || g_canvas[g_cidx].layerVisibility.empty()) return;
     auto& d = *ImGui::GetBackgroundDrawList(); auto& io = ImGui::GetIO(); static bool isTypingText = false;
 
     if (!g_app.ui_state) {

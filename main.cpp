@@ -25,6 +25,8 @@
 #include "utils.h"
 #include <ft2build.h>
 #include <filesystem>
+#include "keystate.h"
+#include "ui_states.h"
 #include FT_FREETYPE_H
 
 // Data
@@ -247,8 +249,17 @@ int main(int, char**)
         ImGui_ImplWin32_NewFrame();
         ImGui::NewFrame();
 
+        key_state.update();
+
+        if (GetAsyncKeyState(VK_CONTROL) && key_state.key_pressed('N') & 1)
+            g_app.ui_state = std::make_unique<cUIStateNewProject>();
+        else if (GetAsyncKeyState(VK_CONTROL) && key_state.key_pressed('O') & 1)
+            g_app.ui_state = std::make_unique<cUIStateOpenProject>();
+        else if (GetAsyncKeyState(VK_CONTROL) && key_state.key_pressed('S') & 1)
+            g_app.ui_state = std::make_unique<cUIStateSaveProject>();
+
         // Update UI state / Canvas
-        g_canvas[g_cidx].Editor();
+        if (!g_canvas.empty()) g_canvas[g_cidx].Editor();
         if (g_app.ui_state) g_app.ui_state->Update();
 
         {
