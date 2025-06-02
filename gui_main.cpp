@@ -1131,12 +1131,21 @@ void cGUI::Display()
 
         std::string name = std::string(ICON_FA_ARROW_UP) + "##" + std::to_string(i);
 
+        // Move layer up UI
         if (ImGui::Button(name.c_str(), ImVec2(22, 22))) {
             if (i > 0) {
                 std::swap(g_canvas[g_cidx].tiles[i], g_canvas[g_cidx].tiles[i - 1]);
                 std::swap(g_canvas[g_cidx].layerVisibility[i], g_canvas[g_cidx].layerVisibility[i - 1]);
                 std::swap(g_canvas[g_cidx].layerNames[i], g_canvas[g_cidx].layerNames[i - 1]);
                 std::swap(g_canvas[g_cidx].layerOpacity[i], g_canvas[g_cidx].layerOpacity[i - 1]);
+
+                // Update compressed layer indices
+                for (auto& cl : g_canvas[g_cidx].compressedTiles) {
+                    if (cl.originalIndex == i)
+                        cl.originalIndex = i - 1;
+                    else if (cl.originalIndex == i - 1)
+                        cl.originalIndex = i;
+                }
 
                 if (g_canvas[g_cidx].selLayerIndex == i)
                     g_canvas[g_cidx].selLayerIndex = i - 1;
@@ -1155,6 +1164,14 @@ void cGUI::Display()
                 std::swap(g_canvas[g_cidx].layerVisibility[i], g_canvas[g_cidx].layerVisibility[i + 1]);
                 std::swap(g_canvas[g_cidx].layerNames[i], g_canvas[g_cidx].layerNames[i + 1]);
                 std::swap(g_canvas[g_cidx].layerOpacity[i], g_canvas[g_cidx].layerOpacity[i + 1]);
+
+                // Update compressed layer indices
+                for (auto& cl : g_canvas[g_cidx].compressedTiles) {
+                    if (cl.originalIndex == i)
+                        cl.originalIndex = i + 1;
+                    else if (cl.originalIndex == i + 1)
+                        cl.originalIndex = i;
+                }
 
                 if (g_canvas[g_cidx].selLayerIndex == i)
                     g_canvas[g_cidx].selLayerIndex = i + 1;
