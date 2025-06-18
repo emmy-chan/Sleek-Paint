@@ -31,7 +31,7 @@ public:
 	int ColorDifference(const ImU32& col1, const ImU32& col2);
 	int ColorDifferenceSquared(const ImU32& col1, const ImU32& col2);
 	bool IsTilesEqual(const std::vector<ImU32>& a, const std::vector<ImU32>& b);
-	const bool IsClickingOutsideCanvas(ImVec2 mouse);
+	bool IsClickingInsideCanvas(const ImVec2& startMousePos, const ImVec2& currentMousePos);
 	std::vector<uint64_t> GeneratePermutation(uint64_t size, uint64_t seed);
 	void GenerateRandomKeyAndSeed(uint64_t& key, uint64_t& seed);
 	ImU32 XorColor(ImU32 color, uint64_t key);

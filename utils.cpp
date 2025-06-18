@@ -87,21 +87,22 @@ bool cUtils::IsTilesEqual(const std::vector<ImU32>& a, const std::vector<ImU32>&
     return a.size() == b.size() && std::equal(a.begin(), a.end(), b.begin());
 }
 
-const bool cUtils::IsClickingOutsideCanvas(ImVec2 mouse) {
-    auto& io = ImGui::GetIO();
-    static bool bToolFlip = true;
-    const bool bMouseOutsideCanvas = mouse.x < 200 || mouse.x > io.DisplaySize.x - 61 || mouse.y > io.DisplaySize.y - 20 || mouse.y < 24;
-    static bool bCanDraw = !bMouseOutsideCanvas && !g_app.ui_state;
+bool cUtils::IsClickingInsideCanvas(const ImVec2& startMousePos, const ImVec2& currentMousePos) {
+    // Calculate canvas pixel bounds
+    const float canvasLeft = g_cam.x;
+    const float canvasTop = g_cam.y;
+    const float canvasRight = canvasLeft + g_canvas[g_cidx].width * TILE_SIZE;
+    const float canvasBottom = canvasTop + g_canvas[g_cidx].height * TILE_SIZE;
 
-    if (bMouseOutsideCanvas && g_util.MousePressed(0)) bToolFlip = false;
+    // Check if stroke started AND ended inside canvas
+    const bool startedInside = startMousePos.x >= canvasLeft && startMousePos.x <= canvasRight &&
+        startMousePos.y >= canvasTop && startMousePos.y <= canvasBottom;
 
-    if (!bToolFlip) {
-        if (g_util.MouseReleased(0)) bToolFlip = !g_app.ui_state;
-    }
-    else
-        bCanDraw = !bMouseOutsideCanvas && !g_app.ui_state;
+    const bool endedInside = currentMousePos.x >= canvasLeft && currentMousePos.x <= canvasRight &&
+        currentMousePos.y >= canvasTop && currentMousePos.y <= canvasBottom;
 
-    return !bCanDraw;
+    // Only allow if both are inside and UI is not blocking input
+    return (startedInside || endedInside) && !g_app.ui_state;
 }
 
 std::vector<uint64_t> cUtils::GeneratePermutation(uint64_t size, uint64_t seed) {
