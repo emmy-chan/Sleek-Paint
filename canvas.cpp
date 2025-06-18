@@ -1250,7 +1250,8 @@ void cCanvas::Editor() {
     const bool clickingInsideCanvas = x >= 0 && x < width && y >= 0 && y < height;
     static ImVec2 mouseStart;
     if (g_util.MousePressed(0) && clickingInsideCanvas) mouseStart = ImGui::GetMousePos();
-    const bool bCanDraw = !g_util.IsClickingOutsideCanvas(mouseStart.x > 0 && mouseStart.y > 0 ? mouseStart : io.MousePos);
+    else if (g_util.MouseReleased(0)) mouseStart = ImVec2(-FLT_MAX, FLT_MAX);
+    const bool bCanDraw = g_util.IsClickingInsideCanvas(mouseStart, io.MousePos);
     static ImVec2 lastMousePos = ImVec2(-1, -1);
 
     if (layerVisibility[selLayerIndex] && layerOpacity[selLayerIndex] && bCanDraw && clickingInsideCanvas && !ImGui::IsAnyItemFocused() && !ImGui::IsAnyItemHovered()) {
