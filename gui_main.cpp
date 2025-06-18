@@ -1325,6 +1325,49 @@ void cGUI::Display()
         }
     }
 
+    // Merge layer down
+    if (ImGui::Button((std::string("Merge Layer ") + ICON_FA_ARROW_DOWN).c_str(), ImVec2(ImGui::GetContentRegionAvail().x, 0))) {
+        auto& canvas = g_canvas[g_cidx];
+        const size_t i = canvas.selLayerIndex;
+
+        if (canvas.tiles.size() > 1 &&
+            i < canvas.tiles.size() - 1 &&
+            !canvas.tiles[i].empty() &&
+            !canvas.tiles[i + 1].empty()) {
+
+            const size_t pixelCount = canvas.tiles[i].size();
+            auto& top = canvas.tiles[i];
+            auto& bottom = canvas.tiles[i + 1];
+
+            // Merge pixel data: top merges into bottom
+            for (size_t px = 0; px < pixelCount; ++px) {
+                const ImU32 topPixel = top[px];
+                const uint8_t alpha = (topPixel >> IM_COL32_A_SHIFT) & 0xFF;
+                if (alpha > 0)
+                    bottom[px] = topPixel; // Overwrite non-transparent pixels
+            }
+
+            // Remove merged top layer
+            canvas.tiles.erase(canvas.tiles.begin() + i);
+            canvas.layerNames.erase(canvas.layerNames.begin() + i);
+            canvas.layerOpacity.erase(canvas.layerOpacity.begin() + i);
+            canvas.layerVisibility.erase(canvas.layerVisibility.begin() + i);
+
+            // Remove any compressed copy
+            for (auto it = canvas.compressedTiles.begin(); it != canvas.compressedTiles.end(); ) {
+                if (it->originalIndex == i) it = canvas.compressedTiles.erase(it);
+                else {
+                    if (it->originalIndex > i) --it->originalIndex;
+                    ++it;
+                }
+            }
+
+            // Fix selected index if it was on the removed layer
+            if (canvas.selLayerIndex >= canvas.tiles.size())
+                canvas.selLayerIndex = canvas.tiles.size() - 1;
+        }
+    }
+
     // Restore the original padding style
     ImGui::PopStyleVar();
 
