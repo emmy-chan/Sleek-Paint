@@ -1250,7 +1250,6 @@ void cCanvas::Editor() {
     const bool clickingInsideCanvas = x >= 0 && x < width && y >= 0 && y < height;
     static ImVec2 mouseStart;
     if (g_util.MousePressed(0) && clickingInsideCanvas) mouseStart = ImGui::GetMousePos();
-    else if (g_util.MouseReleased(0)) mouseStart = ImVec2(-FLT_MAX, FLT_MAX);
     const bool bCanDraw = g_util.IsClickingInsideCanvas(mouseStart, io.MousePos);
     static ImVec2 lastMousePos = ImVec2(-1, -1);
 
@@ -1644,6 +1643,9 @@ void cCanvas::Editor() {
             }
         }
     }
+
+    // Clear this after we run our tools
+    if (g_util.MouseReleased(0)) mouseStart = ImVec2(-FLT_MAX, -FLT_MAX);
 
     // Draw a rectangle around the selected indexes
     DrawSelectionRectangle(selectedIndexes, TILE_SIZE, g_cam.x, g_cam.y, width, height, IM_COL32_WHITE, 2);
