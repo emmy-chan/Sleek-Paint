@@ -343,14 +343,14 @@ inline void ImGui::FileBrowser::Display()
     }
     if (flags_ & ImGuiFileBrowserFlags_NoModal)
     {
-        if (!BeginPopup(openLabel_.c_str()))
+        if (!BeginPopup(openLabel_.c_str(), ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse))
         {
             return;
         }
     }
     else if (!BeginPopupModal(openLabel_.c_str(), nullptr,
         flags_ & ImGuiFileBrowserFlags_NoTitleBar ?
-        ImGuiWindowFlags_NoTitleBar : 0))
+        ImGuiWindowFlags_NoTitleBar : 0 | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse))
     {
         return;
     }
